@@ -34,9 +34,8 @@ else {
 }
 
 async function exchangeSwitcher(selectedExchange) {
-  convertToUSD = false;
   exchange = selectedExchange;
-  await currencyToggle();
+  convertToUSD = false;
   await refreshChart();
   return;
 }
@@ -199,6 +198,7 @@ function toggleInput() {
 
 async function refreshChart() {
   toggleInput();
+  await currencyToggle();
 
   const dataType = inputDataType.value;
   const date = inputDate.value;
