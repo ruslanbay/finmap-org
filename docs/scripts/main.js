@@ -36,6 +36,7 @@ else {
 async function exchangeSwitcher(selectedExchange) {
   exchange = selectedExchange;
   convertToUSD = false;
+  await currencyToggle();
   await refreshChart();
   return;
 }
@@ -91,6 +92,11 @@ async function currencyToggle() {
     exchangeRateByDate = await getExchangeRateByDate(exchangeRates, date, nativeCurrency);
   }
   linkCurrencyToggle.textContent = currency;
+}
+
+if (nativeCurrency === undefined) {
+  convertToUSD = false;
+  currencyToggle();
 }
 
 let date = urlDate ? new Date(`${urlDate}T13:00:00`) : new Date();
@@ -198,7 +204,6 @@ function toggleInput() {
 
 async function refreshChart() {
   toggleInput();
-  await currencyToggle();
 
   const dataType = inputDataType.value;
   const date = inputDate.value;
