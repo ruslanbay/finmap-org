@@ -192,7 +192,7 @@ function toggleInput() {
 
 async function refreshChart() {
   toggleInput();
-  currencyToggle();
+  await currencyToggle();
 
   const dataType = inputDataType.value;
   const date = inputDate.value;
