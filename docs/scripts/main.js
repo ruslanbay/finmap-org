@@ -49,7 +49,6 @@ let currency = "USD";
 let currencySign = "$";
 const linkCurrencyToggle = document.getElementById("currencyToggle");
 linkCurrencyToggle.textContent = "USD";
-linkCurrencyToggle.addEventListener("click", currencyToggle);
 
 let exchangeRates;
 let exchangeRateByDate = 1;
