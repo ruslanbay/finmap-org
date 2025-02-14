@@ -36,43 +36,41 @@ else {
 // Currency
 let nativeCurrency;
 let nativeCurrencySign;
-
-switch (exchange) {
-  case "lse":
-    nativeCurrency = "GBP";
-    nativeCurrencySign = "£";
-    break;
-  case "bist":
-    nativeCurrency = "TRY";
-    nativeCurrencySign = "₺";
-    break;
-  case "moex":
-    nativeCurrency = "RUB";
-    nativeCurrencySign = "₽";
-    break;
-  case "nasdaq":
-  case "nyse":
-  case "amex":
-  case "us-all":
-    nativeCurrency = "USD";
-    nativeCurrencySign = "$";
-    break;
-  default:
-    nativeCurrency = "USD";
-    nativeCurrencySign = "$";
-    break;
-}
-
-let convertToUSD = "false";
-let currency = nativeCurrency;
-let currencySign = nativeCurrencySign;
+let convertToUSD = "true";
+let currency = "USD";
+let currencySign = "$";
 const linkCurrencyToggle = document.getElementById("currencyToggle");
-linkCurrencyToggle.textContent = nativeCurrency;
+linkCurrencyToggle.textContent = "USD";
 linkCurrencyToggle.addEventListener("click", currencyToggle);
 
 let exchangeRates;
 let exchangeRateByDate = 1;
 async function currencyToggle() {
+  switch (exchange) {
+    case "lse":
+      nativeCurrency = "GBP";
+      nativeCurrencySign = "£";
+      break;
+    case "bist":
+      nativeCurrency = "TRY";
+      nativeCurrencySign = "₺";
+      break;
+    case "moex":
+      nativeCurrency = "RUB";
+      nativeCurrencySign = "₽";
+      break;
+    case "nasdaq":
+    case "nyse":
+    case "amex":
+    case "us-all":
+      nativeCurrency = "USD";
+      nativeCurrencySign = "$";
+      break;
+    default:
+      nativeCurrency = "USD";
+      nativeCurrencySign = "$";
+      break;
+  }
   if (convertToUSD === "false") {
     convertToUSD = "true";
     currency = "USD";
