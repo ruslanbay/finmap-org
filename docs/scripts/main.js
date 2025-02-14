@@ -36,7 +36,7 @@ else {
 // Currency
 let nativeCurrency;
 let nativeCurrencySign;
-let convertToUSD = "true";
+let convertToUSD = false;
 let currency = "USD";
 let currencySign = "$";
 const linkCurrencyToggle = document.getElementById("currencyToggle");
@@ -71,23 +71,20 @@ async function currencyToggle() {
       nativeCurrencySign = "$";
       break;
   }
-  if (convertToUSD === "false") {
+  if (convertToUSD) {
+    convertToUSD = "false";
+    currency = nativeCurrency;
+    currencySign = nativeCurrencySign;
+    exchangeRateByDate = 1;
+  }
+  else {
     convertToUSD = "true";
     currency = "USD";
     currencySign = "$";
     exchangeRates = await getExchangeRates(nativeCurrency);
     exchangeRateByDate = await getExchangeRateByDate(exchangeRates, date, nativeCurrency);
   }
-  else {
-    convertToUSD = "false";
-    currency = nativeCurrency;
-    currencySign = nativeCurrencySign;
-    exchangeRateByDate = 1;
-  }
   linkCurrencyToggle.textContent = currency;
-  if (nativeCurrency !== "USD") {
-    refreshChart();
-  }
 }
 
 let date = urlDate ? new Date(`${urlDate}T13:00:00`) : new Date();
@@ -195,6 +192,7 @@ function toggleInput() {
 
 async function refreshChart() {
   toggleInput();
+  currencyToggle();
 
   const dataType = inputDataType.value;
   const date = inputDate.value;
