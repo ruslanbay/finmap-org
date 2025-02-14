@@ -72,13 +72,13 @@ async function currencyToggle() {
       break;
   }
   if (convertToUSD) {
-    convertToUSD = "false";
+    convertToUSD = false;
     currency = nativeCurrency;
     currencySign = nativeCurrencySign;
     exchangeRateByDate = 1;
   }
   else {
-    convertToUSD = "true";
+    convertToUSD = true;
     currency = "USD";
     currencySign = "$";
     exchangeRates = await getExchangeRates(nativeCurrency);
