@@ -33,6 +33,14 @@ else {
   exchange = "nasdaq";
 }
 
+async function exchangeSwitcher(selectedExchange) {
+  convertToUSD = false;
+  exchange = selectedExchange;
+  await currencyToggle();
+  await refreshChart();
+  return;
+}
+
 // Currency
 let nativeCurrency;
 let nativeCurrencySign;
@@ -192,7 +200,6 @@ function toggleInput() {
 
 async function refreshChart() {
   toggleInput();
-  await currencyToggle();
 
   const dataType = inputDataType.value;
   const date = inputDate.value;
