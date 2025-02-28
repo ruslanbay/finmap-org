@@ -1,0 +1,211 @@
+name: 'Update Histogram Datafiles'
+
+on:
+  schedule:
+    - cron: '20 00 * * 2-6'
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Start date'
+        required: true
+        type: string
+        default: '2011-12-19'
+      end_date:
+        description: 'End date'
+        required: true
+        type: string
+        default: '2025-02-28'
+      stepDays:
+        description: 'Step in days'
+        required: true
+        type: number
+        default: 1
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    env: 
+      CI_COMMIT_MESSAGE: Update Histogram Datafiles
+      CI_COMMIT_AUTHOR: github-actions[bot]
+      CI_COMMIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+      CI_URL: https://iss.moex.com/iss
+
+    steps:
+    - name: Read inputs
+      run: |
+        if [ -z "${{ inputs.start_date }}" ]; then
+          START_DATE=$(date --utc -d 'yesterday' +%Y/%m/%d)
+          END_DATE=$(date --utc -d 'yesterday' +%Y/%m/%d)
+        else
+          START_DATE="${{ inputs.start_date }}"
+          END_DATE="${{ inputs.end_date }}"
+        fi
+        echo "START_DATE=$START_DATE" >> $GITHUB_ENV
+        echo "END_DATE=$END_DATE" >> $GITHUB_ENV
+        
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Process datafiles
+      run: |
+        DATA_FOLDER="$GITHUB_WORKSPACE/data"
+        start_date="${{ env.START_DATE }}"
+        end_date="${{ env.END_DATE }}"
+        
+        # Convert dates to seconds since epoch for comparison
+        start_seconds=$(date --utc -d "$start_date" +%s)
+        end_seconds=$(date --utc -d "$end_date" +%s)
+        
+        # Loop through the date range
+        current_seconds=$start_seconds
+        while [ $current_seconds -le $end_seconds ]; do
+          current_date=$(date --utc -d "@$current_seconds" +"%Y-%m-%d")
+          # Increment the current date by one day (86400 seconds)
+          current_seconds=$((current_seconds + 86400))
+        
+          # Skip weekends
+          if [ $(date --utc -d "$current_date" +%u) -ge 6 ]; then
+            continue
+          fi
+        
+          CURRENT_FOLDER="$GITHUB_WORKSPACE/data/$(date --utc -d "$current_date" +'%Y/%m/%d')"
+          if [ ! -d "${CURRENT_FOLDER}" ]; then
+            continue
+          fi
+          
+          declare -a SECTORS # this is an array
+
+          for filename in "${CURRENT_FOLDER}"/*; do
+            if [ -f "$filename" ]; then
+              data_length=$(jq '(.securities.data | length)' "${filename}")
+              # Skip empty files
+              if [ "${data_length}" -eq "0" ]; then
+                continue
+              fi
+        
+              mkdir -p "${DATA_FOLDER}/history"
+              history_file="${DATA_FOLDER}/history/$(basename ${filename})"
+              tsv_file=$(basename "${filename}" | sed 's/json/tsv/')
+              
+              # Read predefined sectors from TSV file, excluding empty sectors
+              SECTORS=() # clear the array
+              while IFS=$'\t' read -r sector; do
+                if [ ! -z "$sector" ] && [ "$sector" != "sector" ]; then
+                  SECTORS+=("$sector")
+                fi
+              done < <(cut -f1 "${DATA_FOLDER}/sectors/${tsv_file}" | sort -u)
+
+              # Create JSON array of all sectors with zero values for initialization
+              sectors_json=$(printf '%s\n' "${SECTORS[@]}" | jq -R -s 'split("\n")[:-1] | 
+                map({
+                  sectorName: .,
+                  marketCap: 0,
+                  value: 0,
+                  volume: 0,
+                  priceChangePct: 0,
+                  tradesNumber: 0,
+                  itemsNumber: 0
+                })')
+        
+              # Process current day's data with zero initialization for missing sectors
+              current_data=$(jq --arg current_date "$current_date" \
+              --argjson sectors "$sectors_json" \
+              '{
+                date: $current_date,
+                sectors: (
+                  # Start with zero-filled sectors
+                  $sectors as $zero_sectors |
+                  # Get actual data
+                  [.securities.data[] | select(.[2] == "sector" and .[3] != "") | {
+                    sectorName: .[6],
+                    marketCap: (.[17] // 0),
+                    value: (.[15] // 0),
+                    volume: (.[14] // 0),
+                    priceChangePct: (.[13] // 0),
+                    tradesNumber: (.[16] // 0),
+                    itemsNumber: (.[22] // 0)
+                  }] as $actual_data |
+                  # Merge actual data over zero-filled sectors
+                  $zero_sectors | map(
+                    . as $zero_sector |
+                    ($actual_data[] | select(.sectorName == $zero_sector.sectorName)) // .
+                  )
+                )
+              }' "${filename}")
+        
+              # If history file doesn't exist, create initial structure
+              if [ ! -f "$history_file" ]; then
+                echo "$current_data" | jq '{
+                  dates: [.date],
+                  sectors: [
+                    .sectors[] | {
+                      sectorName: .sectorName,
+                      marketCap: [.marketCap],
+                      value: [.value],
+                      volume: [.volume],
+                      priceChangePct: [.priceChangePct],
+                      tradesNumber: [.tradesNumber],
+                      itemsNumber: [.itemsNumber]
+                    }
+                  ]
+                }' > "$history_file"
+              else
+                # Merge new data with existing data
+                jq --compact-output --argjson new_data "$current_data" '
+                # First, check if the new date already exists
+                if (.dates | index($new_data.date)) then
+                  # If date exists, do not modify the data
+                  .
+                else
+                  # Add new date and sort dates array
+                  .dates += [$new_data.date] |
+                  .dates |= sort |
+                  
+                  # Update sectors with new data
+                  .sectors = (
+                    . as $existing |
+                    reduce ($new_data.sectors[] | {
+                      sectorName: .sectorName,
+                      data: {
+                        marketCap: .marketCap,
+                        value: .value,
+                        volume: .volume,
+                        priceChangePct: .priceChangePct,
+                        tradesNumber: .tradesNumber,
+                        itemsNumber: .itemsNumber
+                      }
+                    }) as $new_sector (
+                      $existing.sectors;
+                      
+                      # Find existing sector or create new one
+                      map(
+                        if .sectorName == $new_sector.sectorName then
+                          # Add new values only if date is new
+                          .marketCap += [$new_sector.data.marketCap] |
+                          .value += [$new_sector.data.value] |
+                          .volume += [$new_sector.data.volume] |
+                          .priceChangePct += [$new_sector.data.priceChangePct] |
+                          .tradesNumber += [$new_sector.data.tradesNumber] |
+                          .itemsNumber += [$new_sector.data.itemsNumber]
+                        else
+                          .
+                        end
+                      )
+                    )
+                  )
+                end' "$history_file" > "${history_file}.tmp" && mv "${history_file}.tmp" "$history_file"
+              fi
+            fi
+          done
+        done
+    
+    - name: Commit and push build artifacts
+      run: |
+        git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+        git config --global user.email "${{ env.CI_COMMIT_AUTHOR_EMAIL }}"
+        git add --all
+        git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
+        git push
