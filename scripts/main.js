@@ -239,7 +239,7 @@ async function refreshChart() {
 
   switch (chartType) {
     case "treemap":
-      await refreshTreemap(dataType, date);
+      await refreshTreemap(reponame, dataType, date);
       divChart.on("plotly_click", async (event) => {
         const clickedTreemapItem = event.points[0].customdata;
         const clickedTreemapItemType = clickedTreemapItem[2];
