@@ -1,15 +1,3 @@
-[![Update Market Data: US](https://github.com/finmap-org/data-us/actions/workflows/update-marketdata-us.yml/badge.svg?branch=main)](https://github.com/finmap-org/data-us/actions/workflows/update-marketdata-us.yml)
-
-[![Update Market Data: LSE](https://github.com/finmap-org/data-uk/actions/workflows/update-marketdata-lse.yml/badge.svg?branch=main)](https://github.com/finmap-org/data-uk/actions/workflows/update-marketdata-lse.yml)
-
-[![Update Market Data: MOEX](https://github.com/finmap-org/data-russia/actions/workflows/update-marketdata-moex.yml/badge.svg?branch=main)](https://github.com/finmap-org/data-russia/actions/workflows/update-marketdata-moex.yml)
-
-[![Update Currency Exchange Rates](https://github.com/finmap-org/data-currency/actions/workflows/update-currency-rates.yml/badge.svg?branch=main)](https://github.com/finmap-org/data-currency/actions/workflows/update-currency-rates.yml)
-
-[![Update Oil Prices](https://github.com/finmap-org/data-commodity/actions/workflows/update-oil-prices.yaml/badge.svg?branch=main)](https://github.com/finmap-org/data-commodity/actions/workflows/update-oil-prices.yaml)
-
-[![pages-build-deployment](https://github.com/finmap-org/finmap-org/actions/workflows/pages/pages-build-deployment/badge.svg?branch=main)](https://github.com/finmap-org/finmap-org/actions/workflows/pages/pages-build-deployment)
-
 PRIVACY POLICY
 
 This project does not collect or store any personal user data. It does not track user activity in any way.
