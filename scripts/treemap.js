@@ -150,7 +150,7 @@ async function renderTreemapChart(chartData) {
 let filterList;
 const highlightList = ["AAPL", "ASML", "WLY", "GCHE"];
 
-async function refreshTreemap(dataType, date) {
+async function refreshTreemap(reponame, dataType, date) {
   const localFilterCsv = localStorage.getItem("filterCsv");
   if (localFilterCsv !== undefined && localFilterCsv !== null) {
     filterList = await applyFilter(localFilterCsv);
@@ -163,13 +163,13 @@ async function refreshTreemap(dataType, date) {
     inputFileLabel.removeAttribute("hidden");
     linkEraseFilter.setAttribute("hidden", "");
   }
-  chartData = await prepTreemapData(dataType, date);
+  chartData = await prepTreemapData(reponame, dataType, date);
   await renderTreemapChart(chartData);
 }
 
 
-async function getMarketDataJson(date, exchange) {
-  let url = `https://raw.githubusercontent.com/finmap-org/finmap-org/refs/heads/main/data/${date.replace(/-/g, "/")}/${exchange}.json`;
+async function getMarketDataJson(reponame, date, exchange) {
+  let url = `https://raw.githubusercontent.com/finmap-org/${reponame}/refs/heads/main/marketdata/${date.replace(/-/g, "/")}/${exchange}.json`;
 
   if (date === new Date().toISOString().split("T")[0]) {
     url = url + `?_=${new Date().toISOString().split(":")[0]}`;
@@ -189,8 +189,8 @@ async function getMarketDataJson(date, exchange) {
 }
 
 
-async function prepTreemapData(dataType, date) {
-  const marketData = await getMarketDataJson(date, exchange);
+async function prepTreemapData(reponame, dataType, date) {
+  const marketData = await getMarketDataJson(reponame, date, exchange);
   let filteredMarketData = marketData;
 
   if (filterList && filterList["ticker"].length > 0) {
