@@ -357,12 +357,13 @@ class D3CanvasTreemap extends TreemapRenderer {
             .map((node, index) => `
                 <span 
                     style="
-                        cursor: pointer; 
+                        cursor: ${index === this.path.length - 1 ? 'default' : 'pointer'}; 
                         padding: 5px 10px;
-                        background: ${index === this.path.length - 1 ? '#34495E' : 'transparent'};
+                        background: #34495E;
                         border-radius: 4px;
                         margin-right: 5px;
-                        ${index < this.path.length - 1 ? 'color: #3498DB;' : ''}
+                        display: ${index === this.path.length - 1 ? 'none' : 'inline-block'};
+                        color: ${index < this.path.length - 1 ? '#3498DB' : '#ffffff'};
                     "
                     data-index="${index}"
                 >
