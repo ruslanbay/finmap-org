@@ -5,12 +5,35 @@ class D3CanvasTreemap {
       this.container = document.getElementById(containerId);
       this.tooltip = document.getElementById('tooltip');
       
+      // Create pathbar container
+      this.pathbar = document.createElement('div');
+      this.pathbar.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 40px;
+          background: #2C3E50;
+          color: white;
+          display: flex;
+          align-items: center;
+          padding: 0 10px;
+          font-family: Arial, sans-serif;
+          z-index: 1;
+      `;
+      this.container.appendChild(this.pathbar);
+
       // Set up dimensions
-      this.width = this.container.clientWidth;
-      this.height = this.container.clientHeight;
+        this.width = this.container.clientWidth;
+        this.height = this.container.clientHeight - 40; // Subtract pathbar height
       
       // Create Canvas
       this.canvas = document.createElement('canvas');
+      this.canvas.style.cssText = `
+          position: absolute;
+          top: 40px;
+          left: 0;
+      `;
       this.canvas.width = this.width * window.devicePixelRatio;
       this.canvas.height = this.height * window.devicePixelRatio;
       this.canvas.style.width = this.width + 'px';
@@ -23,6 +46,8 @@ class D3CanvasTreemap {
 
       // Store nodes for interaction
       this.nodes = [];
+      this.currentRoot = null;
+      this.path = [];
       
       // Bind events
       this.bindEvents();
@@ -31,8 +56,8 @@ class D3CanvasTreemap {
   bindEvents() {
       // Handle window resize
       window.addEventListener('resize', () => {
-          this.width = this.container.clientWidth;
-          this.height = this.container.clientHeight;
+        this.width = this.container.clientWidth;
+        this.height = this.container.clientHeight - 40;
           
           this.canvas.width = this.width * window.devicePixelRatio;
           this.canvas.height = this.height * window.devicePixelRatio;
@@ -56,16 +81,89 @@ class D3CanvasTreemap {
           const node = this.findNodeAtPosition(x, y);
           
           if (node) {
-              this.showTooltip(node, event);
+            this.canvas.style.cursor = 'pointer';
+            this.showTooltip(node, event);
           } else {
+              this.canvas.style.cursor = 'default';
               this.hideTooltip();
           }
       });
 
-      // Hide tooltip when mouse leaves canvas
-      this.canvas.addEventListener('mouseleave', () => {
-          this.hideTooltip();
+      this.canvas.addEventListener('click', (event) => {
+          const rect = this.canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+
+          const node = this.findNodeAtPosition(x, y);
+          if (node && node.data.children && node.data.children.length > 0) {
+              this.drillDown(node);
+          }
       });
+
+      // Handle pathbar clicks
+      this.pathbar.addEventListener('click', (event) => {
+          const index = parseInt(event.target.dataset.index);
+          if (!isNaN(index)) {
+              this.drillTo(index);
+          }
+      });
+  }
+
+    updatePathbar() {
+      this.pathbar.innerHTML = this.path
+          .map((node, index) => `
+              <span 
+                  style="
+                      cursor: pointer; 
+                      padding: 5px 10px;
+                      background: ${index === this.path.length - 1 ? '#34495E' : 'transparent'};
+                      border-radius: 4px;
+                      margin-right: 5px;
+                  "
+                  data-index="${index}"
+              >
+                  ${node.data.name}
+                  ${index < this.path.length - 1 ? ' >' : ''}
+              </span>
+          `)
+          .join('');
+  }
+  
+  drillDown(node) {
+      this.path.push(node);
+      this.renderFromNode(node);
+  }
+  
+  drillTo(index) {
+      this.path = this.path.slice(0, index + 1);
+      this.renderFromNode(this.path[this.path.length - 1]);
+  }
+  
+  renderFromNode(node) {
+      this.currentRoot = node;
+      
+      // Create treemap layout
+      const treemap = d3.treemap()
+          .size([this.width, this.height])
+          .padding(1)
+          .round(true);
+      
+      // Create hierarchy starting from current node
+      const root = d3.hierarchy(node.data)
+          .sum(d => d.type === 'sector' ? 0 : d.value)
+          .sort((a, b) => b.value - a.value);
+      
+      // Generate treemap layout
+      treemap(root);
+  
+      // Store nodes for interaction
+      this.nodes = root.leaves();
+  
+      // Update pathbar
+      this.updatePathbar();
+  
+      // Render visualization
+      this.render();
   }
 
   findNodeAtPosition(x, y) {
@@ -218,113 +316,89 @@ class D3CanvasTreemap {
       d3.select(this.tooltip).style('display', 'none');
   }
 
-  render(data) {
-    this.currentData = data;
-    const hierarchicalData = this.transformData(data);
-    
-    // Create treemap layout with custom value accessor
-    const treemap = d3.treemap()
-        .size([this.width, this.height])
-        .padding(1)
-        .round(true);
-    
-    // Create hierarchy with custom value accessor
-    const root = d3.hierarchy(hierarchicalData)
-        .sum(d => d.type === 'sector' ? 0 : d.value) // Only count non-sector nodes
-        .sort((a, b) => b.value - a.value);
-    
-    // Generate treemap layout
-    treemap(root);
-
-    // Store nodes for interaction
-    this.nodes = root.leaves();
-
-    // Clear canvas
-    this.ctx.clearRect(0, 0, this.width, this.height);
-
-    // Enhanced color scale for hierarchy levels
-    const getNodeColor = (node) => {
-        if (node.data.type === 'sector') {
-            return '#34495E';  // darker color for sectors
-        }
-        return '#3498DB';  // lighter color for leaves
-    };
-
-    // Draw nodes
-    this.nodes.forEach(node => {
-        // Draw rectangle
-        this.ctx.fillStyle = getNodeColor(node);
-        this.ctx.globalAlpha = 0.8;
-        this.ctx.fillRect(
-            node.x0,
-            node.y0,
-            node.x1 - node.x0,
-            node.y1 - node.y0
-        );
-
-        // Draw border
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 1;
-        this.ctx.globalAlpha = 1;
-        this.ctx.strokeRect(
-            node.x0,
-            node.y0,
-            node.x1 - node.x0,
-            node.y1 - node.y0
-        );
-
-        // Draw text if node is large enough
-        const nodeWidth = node.x1 - node.x0;
-        const nodeHeight = node.y1 - node.y0;
-        
-        if (nodeWidth > 30 && nodeHeight > 15) {
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = '10px Arial';
-            this.ctx.textBaseline = 'top';
-            
-            // Add value to the label
-            const text = `${node.data.name} (${node.value.toFixed(2)})`;
-            const maxWidth = nodeWidth - 6;
-            let truncatedText = text;
-            
-            while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
-                truncatedText = truncatedText.slice(0, -1);
-            }
-            
-            if (truncatedText !== text) {
-                truncatedText += '...';
-            }
-            
-            this.ctx.fillText(
-                truncatedText,
-                node.x0 + 3,
-                node.y0 + 3
-            );
-        }
-    });
-
-    // Debug: print hierarchy information
-    const printNode = (node, level = 0) => {
-        const indent = '  '.repeat(level);
-        // console.log(`${indent}${node.data.name}:`);
-        // console.log(`${indent}  type: ${node.data.type}`);
-        // console.log(`${indent}  value: ${node.value}`);
-        if (node.children) {
-            // console.log(`${indent}  children sum: ${node.children.reduce((sum, child) => sum + child.value, 0)}`);
-            node.children.forEach(child => printNode(child, level + 1));
-        }
-    };
-    printNode(root);
-}
+  render() {
+      // Clear canvas
+      this.ctx.clearRect(0, 0, this.width, this.height);
+  
+      // Color scale
+      const getNodeColor = (node) => {
+          if (node.data.type === 'sector') {
+              return '#34495E';
+          }
+          return '#3498DB';
+      };
+  
+      // Draw nodes
+      this.nodes.forEach(node => {
+          // Draw rectangle with gradient
+          const gradient = this.ctx.createLinearGradient(
+              node.x0, 
+              node.y0, 
+              node.x0, 
+              node.y1
+          );
+          gradient.addColorStop(0, getNodeColor(node));
+          gradient.addColorStop(1, d3.color(getNodeColor(node)).darker(0.5));
+          
+          this.ctx.fillStyle = gradient;
+          this.ctx.globalAlpha = 0.9;
+          this.ctx.fillRect(
+              node.x0,
+              node.y0,
+              node.x1 - node.x0,
+              node.y1 - node.y0
+          );
+  
+          // Draw border
+          this.ctx.strokeStyle = '#ffffff';
+          this.ctx.lineWidth = 1;
+          this.ctx.globalAlpha = 1;
+          this.ctx.strokeRect(
+              node.x0,
+              node.y0,
+              node.x1 - node.x0,
+              node.y1 - node.y0
+          );
+  
+          // Draw text if node is large enough
+          const nodeWidth = node.x1 - node.x0;
+          const nodeHeight = node.y1 - node.y0;
+          
+          if (nodeWidth > 30 && nodeHeight > 15) {
+              this.ctx.fillStyle = '#ffffff';
+              this.ctx.font = '10px Arial';
+              this.ctx.textBaseline = 'top';
+              
+              const value = d3.format(',.2f')(node.value);
+              const text = `${node.data.name} ($${value}M)`;
+              const maxWidth = nodeWidth - 6;
+              let truncatedText = text;
+              
+              while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
+                  truncatedText = truncatedText.slice(0, -1);
+              }
+              
+              if (truncatedText !== text) {
+                  truncatedText += '...';
+              }
+              
+              this.ctx.fillText(
+                  truncatedText,
+                  node.x0 + 3,
+                  node.y0 + 3
+              );
+          }
+      });
+  }
 }
 
 // Initialize and render
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-      // console.log('Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted):', 
-      //     new Date().toISOString().slice(0, 19).replace('T', ' '));
-      // console.log('Current User\'s Login:', window.ruslanbay || 'unknown');
-      // console.log('Initializing application...');
+      console.log('Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted):', 
+          new Date().toISOString().slice(0, 19).replace('T', ' '));
+      console.log('Current User\'s Login:', window.ruslanbay || 'unknown');
+      console.log('Initializing application...');
 
       const treemap = new D3CanvasTreemap('container');
       
@@ -340,6 +414,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           border-radius: 8px;
           text-align: center;
           z-index: 1000;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       `;
       loadingDiv.innerHTML = 'Loading data...';
       treemap.container.appendChild(loadingDiv);
@@ -354,8 +429,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Remove loading indicator
       treemap.container.removeChild(loadingDiv);
       
-      // Render treemap
-      await treemap.render(data);
+      // Initialize with root node
+      const root = d3.hierarchy(treemap.transformData(data))
+          .sum(d => d.type === 'sector' ? 0 : d.value)
+          .sort((a, b) => b.value - a.value);
+          
+      treemap.path = [root];
+      treemap.renderFromNode(root);
       
   } catch (error) {
       console.error('Failed to initialize or render treemap:', error);
