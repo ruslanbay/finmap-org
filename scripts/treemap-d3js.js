@@ -380,15 +380,10 @@ class D3CanvasTreemap extends TreemapRenderer {
             // Node exists in path - trim to that point
             this.path = this.path.slice(0, existingIndex + 1);
         } else {
-            // Node is new - add it to path
-            // If we're clicking a visible node, first trim the path to current root
-            if (this.currentRoot && this.nodes.includes(node)) {
-                const currentRootIndex = this.path.findIndex(n => n === this.currentRoot);
-                if (currentRootIndex !== -1) {
-                    this.path = this.path.slice(0, currentRootIndex + 1);
-                }
+            // Node is new - add it to path if it's a direct child of current root
+            if (this.nodes.includes(node) && (!node.parent || node.parent === this.currentRoot)) {
+                this.path.push(node);
             }
-            this.path.push(node);
         }
     
         this.renderFromNode(node);
@@ -529,30 +524,26 @@ class D3CanvasTreemap extends TreemapRenderer {
         const HEADER_HEIGHT = 24;
         const sortedNodes = [...this.nodes].reverse();
     
-        // Check for parent node headers first
-        const parentNode = sortedNodes.find(node => 
-            node.children && 
-            this.isPointInRect(x, y, {
-                x0: node.x0,
-                x1: node.x1,
-                y0: node.y0,
-                y1: node.y0 + HEADER_HEIGHT
-            })
-        );
-    
-        if (parentNode) {
-            return parentNode;
-        }
-    
-        // Then check for any node
-        return sortedNodes.find(node => 
-            this.isPointInRect(x, y, {
-                x0: node.x0,
-                x1: node.x1,
-                y0: node.y0,
-                y1: node.y1
-            })
-        );
+        // First check only headers and leaf nodes
+        return sortedNodes.find(node => {
+            if (node.children) {
+                // For parent nodes, only check header area
+                return this.isPointInRect(x, y, {
+                    x0: node.x0,
+                    x1: node.x1,
+                    y0: node.y0,
+                    y1: node.y0 + HEADER_HEIGHT
+                });
+            } else {
+                // For leaf nodes, check entire area
+                return this.isPointInRect(x, y, {
+                    x0: node.x0,
+                    x1: node.x1,
+                    y0: node.y0,
+                    y1: node.y1
+                });
+            }
+        });
     }
     
     isPointInRect(x, y, rect) {
@@ -675,16 +666,10 @@ class TreemapInitializer {
     static CONTAINER_ID = 'container';
 
     constructor() {
-        this.timestamp = '2025-03-17 11:51:04';
-        this.userLogin = 'ruslanbay';
     }
 
     async initialize() {
         try {
-            console.log('Initializing application...');
-            console.log('Current Date and Time (UTC):', this.timestamp);
-            console.log('Current User\'s Login:', this.userLogin);
-
             const treemap = new D3CanvasTreemap(TreemapInitializer.CONTAINER_ID);
             const loadingDiv = this.createLoadingIndicator();
             treemap.container.appendChild(loadingDiv);
@@ -714,12 +699,7 @@ class TreemapInitializer {
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             font-family: Arial, sans-serif;
         `;
-        loadingDiv.innerHTML = `
-            <div>Loading data...</div>
-            <div style="font-size: 12px; color: #666; margin-top: 8px;">
-                ${this.timestamp} UTC
-            </div>
-        `;
+        loadingDiv.innerHTML = `<div>Loading data...</div>`;
         return loadingDiv;
     }
 
@@ -772,11 +752,6 @@ class TreemapInitializer {
                     white-space: pre-wrap;
                 ">
                     ${this.escapeHtml(error.stack)}
-                </div>
-                <div style="font-size: 12px; color: #666;">
-                    <div>Time: ${this.timestamp} UTC</div>
-                    <div>User: ${this.userLogin}</div>
-                    <div>Browser: ${navigator.userAgent}</div>
                 </div>
             </div>
         `;
