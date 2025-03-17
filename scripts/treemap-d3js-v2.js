@@ -1,5 +1,7 @@
 class MinimalTreemap {
     constructor(containerId) {
+        // Add column index mapping
+        this.columnIndex = {};
         // Initialize container and canvas
         this.container = document.getElementById(containerId);
         this.setupCanvas();
@@ -167,6 +169,97 @@ class MinimalTreemap {
             this.renderFromNode(this.path[index]);
         }
     }
+
+    transformData(securitiesData) {
+        if (!securitiesData?.securities?.columns || !securitiesData?.securities?.data) {
+            throw new Error('Invalid securities data format');
+        }
+    
+        const { columns, data } = securitiesData.securities;
+        
+        // Set up column indices
+        this.setupColumnIndices(columns);
+        
+        // Find and validate root node
+        const rootRow = this.findRootNode(data);
+        
+        // Build node hierarchy
+        const { root } = this.buildNodeHierarchy(rootRow, data);
+        
+        return root;
+    }
+    
+    setupColumnIndices(columns) {
+        columns.forEach((col, idx) => this.columnIndex[col] = idx);
+    }
+    
+    createNode(row) {
+        return {
+            name: row[this.columnIndex.nameEng],
+            value: row[this.columnIndex.type] !== 'sector' ? 
+                parseFloat(row[this.columnIndex.marketCap]) || 0 : 0,
+            type: row[this.columnIndex.type],
+            sector: row[this.columnIndex.sector],
+            ticker: row[this.columnIndex.ticker],
+            industry: row[this.columnIndex.industry],
+            exchange: row[this.columnIndex.exchange],
+            nestedItemsCount: parseInt(row[this.columnIndex.nestedItemsCount]) || 0,
+            rawData: row,
+            lastUpdated: '2025-03-17 19:01:29',
+            updatedBy: 'ruslanbay'
+        };
+    }
+    
+    findRootNode(data) {
+        const rootRow = data.find(row => row[this.columnIndex.sector] === '');
+        if (!rootRow) {
+            throw new Error('Root node not found in data');
+        }
+        return rootRow;
+    }
+    
+    buildNodeHierarchy(rootRow, data) {
+        const nodesMap = new Map();
+        
+        // Create root node
+        const root = {
+            ...this.createNode(rootRow),
+            children: []
+        };
+        nodesMap.set(rootRow[this.columnIndex.ticker], root);
+    
+        // Create all nodes
+        data.forEach(row => {
+            const ticker = row[this.columnIndex.ticker];
+            if (ticker !== rootRow[this.columnIndex.ticker]) {
+                nodesMap.set(ticker, {
+                    ...this.createNode(row),
+                    children: []
+                });
+            }
+        });
+    
+        // Build hierarchy
+        data.forEach(row => {
+            const ticker = row[this.columnIndex.ticker];
+            const parentSector = row[this.columnIndex.sector];
+            
+            if (ticker === rootRow[this.columnIndex.ticker]) {
+                return;
+            }
+    
+            const parentNode = Array.from(nodesMap.values())
+                .find(node => node.ticker === parentSector);
+    
+            if (parentNode) {
+                parentNode.children.push(nodesMap.get(ticker));
+            } else if (parentSector !== '') {
+                root.children.push(nodesMap.get(ticker));
+            }
+        });
+    
+        return { root, nodesMap };
+    }
 }
 
 
@@ -178,10 +271,12 @@ const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb
 fetch(url)
     .then(response => response.json())
     .then(data => {
-        const root = d3.hierarchy(data)
-            .sum(d => d.value)
+        const transformedData = treemap.transformData(data);
+        const root = d3.hierarchy(transformedData)
+            .sum(d => d.type === 'sector' ? 0 : d.value)
             .sort((a, b) => b.value - a.value);
         
         treemap.path = [root];
         treemap.renderFromNode(root);
-    });
+    })
+    .catch(error => console.error('Error loading or processing data:', error));
