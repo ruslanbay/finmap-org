@@ -159,15 +159,15 @@ class D3CanvasTreemap {
         }, 0);
 
         // Debug logging
-        console.log(`Node: ${node.name}`);
-        console.log(`  Type: ${node.type}`);
-        console.log(`  Children count: ${node.children.length}`);
-        console.log(`  Total value (sum of children): ${node.value}`);
-        console.log(`  Children:`, node.children.map(c => ({
-            name: c.name,
-            value: c.value,
-            type: c.type
-        })));
+        // console.log(`Node: ${node.name}`);
+        // console.log(`  Type: ${node.type}`);
+        // console.log(`  Children count: ${node.children.length}`);
+        // console.log(`  Total value (sum of children): ${node.value}`);
+        // console.log(`  Children:`, node.children.map(c => ({
+        //     name: c.name,
+        //     value: c.value,
+        //     type: c.type
+        // })));
 
         return node.value;
     };
@@ -180,9 +180,9 @@ class D3CanvasTreemap {
         if (node.children && node.children.length > 0) {
             const childrenSum = node.children.reduce((sum, child) => sum + child.value, 0);
             if (Math.abs(childrenSum - node.value) > 0.01) {
-                console.error(`Value mismatch in node ${node.name}:`);
-                console.error(`  Node value: ${node.value}`);
-                console.error(`  Sum of children: ${childrenSum}`);
+                // console.error(`Value mismatch in node ${node.name}:`);
+                // console.error(`  Node value: ${node.value}`);
+                // console.error(`  Sum of children: ${childrenSum}`);
             }
             node.children.forEach(verifyNode);
         }
@@ -190,10 +190,10 @@ class D3CanvasTreemap {
     verifyNode(root);
 
     // Debug info
-    console.log('Data transformation complete');
-    console.log('Total nodes:', nodesMap.size);
-    console.log('Root children:', root.children.length);
-    console.log('Root value (total market cap):', root.value);
+    // console.log('Data transformation complete');
+    // console.log('Total nodes:', nodesMap.size);
+    // console.log('Root children:', root.children.length);
+    // console.log('Root value (total market cap):', root.value);
 
     return root;
 }
@@ -304,11 +304,11 @@ class D3CanvasTreemap {
     // Debug: print hierarchy information
     const printNode = (node, level = 0) => {
         const indent = '  '.repeat(level);
-        console.log(`${indent}${node.data.name}:`);
-        console.log(`${indent}  type: ${node.data.type}`);
-        console.log(`${indent}  value: ${node.value}`);
+        // console.log(`${indent}${node.data.name}:`);
+        // console.log(`${indent}  type: ${node.data.type}`);
+        // console.log(`${indent}  value: ${node.value}`);
         if (node.children) {
-            console.log(`${indent}  children sum: ${node.children.reduce((sum, child) => sum + child.value, 0)}`);
+            // console.log(`${indent}  children sum: ${node.children.reduce((sum, child) => sum + child.value, 0)}`);
             node.children.forEach(child => printNode(child, level + 1));
         }
     };
@@ -319,10 +319,10 @@ class D3CanvasTreemap {
 // Initialize and render
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-      console.log('Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted):', 
-          new Date().toISOString().slice(0, 19).replace('T', ' '));
-      console.log('Current User\'s Login:', window.ruslanbay || 'unknown');
-      console.log('Initializing application...');
+      // console.log('Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted):', 
+      //     new Date().toISOString().slice(0, 19).replace('T', ' '));
+      // console.log('Current User\'s Login:', window.ruslanbay || 'unknown');
+      // console.log('Initializing application...');
 
       const treemap = new D3CanvasTreemap('container');
       
