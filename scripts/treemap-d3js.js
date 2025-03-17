@@ -422,11 +422,13 @@ class D3CanvasTreemap extends TreemapRenderer {
         }
     
         const HEADER_HEIGHT = 24;
-        const PADDING_TOP = 8; // Add padding from top border
+        const BORDER_PADDING = 2; // Padding for borders
     
         const treemap = d3.treemap()
-            .size([this.width, this.height - HEADER_HEIGHT]) // Adjust total height
-            .padding(1)
+            .size([this.width, this.height])
+            .paddingTop(HEADER_HEIGHT)  // Space for header
+            .paddingInner(BORDER_PADDING)  // Space between siblings
+            .paddingOuter(BORDER_PADDING)  // Space from parent's border
             .round(true);
         
         const root = d3.hierarchy(node.data)
@@ -434,15 +436,7 @@ class D3CanvasTreemap extends TreemapRenderer {
             .sort((a, b) => b.value - a.value);
         
         treemap(root);
-    
-        // Adjust y-positions to add padding after header
-        root.descendants().forEach(node => {
-            if (node !== root) {
-                node.y0 += PADDING_TOP;
-                node.y1 += PADDING_TOP;
-            }
-        });
-    
+        
         this.nodes = root.descendants();
         this.updatePathbar();
         this.render();
