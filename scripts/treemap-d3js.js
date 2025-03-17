@@ -357,13 +357,12 @@ class D3CanvasTreemap extends TreemapRenderer {
             .map((node, index) => `
                 <span 
                     style="
-                        cursor: ${index === this.path.length - 1 ? 'default' : 'pointer'}; 
+                        cursor: pointer; 
                         padding: 5px 10px;
-                        background: #34495E;
+                        background: ${index === this.path.length - 1 ? '#34495E' : 'transparent'};
                         border-radius: 4px;
                         margin-right: 5px;
-                        display: ${index === this.path.length - 1 ? 'none' : 'inline-block'};
-                        color: ${index < this.path.length - 1 ? '#3498DB' : '#ffffff'};
+                        ${index < this.path.length - 1 ? 'color: #3498DB;' : ''}
                     "
                     data-index="${index}"
                 >
@@ -535,30 +534,32 @@ class D3CanvasTreemap extends TreemapRenderer {
         const HEADER_HEIGHT = 24;
         const sortedNodes = [...this.nodes].reverse();
     
-        // Check for parent node headers first
-        const parentNode = sortedNodes.find(node => 
-            node.children && 
-            this.isPointInRect(x, y, {
-                x0: node.x0,
-                x1: node.x1,
-                y0: node.y0,
-                y1: node.y0 + HEADER_HEIGHT
-            })
-        );
+        // Ignore clicks on expanded parent nodes' areas
+        const node = sortedNodes.find(node => {
+            if (node === this.currentRoot) {
+                return false; // Ignore clicks on current root's area
+            }
+            
+            if (node.children) {
+                // For parent nodes, only check header area
+                return this.isPointInRect(x, y, {
+                    x0: node.x0,
+                    x1: node.x1,
+                    y0: node.y0,
+                    y1: node.y0 + HEADER_HEIGHT
+                });
+            } else {
+                // For leaf nodes, check entire area
+                return this.isPointInRect(x, y, {
+                    x0: node.x0,
+                    x1: node.x1,
+                    y0: node.y0,
+                    y1: node.y1
+                });
+            }
+        });
     
-        if (parentNode) {
-            return parentNode;
-        }
-    
-        // Then check for any node
-        return sortedNodes.find(node => 
-            this.isPointInRect(x, y, {
-                x0: node.x0,
-                x1: node.x1,
-                y0: node.y0,
-                y1: node.y1
-            })
-        );
+        return node;
     }
     
     isPointInRect(x, y, rect) {
