@@ -425,6 +425,7 @@ class D3CanvasTreemap extends TreemapRenderer {
     
         const treemap = d3.treemap()
             .size([this.width, this.height])
+            .padding(1)
             .round(true);
         
         const root = d3.hierarchy(node.data)
@@ -433,11 +434,12 @@ class D3CanvasTreemap extends TreemapRenderer {
         
         treemap(root);
     
-        // Adjust child nodes to start below their parent's header
+        // For each parent node, shift its children down by HEADER_HEIGHT
         root.descendants().forEach(node => {
             if (node.children) {
                 node.children.forEach(child => {
-                    child.y0 = node.y0 + HEADER_HEIGHT;
+                    // Only adjust the top position, keeping the original width
+                    child.y0 += HEADER_HEIGHT;
                 });
             }
         });
