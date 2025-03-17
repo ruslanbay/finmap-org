@@ -669,11 +669,11 @@ class TreemapRenderer {
 }
 
 class TreemapInitializer {
-    static readonly DATA_URL = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
-    static readonly CONTAINER_ID = 'container';
+    static DATA_URL = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
+    static CONTAINER_ID = 'container';
 
     constructor() {
-        this.timestamp = '2025-03-17 11:15:57';
+        this.timestamp = '2025-03-17 11:46:35';
         this.userLogin = 'ruslanbay';
     }
 
