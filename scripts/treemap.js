@@ -169,7 +169,7 @@ async function refreshTreemap(reponame, dataType, date) {
 
 
 async function getMarketDataJson(reponame, date, exchange) {
-  let url = `https://raw.githubusercontent.com/finmap-org/${reponame}/refs/heads/main/marketdata/${date.replace(/-/g, "/")}/${exchange}.json`;
+  let url = `https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json`;
 
   if (date === new Date().toISOString().split("T")[0]) {
     url = url + `?_=${new Date().toISOString().split(":")[0]}`;
@@ -242,8 +242,8 @@ async function prepTreemapData(reponame, dataType, date) {
     if (isPortfolio && (!filterList["ticker"].includes(ticker) && chartData["type"][i] !== "sector")) {
       return;
     }
-    chartData.marketCap[i] = chartData.marketCap[i] / (1e6 * exchangeRateByDate);
-    chartData.value[i] = chartData.value[i] / (1e6 * exchangeRateByDate);
+    // chartData.marketCap[i] = chartData.marketCap[i] / (1e6 * exchangeRateByDate);
+    // chartData.value[i] = chartData.value[i] / (1e6 * exchangeRateByDate);
     let size;
     if (isPortfolio) {
       const filterListIndex = filterList["ticker"].indexOf(ticker);
@@ -318,16 +318,14 @@ if (isPortfolio) {
   portfolioValue = `In Portfolio: %{value:,.0f}<br>`;
 }
 
-  chartData["texttemplate"] = `<b>%{label}</b><br>
-%{customdata[7]}<br>
-%{customdata[12]} (%{customdata[13]:.2f}%)<br>
-MarketCap: ${currencySign}%{customdata[17]:,.0f}M`;
+  chartData["texttemplate"] = `<b>%{customdata[7]}</b><br>
+${currencySign}%{customdata[17]:,.2f}`;
 
   chartData["hovertemplate"] = `<b>%{customdata[6]}</b><br>
 %{customdata[7]}<br>
 Price: %{customdata[12]}<br>
 Price change: %{customdata[13]:.2f}%<br>
-MarketCap: ${currencySign}%{customdata[17]:,.0f}M<br>
+MarketCap: ${currencySign}%{customdata[17]:,.2f}M<br>
 Volume: %{customdata[14]:,.0f}<br>
 Value: ${currencySign}%{customdata[15]:,.0f}M<br>
 Trades: %{customdata[16]:,.0f}<br>
