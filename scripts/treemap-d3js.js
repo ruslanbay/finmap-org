@@ -4,6 +4,9 @@ class D3CanvasTreemap {
   constructor(containerId) {
       this.container = document.getElementById(containerId);
       this.tooltip = document.getElementById('tooltip');
+
+      // Add columnIndex as a class property
+      this.columnIndex = {};
       
       // Create pathbar container
       this.pathbar = document.createElement('div');
@@ -138,6 +141,18 @@ class D3CanvasTreemap {
               this.hideTooltip();
           }
       });
+
+      this.canvas.addEventListener('click', (event) => {
+          const rect = this.canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+  
+          const node = this.findNodeAtPosition(x, y);
+          if (node) {
+              // Always drill down, regardless of whether it's a parent or leaf node
+              this.drillDown(node);
+          }
+      });
   }
 
     updatePathbar() {
@@ -161,6 +176,7 @@ class D3CanvasTreemap {
   }
   
   drillDown(node) {
+      console.log('Drilling down to:', node.data.name);
       this.path.push(node);
       this.renderFromNode(node);
   }
@@ -173,13 +189,15 @@ class D3CanvasTreemap {
   renderFromNode(node) {
       this.currentRoot = node;
       
-      // Handle leaf node differently
+      // Check if this is a leaf node (no children)
       if (!node.data.children || node.data.children.length === 0) {
+          console.log('Rendering leaf details for:', node.data.name);
           this.renderLeafDetails(node);
           return;
       }
       
       // Regular treemap rendering for non-leaf nodes
+      console.log('Rendering treemap for:', node.data.name);
       const treemap = d3.treemap()
           .size([this.width, this.height])
           .padding(1)
@@ -231,11 +249,11 @@ class D3CanvasTreemap {
   
       // Helper function to draw a row
       const drawRow = (label, value) => {
-          if (value !== undefined && value !== '') {
+          if (value !== undefined && value !== '' && value !== null) {
               this.ctx.font = 'bold 14px Arial';
               this.ctx.fillText(label + ':', x + padding, currentY);
               this.ctx.font = '14px Arial';
-              this.ctx.fillText(value, x + padding + 150, currentY);
+              this.ctx.fillText(String(value), x + padding + 150, currentY);
               currentY += lineHeight;
           }
       };
@@ -254,18 +272,19 @@ class D3CanvasTreemap {
       if (node.data.sector) drawRow('Sector', node.data.sector);
       if (node.data.industry) drawRow('Industry', node.data.industry);
       
-      // Add more details from rawData if available
-      if (node.data.rawData) {
-          if (node.data.rawData[columnIndex.priceLastSale]) 
-              drawRow('Last Sale Price', node.data.rawData[columnIndex.priceLastSale]);
-          if (node.data.rawData[columnIndex.priceChangePct]) 
-              drawRow('Price Change %', `${node.data.rawData[columnIndex.priceChangePct]}%`);
-          if (node.data.rawData[columnIndex.volume]) 
-              drawRow('Volume', formatNumber(node.data.rawData[columnIndex.volume]));
-          if (node.data.rawData[columnIndex.numTrades]) 
-              drawRow('Number of Trades', formatNumber(node.data.rawData[columnIndex.numTrades]));
-          if (node.data.rawData[columnIndex.listedFrom]) 
-              drawRow('Listed From', node.data.rawData[columnIndex.listedFrom]);
+      // Add more details from rawData
+      const rawData = node.data.rawData;
+      if (rawData) {
+          if (rawData[this.columnIndex.priceLastSale]) 
+              drawRow('Last Sale Price', rawData[this.columnIndex.priceLastSale]);
+          if (rawData[this.columnIndex.priceChangePct]) 
+              drawRow('Price Change %', `${rawData[this.columnIndex.priceChangePct]}%`);
+          if (rawData[this.columnIndex.volume]) 
+              drawRow('Volume', formatNumber(rawData[this.columnIndex.volume]));
+          if (rawData[this.columnIndex.numTrades]) 
+              drawRow('Number of Trades', formatNumber(rawData[this.columnIndex.numTrades]));
+          if (rawData[this.columnIndex.listedFrom]) 
+              drawRow('Listed From', rawData[this.columnIndex.listedFrom]);
       }
   }
 
@@ -297,6 +316,9 @@ class D3CanvasTreemap {
 
   transformData(securitiesData) {
     const { columns, data } = securitiesData.securities;
+
+    // Store column indices as class property
+    columns.forEach((col, idx) => this.columnIndex[col] = idx);
     
     // Create an index map for column names
     const columnIndex = {};
