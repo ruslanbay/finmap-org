@@ -77,7 +77,7 @@ class D3CanvasTreemap {
 
   transformData(securitiesData) {
     const { columns, data } = securitiesData.securities;
-      
+    
     // Create an index map for column names
     const columnIndex = {};
     columns.forEach((col, idx) => columnIndex[col] = idx);
@@ -85,58 +85,75 @@ class D3CanvasTreemap {
     // Helper function to create a node object from a row
     const createNode = (row) => ({
         name: row[columnIndex.nameEng],
-        value: row[columnIndex.marketCap] || 0,
+        value: parseFloat(row[columnIndex.marketCap]) || 0,
         type: row[columnIndex.type],
         sector: row[columnIndex.sector],
         ticker: row[columnIndex.ticker],
-        rawData: row
+        industry: row[columnIndex.industry],
+        exchange: row[columnIndex.exchange],
+        marketCap: parseFloat(row[columnIndex.marketCap]) || 0,
+        nestedItemsCount: parseInt(row[columnIndex.nestedItemsCount]) || 0,
+        rawData: row // Keep the original data for tooltip
     });
-    
-    // Find root node
-    const rootRow = data.find(row => 
-        row[columnIndex.type] === 'sector' && 
-        row[columnIndex.sector] === ''
-    );
-    
+
+    // Find root node (where sector is empty)
+    const rootRow = data.find(row => row[columnIndex.sector] === '');
     if (!rootRow) {
         throw new Error('Root node not found');
     }
+
+    // Create map to store all nodes
+    const nodesMap = new Map();
     
     // Create the root object
     const root = {
         ...createNode(rootRow),
         children: []
     };
-    
-    // Find sector nodes (first level children)
-    const sectors = data.filter(row => 
-        row[columnIndex.type] === 'sector' && 
-        row[columnIndex.sector] !== ''
-    );
-    
-    // Add sectors as children to root
-    sectors.forEach(sectorRow => {
-        const sectorNode = {
-            ...createNode(sectorRow),
-            children: []
-        };
-        
-        // Find items belonging to this sector
-        const sectorItems = data.filter(row =>
-            row[columnIndex.type] !== 'sector' &&
-            row[columnIndex.sector] === sectorRow[columnIndex.sector]
-        );
-        
-        // Add items as children to sector
-        sectorItems.forEach(itemRow => {
-            sectorNode.children.push(createNode(itemRow));
-        });
-        
-        root.children.push(sectorNode);
+    nodesMap.set(rootRow[columnIndex.ticker], root);
+
+    // First pass: create all nodes
+    data.forEach(row => {
+        const ticker = row[columnIndex.ticker];
+        if (ticker !== rootRow[columnIndex.ticker]) {
+            nodesMap.set(ticker, {
+                ...createNode(row),
+                children: []
+            });
+        }
     });
-    
+
+    // Second pass: build hierarchy
+    data.forEach(row => {
+        const ticker = row[columnIndex.ticker];
+        const parentSector = row[columnIndex.sector];
+        
+        // Skip root node
+        if (ticker === rootRow[columnIndex.ticker]) {
+            return;
+        }
+
+        // Find parent node
+        const parentNode = Array.from(nodesMap.values()).find(node => 
+            node.ticker === parentSector
+        );
+
+        if (parentNode) {
+            parentNode.children.push(nodesMap.get(ticker));
+        } else if (parentSector !== '') {
+            // If parent not found but sector is specified, add to root
+            root.children.push(nodesMap.get(ticker));
+        }
+    });
+
+    // Debug info
+    console.log('Data transformation complete');
+    console.log('Total nodes:', nodesMap.size);
+    console.log('Root children:', root.children.length);
+    console.log('Root market cap:', root.marketCap);
+
     return root;
-  }
+}
 
   showTooltip(node, event) {
       const tooltip = d3.select(this.tooltip);
