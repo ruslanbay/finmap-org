@@ -2,21 +2,12 @@
 <html>
 
 <head>
-  <title>WebGL Accelerated Treemap with Images</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>D3.js Treemap</title>
   <style>
     #container {
       width: 100vw;
       height: 100vh;
       position: relative;
-      overflow: hidden;
-    }
-
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
     }
 
     #tooltip {
@@ -41,23 +32,6 @@
 
   <!-- Load D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
-
-  <!-- Load PIXI.js v8.8.1 -->
-  <script src="https://pixijs.download/v8.8.1/pixi.min.js"></script>
-
-  <!-- Error tracking -->
-  <script>
-    window.addEventListener('error', function (event) {
-      console.error('Global error:', {
-        message: event.message,
-        source: event.source,
-        lineno: event.lineno,
-        colno: event.colno,
-        error: event.error,
-        timestamp: new Date().toISOString()
-      });
-    });
-  </script>
 
   <!-- Load your treemap code -->
   <script src="scripts/treemap-d3js.js"></script>
