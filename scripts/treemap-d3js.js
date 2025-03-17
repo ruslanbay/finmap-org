@@ -265,104 +265,96 @@ findNodeAtPosition(x, y) {
 }
 
 transformData(securitiesData) {
-const { columns, data } = securitiesData.securities;
+  const { columns, data } = securitiesData.securities;
 
-// Create an index map for column names
-const columnIndex = {};
-columns.forEach((col, idx) => columnIndex[col] = idx);
+  // Create an index map for column names
+  const columnIndex = {};
+  columns.forEach((col, idx) => columnIndex[col] = idx);
 
-// Helper function to create a node object from a row
-const createNode = (row) => ({
-    name: row[columnIndex.nameEng],
-    // Only set marketCap for non-sector nodes
-    value: row[columnIndex.type] !== 'sector' ? parseFloat(row[columnIndex.marketCap]) || 0 : 0,
-    type: row[columnIndex.type],
-    sector: row[columnIndex.sector],
-    ticker: row[columnIndex.ticker],
-    industry: row[columnIndex.industry],
-    exchange: row[columnIndex.exchange],
-    nestedItemsCount: parseInt(row[columnIndex.nestedItemsCount]) || 0,
-    rawData: row
-});
+  // Helper function to create a node object from a row
+  const createNode = (row) => ({
+      name: row[columnIndex.nameEng],
+      // Only set marketCap for non-sector nodes
+      value: row[columnIndex.type] !== 'sector' ? parseFloat(row[columnIndex.marketCap]) || 0 : 0,
+      type: row[columnIndex.type],
+      sector: row[columnIndex.sector],
+      ticker: row[columnIndex.ticker],
+      industry: row[columnIndex.industry],
+      exchange: row[columnIndex.exchange],
+      nestedItemsCount: parseInt(row[columnIndex.nestedItemsCount]) || 0,
+      rawData: row
+  });
 
-// Find root node (where sector is empty)
-const rootRow = data.find(row => row[columnIndex.sector] === '');
-if (!rootRow) {
-    throw new Error('Root node not found');
-}
+  // Find root node (where sector is empty)
+  const rootRow = data.find(row => row[columnIndex.sector] === '');
+  if (!rootRow) {
+      throw new Error('Root node not found');
+  }
 
-// Create map to store all nodes
-const nodesMap = new Map();
+  // Create map to store all nodes
+  const nodesMap = new Map();
 
-// Create the root object
-const root = {
-    ...createNode(rootRow),
-    children: []
-};
-nodesMap.set(rootRow[columnIndex.ticker], root);
+  // Create the root object
+  const root = {
+      ...createNode(rootRow),
+      children: []
+  };
+  nodesMap.set(rootRow[columnIndex.ticker], root);
 
-// First pass: create all nodes
-data.forEach(row => {
-    const ticker = row[columnIndex.ticker];
-    if (ticker !== rootRow[columnIndex.ticker]) {
-        nodesMap.set(ticker, {
-            ...createNode(row),
-            children: []
-        });
-    }
-});
+  // First pass: create all nodes
+  data.forEach(row => {
+      const ticker = row[columnIndex.ticker];
+      if (ticker !== rootRow[columnIndex.ticker]) {
+          nodesMap.set(ticker, {
+              ...createNode(row),
+              children: []
+          });
+      }
+  });
 
-// Second pass: build hierarchy
-data.forEach(row => {
-    const ticker = row[columnIndex.ticker];
-    const parentSector = row[columnIndex.sector];
-    
-    // Skip root node
-    if (ticker === rootRow[columnIndex.ticker]) {
-        return;
-    }
+  // Second pass: build hierarchy
+  data.forEach(row => {
+      const ticker = row[columnIndex.ticker];
+      const parentSector = row[columnIndex.sector];
+      
+      // Skip root node
+      if (ticker === rootRow[columnIndex.ticker]) {
+          return;
+      }
 
-    // Find parent node
-    const parentNode = Array.from(nodesMap.values()).find(node => 
-        node.ticker === parentSector
-    );
+      // Find parent node
+      const parentNode = Array.from(nodesMap.values()).find(node => 
+          node.ticker === parentSector
+      );
 
-    if (parentNode) {
-        parentNode.children.push(nodesMap.get(ticker));
-    } else if (parentSector !== '') {
-        // If parent not found but sector is specified, add to root
-        root.children.push(nodesMap.get(ticker));
-    }
-});
+      if (parentNode) {
+          parentNode.children.push(nodesMap.get(ticker));
+      } else if (parentSector !== '') {
+          // If parent not found but sector is specified, add to root
+          root.children.push(nodesMap.get(ticker));
+      }
+  });
 
-// Function to recursively calculate values
-const calculateValues = (node) => {
-    if (!node.children || node.children.length === 0) {
-        // Leaf node - already has its value set
-        return node.value;
-    }
+  // Function to recursively calculate values
+  const calculateValues = (node) => {
+      if (!node.children || node.children.length === 0) {
+          // Leaf node - already has its value set
+          return node.value;
+      }
 
-    // For parent nodes, sum up only their children's values
-    node.value = node.children.reduce((sum, child) => {
-        return sum + calculateValues(child);
-    }, 0);
+      // For parent nodes, sum up only their children's values
+      node.value = node.children.reduce((sum, child) => {
+          return sum + calculateValues(child);
+      }, 0);
 
-    // Debug logging
-    // console.log(`Node: ${node.name}`);
-    // console.log(`  Type: ${node.type}`);
-    // console.log(`  Children count: ${node.children.length}`);
-    // console.log(`  Total value (sum of children): ${node.value}`);
-    // console.log(`  Children:`, node.children.map(c => ({
-    //     name: c.name,
-    //     value: c.value,
-    //     type: c.type
-    // })));
+      return node.value;
+  };
 
-    return node.value;
-};
+  // Calculate values starting from root
+  calculateValues(root);
 
-// Calculate values starting from root
-calculateValues(root);
+  // Return the root node
+  return root;  // <-- This was missing
 }
 
 // Initialize and render
