@@ -38,6 +38,9 @@ class MinimalTreemap {
         // Resize observer instead of window.resize
         this.resizeObserver = new ResizeObserver(this.handleResize.bind(this));
         this.resizeObserver.observe(this.container);
+
+        // Add parent references to make path building easier
+        this.nodesMap = new Map();
     }
 
     updateDimensions(width, height) {
@@ -93,7 +96,7 @@ class MinimalTreemap {
     
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(this.currentRoot === this.path[0] ? 0 : 24) // No padding for root node
+            .paddingTop(24)
             .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
@@ -207,7 +210,7 @@ class MinimalTreemap {
     
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(node === this.path[0] ? 0 : 24) // No padding for root node
+            .paddingTop(24)
             .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
@@ -325,14 +328,21 @@ class MinimalTreemap {
 
     drillDown(node) {
         if (!node || this.currentRoot === node) return;
+
+        // Build complete path from node to root
+        const fullPath = [];
+        let currentNode = node;
         
-        const existingIndex = this.path.findIndex(n => n === node);
-        if (existingIndex !== -1) {
-            this.path = this.path.slice(0, existingIndex + 1);
-        } else {
-            this.path.push(node);
+        // Traverse up the hierarchy to build the path
+        while (currentNode) {
+            fullPath.unshift(currentNode);
+            currentNode = currentNode.parent;
         }
         
+        // Update path with the full hierarchy
+        this.path = fullPath;
+        
+        // Render the target node
         this.renderFromNode(node);
     }
 
@@ -392,46 +402,49 @@ class MinimalTreemap {
     }
     
     buildNodeHierarchy(rootRow, data) {
-        const nodesMap = new Map();
+        this.nodesMap.clear();
         
         // Create root node
         const root = {
             ...this.createNode(rootRow),
-            children: []
+            children: [],
+            parent: null  // Add parent reference
         };
-        nodesMap.set(rootRow[this.columnIndex.ticker], root);
+        this.nodesMap.set(rootRow[this.columnIndex.ticker], root);
     
-        // Create all nodes
+        // Create all nodes first
         data.forEach(row => {
             const ticker = row[this.columnIndex.ticker];
             if (ticker !== rootRow[this.columnIndex.ticker]) {
-                nodesMap.set(ticker, {
+                this.nodesMap.set(ticker, {
                     ...this.createNode(row),
-                    children: []
+                    children: [],
+                    parent: null  // Will set correct parent in next step
                 });
             }
         });
     
-        // Build hierarchy
+        // Build hierarchy with parent references
         data.forEach(row => {
             const ticker = row[this.columnIndex.ticker];
             const parentSector = row[this.columnIndex.sector];
             
-            if (ticker === rootRow[this.columnIndex.ticker]) {
-                return;
-            }
+            if (ticker === rootRow[this.columnIndex.ticker]) return;
     
-            const parentNode = Array.from(nodesMap.values())
-                .find(node => node.ticker === parentSector);
+            const node = this.nodesMap.get(ticker);
+            const parentNode = Array.from(this.nodesMap.values())
+                .find(n => n.ticker === parentSector);
     
             if (parentNode) {
-                parentNode.children.push(nodesMap.get(ticker));
+                parentNode.children.push(node);
+                node.parent = parentNode;  // Set parent reference
             } else if (parentSector !== '') {
-                root.children.push(nodesMap.get(ticker));
+                root.children.push(node);
+                node.parent = root;  // Set parent reference
             }
         });
     
-        return { root, nodesMap };
+        return { root, nodesMap: this.nodesMap };
     }
 }
 
