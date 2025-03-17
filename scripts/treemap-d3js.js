@@ -428,7 +428,9 @@ class D3CanvasTreemap {
         return node.value;
     }
 
-    class TreemapRenderer {
+}
+
+class TreemapRenderer {
     // Tooltip methods
     showTooltip(node, event) {
         if (!node?.data) {
