@@ -27,48 +27,93 @@ class MinimalTreemap {
         // Add resize handler
         this.resizeHandler = this.handleResize.bind(this);
         window.addEventListener('resize', this.resizeHandler);
+
+        // Cache for computed values
+        this.cache = {
+            hierarchy: null,
+            lastWidth: 0,
+            lastHeight: 0
+        };
+
+        // Resize observer instead of window.resize
+        this.resizeObserver = new ResizeObserver(this.handleResize.bind(this));
+        this.resizeObserver.observe(this.container);
     }
 
-    updateDimensions() {
-        // Get container dimensions
-        const rect = this.container.getBoundingClientRect();
-        
-        // Update width and height (subtract pathbar height)
-        this.width = rect.width;
-        this.height = rect.height - 40;
+    updateDimensions(width, height) {
+        this.width = width;
+        this.height = height;
 
-        // Update canvas dimensions
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = this.width * dpr;
-        this.canvas.height = this.height * dpr;
-        this.canvas.style.width = this.width + 'px';
-        this.canvas.style.height = this.height + 'px';
+        this.canvas.width = width * dpr;
+        this.canvas.height = height * dpr;
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
         
-        // Reset context and scale for HiDPI displays
         this.ctx = this.canvas.getContext('2d');
         this.ctx.scale(dpr, dpr);
     }
 
-    handleResize() {
-        // Debounce resize events
-        if (this.resizeTimeout) {
-            clearTimeout(this.resizeTimeout);
+    handleResize(entries) {
+        if (!entries?.length) return;
+        
+        // Use requestAnimationFrame for smooth resizing
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
         }
 
-        this.resizeTimeout = setTimeout(() => {
-            this.updateDimensions();
-            if (this.currentRoot) {
-                this.renderFromNode(this.currentRoot);
+        this.rafId = requestAnimationFrame(() => {
+            const entry = entries[0];
+            const newWidth = entry.contentRect.width;
+            const newHeight = entry.contentRect.height - 40; // Subtract pathbar
+
+            // Only update if dimensions actually changed
+            if (newWidth !== this.cache.lastWidth || 
+                newHeight !== this.cache.lastHeight) {
+                
+                this.cache.lastWidth = newWidth;
+                this.cache.lastHeight = newHeight;
+                
+                this.updateDimensions(newWidth, newHeight);
+                
+                if (this.currentRoot) {
+                    this.updateLayout();
+                }
             }
-        }, 100); // Wait 100ms after last resize event
+        });
+    }
+
+    updateLayout() {
+        // Reuse existing hierarchy data
+        if (!this.cache.hierarchy) {
+            this.cache.hierarchy = d3.hierarchy(this.currentRoot.data)
+                .sum(d => d.type === 'sector' ? 0 : d.value)
+                .sort((a, b) => b.value - a.value);
+        }
+
+        // Only update treemap layout
+        const treemap = d3.treemap()
+            .size([this.width, this.height])
+            .paddingTop(24)
+            .paddingRight(1)
+            .paddingBottom(1)
+            .paddingLeft(1)
+            .round(true);
+
+        treemap(this.cache.hierarchy);
+        this.nodes = this.cache.hierarchy.descendants();
+        
+        // Just render without updating hierarchy
+        this.render();
     }
 
     // Clean up when no longer needed
     destroy() {
-        window.removeEventListener('resize', this.resizeHandler);
-        if (this.resizeTimeout) {
-            clearTimeout(this.resizeTimeout);
+        this.resizeObserver.disconnect();
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
         }
+    }
     }
 
     setupCanvas() {
@@ -155,24 +200,25 @@ class MinimalTreemap {
         
         this.currentRoot = node;
         
-        // Create treemap layout with padding
+        // Clear cache when switching nodes
+        this.cache.hierarchy = null;
+        
+        // Create new hierarchy for new node
+        this.cache.hierarchy = d3.hierarchy(node.data)
+            .sum(d => d.type === 'sector' ? 0 : d.value)
+            .sort((a, b) => b.value - a.value);
+
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(24)    // Add padding for headers
-            .paddingRight(1)   // Keep small padding for borders
+            .paddingTop(24)
+            .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
             .round(true);
+
+        treemap(this.cache.hierarchy);
+        this.nodes = this.cache.hierarchy.descendants();
         
-        // Process data
-        const root = d3.hierarchy(node.data)
-            .sum(d => d.type === 'sector' ? 0 : d.value)
-            .sort((a, b) => b.value - a.value);
-        
-        treemap(root);
-        this.nodes = root.descendants();
-        
-        // Update UI
         this.updatePathbar();
         this.render();
     }
