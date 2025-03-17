@@ -16,6 +16,59 @@ class MinimalTreemap {
         
         // Bind events
         this.bindEvents();
+        
+        // Add timestamp and user info as class properties
+        this.lastUpdated = '2025-03-17 19:25:46';
+        this.updatedBy = 'ruslanbay';
+
+        // Initial size calculation
+        this.updateDimensions();
+
+        // Add resize handler
+        this.resizeHandler = this.handleResize.bind(this);
+        window.addEventListener('resize', this.resizeHandler);
+    }
+
+    updateDimensions() {
+        // Get container dimensions
+        const rect = this.container.getBoundingClientRect();
+        
+        // Update width and height (subtract pathbar height)
+        this.width = rect.width;
+        this.height = rect.height - 40;
+
+        // Update canvas dimensions
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = this.width * dpr;
+        this.canvas.height = this.height * dpr;
+        this.canvas.style.width = this.width + 'px';
+        this.canvas.style.height = this.height + 'px';
+        
+        // Reset context and scale for HiDPI displays
+        this.ctx = this.canvas.getContext('2d');
+        this.ctx.scale(dpr, dpr);
+    }
+
+    handleResize() {
+        // Debounce resize events
+        if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout);
+        }
+
+        this.resizeTimeout = setTimeout(() => {
+            this.updateDimensions();
+            if (this.currentRoot) {
+                this.renderFromNode(this.currentRoot);
+            }
+        }, 100); // Wait 100ms after last resize event
+    }
+
+    // Clean up when no longer needed
+    destroy() {
+        window.removeEventListener('resize', this.resizeHandler);
+        if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout);
+        }
     }
 
     setupCanvas() {
@@ -339,6 +392,19 @@ class MinimalTreemap {
     }
 }
 
+// Usage example with container CSS:
+document.head.insertAdjacentHTML('beforeend', `
+    <style>
+        #container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+        }
+    </style>
+`);
 
 // Initialize
 const treemap = new MinimalTreemap('container');
@@ -356,4 +422,6 @@ fetch(url)
         treemap.path = [root];
         treemap.renderFromNode(root);
     })
-    .catch(error => console.error('Error loading or processing data:', error));
+    .catch(error => {
+        console.error('Error loading or processing data:', error);
+    });
