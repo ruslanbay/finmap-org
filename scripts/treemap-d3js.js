@@ -1,686 +1,805 @@
 // plot treemap using d3.js (canvas) for better performance
 
 class D3CanvasTreemap {
-  constructor(containerId) {
-      this.container = document.getElementById(containerId);
-      this.tooltip = document.getElementById('tooltip');
-
-      // Add columnIndex as a class property
-      this.columnIndex = {};
-      
-      // Create pathbar container
-      this.pathbar = document.createElement('div');
-      this.pathbar.style.cssText = `
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 40px;
-          background: #2C3E50;
-          color: white;
-          display: flex;
-          align-items: center;
-          padding: 0 10px;
-          font-family: Arial, sans-serif;
-          z-index: 1;
-      `;
-      this.container.appendChild(this.pathbar);
-
-      // Set up dimensions
+    constructor(containerId) {
+        // Initialize container and tooltip
+        this.container = document.getElementById(containerId);
+        this.tooltip = document.getElementById('tooltip');
+    
+        // Initialize data properties
+        this.columnIndex = {};
+        this.nodes = [];
+        this.currentRoot = null;
+        this.path = [];
+        
+        // Create pathbar container
+        this.pathbar = document.createElement('div');
+        this.pathbar.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: #2C3E50;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-family: Arial, sans-serif;
+            z-index: 1;
+        `;
+        this.container.appendChild(this.pathbar);
+    
+        // Set up dimensions
         this.width = this.container.clientWidth;
         this.height = this.container.clientHeight - 40; // Subtract pathbar height
-      
-      // Create Canvas
-      this.canvas = document.createElement('canvas');
-      this.canvas.style.cssText = `
-          position: absolute;
-          top: 40px;
-          left: 0;
-      `;
-      this.canvas.width = this.width * window.devicePixelRatio;
-      this.canvas.height = this.height * window.devicePixelRatio;
-      this.canvas.style.width = this.width + 'px';
-      this.canvas.style.height = this.height + 'px';
-      this.container.appendChild(this.canvas);
-      
-      // Get context and adjust for device pixel ratio
-      this.ctx = this.canvas.getContext('2d');
-      this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-      // Store nodes for interaction
-      this.nodes = [];
-      this.currentRoot = null;
-      this.path = [];
-      
-      // Bind events
-      this.bindEvents();
-
-      // Initialize path with just the root node
-      this.path = [];
-      this.currentRoot = null;
-  }
-
-    bindEvents() {
-      // Handle window resize
-      window.addEventListener('resize', () => {
-          this.width = this.container.clientWidth;
-          this.height = this.container.clientHeight - 40;
-          
-          this.canvas.width = this.width * window.devicePixelRatio;
-          this.canvas.height = this.height * window.devicePixelRatio;
-          this.canvas.style.width = this.width + 'px';
-          this.canvas.style.height = this.height + 'px';
-          
-          this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-          
-          if (this.currentData) {
-              this.render(this.currentData);
-          }
-      });
-  
-      // Handle mouse interactions on canvas
-      this.canvas.addEventListener('mousemove', (event) => {
-          const rect = this.canvas.getBoundingClientRect();
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
-  
-          const node = this.findNodeAtPosition(x, y);
-          
-          if (node) {
-              // Always show pointer cursor and tooltip for any clickable node
-              this.canvas.style.cursor = 'pointer';
-              this.showTooltip(node, event);
-          } else {
-              this.canvas.style.cursor = 'default';
-              this.hideTooltip();
-          }
-      });
-  
-      // Handle clicks on canvas
-      this.canvas.addEventListener('click', (event) => {
-          const rect = this.canvas.getBoundingClientRect();
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
-  
-          const node = this.findNodeAtPosition(x, y);
-          if (node) {
-              // Always drill down for any node
-              this.drillDown(node);
-          }
-      });
-  
-      // Handle pathbar clicks
-      this.pathbar.addEventListener('click', (event) => {
-          const index = parseInt(event.target.dataset.index);
-          if (!isNaN(index)) {
-              this.drillTo(index);
-          }
-      });
-  }
-
-  updatePathbar() {
-      console.log('Updating pathbar with path:', this.path.map(n => n.data.name));
-      
-      this.pathbar.innerHTML = this.path
-          .map((node, index) => `
-              <span 
-                  style="
-                      cursor: pointer; 
-                      padding: 5px 10px;
-                      background: ${index === this.path.length - 1 ? '#34495E' : 'transparent'};
-                      border-radius: 4px;
-                      margin-right: 5px;
-                      ${index < this.path.length - 1 ? 'color: #3498DB;' : ''}
-                  "
-                  data-index="${index}"
-              >
-                  ${node.data.name}
-                  ${index < this.path.length - 1 ? ' >' : ''}
-              </span>
-          `)
-          .join('');
-  }
-  
-  drillDown(node) {
-      // Log for debugging
-      console.log('Attempting to drill down to:', node.data.name);
-      console.log('Current path:', this.path.map(n => n.data.name));
-  
-      // First, check if this node is already the current root
-      if (this.currentRoot === node) {
-          console.log('Already at this node, ignoring drill down');
-          return;
-      }
-  
-      // Check if we're clicking a node that's already in our current view
-      if (this.currentRoot && this.nodes.includes(node)) {
-          // We're clicking a visible node in the current view
-          // Remove any paths after the current root and add this new node
-          const currentRootIndex = this.path.findIndex(n => n === this.currentRoot);
-          if (currentRootIndex !== -1) {
-              this.path = this.path.slice(0, currentRootIndex + 1);
-          }
-          this.path.push(node);
-      } else {
-          // We're either:
-          // 1. Clicking a node in the pathbar (handled by drillTo)
-          // 2. Starting fresh (shouldn't happen in normal operation)
-          const existingIndex = this.path.findIndex(n => n === node);
-          if (existingIndex !== -1) {
-              // If node exists in path, trim to that point
-              this.path = this.path.slice(0, existingIndex + 1);
-          } else {
-              // Only add if it's not already in the path
-              this.path.push(node);
-          }
-      }
-  
-      console.log('New path:', this.path.map(n => n.data.name));
-      this.renderFromNode(node);
-  }
-  
-  drillTo(index) {
-      console.log('Drilling to index:', index);
-      console.log('Path before drill:', this.path.map(n => n.data.name));
-      
-      if (index >= 0 && index < this.path.length) {
-          const targetNode = this.path[index];
-          // Always trim the path when drilling to an index
-          this.path = this.path.slice(0, index + 1);
-          console.log('Path after drill:', this.path.map(n => n.data.name));
-          this.renderFromNode(targetNode);
-      }
-  }
-  
-  renderFromNode(node) {
-      console.log('Rendering node:', node.data.name);
-      this.currentRoot = node;
-      
-      // Handle leaf node
-      if (!node.data.children || node.data.children.length === 0) {
-          console.log('Rendering leaf details');
-          this.renderLeafDetails(node);
-          return;
-      }
-      
-      // Regular treemap rendering for non-leaf nodes
-      console.log('Rendering treemap');
-      const treemap = d3.treemap()
-          .size([this.width, this.height])
-          .padding(1)
-          .round(true);
-      
-      const root = d3.hierarchy(node.data)
-          .sum(d => d.type === 'sector' ? 0 : d.value)
-          .sort((a, b) => b.value - a.value);
-      
-      treemap(root);
-      this.nodes = root.descendants();
-      this.updatePathbar();
-      this.render();
-  }
-  
-  renderLeafDetails(node) {
-      // Clear canvas
-      this.ctx.clearRect(0, 0, this.width, this.height);
-      
-      // Update pathbar
-      this.updatePathbar();
-      
-      // Store single node for interaction
-      this.nodes = [node];
-  
-      // Draw detailed view
-      const padding = 20;
-      const x = padding;
-      const y = padding;
-      const width = this.width - 2 * padding;
-      const height = this.height - 2 * padding;
-  
-      // Draw background
-      this.ctx.fillStyle = '#2C3E50';
-      this.ctx.globalAlpha = 0.9;
-      this.ctx.fillRect(x, y, width, height);
-      this.ctx.strokeStyle = '#ffffff';
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(x, y, width, height);
-  
-      // Draw content
-      this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = 'bold 16px Arial';
-      this.ctx.textBaseline = 'top';
-      this.ctx.globalAlpha = 1;
-  
-      let currentY = y + padding;
-      const lineHeight = 24;
-  
-      // Helper function to draw a row
-      const drawRow = (label, value) => {
-          if (value !== undefined && value !== '' && value !== null) {
-              this.ctx.font = 'bold 14px Arial';
-              this.ctx.fillText(label + ':', x + padding, currentY);
-              this.ctx.font = '14px Arial';
-              this.ctx.fillText(String(value), x + padding + 150, currentY);
-              currentY += lineHeight;
-          }
-      };
-  
-      // Draw title
-      this.ctx.font = 'bold 20px Arial';
-      this.ctx.fillText(node.data.name, x + padding, currentY);
-      currentY += lineHeight * 1.5;
-  
-      // Draw details
-      const formatNumber = d3.format(',.2f');
-      drawRow('Ticker', node.data.ticker);
-      drawRow('Type', node.data.type);
-      drawRow('Market Cap', `$${formatNumber(node.value)}M`);
-      drawRow('Exchange', node.data.exchange);
-      if (node.data.sector) drawRow('Sector', node.data.sector);
-      if (node.data.industry) drawRow('Industry', node.data.industry);
-      
-      // Add more details from rawData
-      const rawData = node.data.rawData;
-      if (rawData) {
-          if (rawData[this.columnIndex.priceLastSale]) 
-              drawRow('Last Sale Price', rawData[this.columnIndex.priceLastSale]);
-          if (rawData[this.columnIndex.priceChangePct]) 
-              drawRow('Price Change %', `${rawData[this.columnIndex.priceChangePct]}%`);
-          if (rawData[this.columnIndex.volume]) 
-              drawRow('Volume', formatNumber(rawData[this.columnIndex.volume]));
-          if (rawData[this.columnIndex.numTrades]) 
-              drawRow('Number of Trades', formatNumber(rawData[this.columnIndex.numTrades]));
-          if (rawData[this.columnIndex.listedFrom]) 
-              drawRow('Listed From', rawData[this.columnIndex.listedFrom]);
-      }
-  }
-
-  // Modify findNodeAtPosition to prioritize header clicks for parent nodes
-  findNodeAtPosition(x, y) {
-      const HEADER_HEIGHT = 24;
-      
-      // First check for header clicks on parent nodes
-      const headerClick = [...this.nodes].reverse().find(node => 
-          node.children &&
-          x >= node.x0 && 
-          x <= node.x1 && 
-          y >= node.y0 && 
-          y <= node.y0 + HEADER_HEIGHT
-      );
-      
-      if (headerClick) {
-          return headerClick;
-      }
-  
-      // Then check for other nodes
-      return [...this.nodes].reverse().find(node => 
-          x >= node.x0 && 
-          x <= node.x1 && 
-          y >= node.y0 && 
-          y <= node.y1
-      );
-  }
-
-  transformData(securitiesData) {
-    const { columns, data } = securitiesData.securities;
-
-    // Store column indices as class property
-    columns.forEach((col, idx) => this.columnIndex[col] = idx);
-    
-    // Create an index map for column names
-    const columnIndex = {};
-    columns.forEach((col, idx) => columnIndex[col] = idx);
-    
-    // Helper function to create a node object from a row
-    const createNode = (row) => ({
-        name: row[columnIndex.nameEng],
-        // Only set marketCap for non-sector nodes
-        value: row[columnIndex.type] !== 'sector' ? parseFloat(row[columnIndex.marketCap]) || 0 : 0,
-        type: row[columnIndex.type],
-        sector: row[columnIndex.sector],
-        ticker: row[columnIndex.ticker],
-        industry: row[columnIndex.industry],
-        exchange: row[columnIndex.exchange],
-        nestedItemsCount: parseInt(row[columnIndex.nestedItemsCount]) || 0,
-        rawData: row
-    });
-
-    // Find root node (where sector is empty)
-    const rootRow = data.find(row => row[columnIndex.sector] === '');
-    if (!rootRow) {
-        throw new Error('Root node not found');
+        
+        // Create Canvas
+        this.canvas = document.createElement('canvas');
+        this.canvas.style.cssText = `
+            position: absolute;
+            top: 40px;
+            left: 0;
+        `;
+        this.canvas.width = this.width * window.devicePixelRatio;
+        this.canvas.height = this.height * window.devicePixelRatio;
+        this.canvas.style.width = this.width + 'px';
+        this.canvas.style.height = this.height + 'px';
+        this.container.appendChild(this.canvas);
+        
+        // Get context and adjust for device pixel ratio
+        this.ctx = this.canvas.getContext('2d');
+        this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        
+        // Bind events
+        this.bindEvents();
     }
 
-    // Create map to store all nodes
-    const nodesMap = new Map();
+    bindEvents() {
+        window.addEventListener('resize', () => {
+            this.width = this.container.clientWidth;
+            this.height = this.container.clientHeight - 40;
+            
+            this.canvas.width = this.width * window.devicePixelRatio;
+            this.canvas.height = this.height * window.devicePixelRatio;
+            this.canvas.style.width = this.width + 'px';
+            this.canvas.style.height = this.height + 'px';
+            
+            this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            if (this.currentData) {
+                this.render(this.currentData);
+            }
+        });
     
-    // Create the root object
-    const root = {
-        ...createNode(rootRow),
-        children: []
-    };
-    nodesMap.set(rootRow[columnIndex.ticker], root);
+        this.canvas.addEventListener('mousemove', (event) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+    
+            const node = this.findNodeAtPosition(x, y);
+            
+            if (node) {
+                this.canvas.style.cursor = 'pointer';
+                this.showTooltip(node, event);
+            } else {
+                this.canvas.style.cursor = 'default';
+                this.hideTooltip();
+            }
+        });
+    
+        this.canvas.addEventListener('click', (event) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+    
+            const node = this.findNodeAtPosition(x, y);
+            if (node) {
+                this.drillDown(node);
+            }
+        });
+    
+        this.pathbar.addEventListener('click', (event) => {
+            const index = parseInt(event.target.dataset.index);
+            if (!isNaN(index)) {
+                this.drillTo(index);
+            }
+        });
+    }
 
-    // First pass: create all nodes
-    data.forEach(row => {
-        const ticker = row[columnIndex.ticker];
-        if (ticker !== rootRow[columnIndex.ticker]) {
-            nodesMap.set(ticker, {
-                ...createNode(row),
-                children: []
-            });
+    updatePathbar() {
+        this.pathbar.innerHTML = this.path
+            .map((node, index) => `
+                <span 
+                    style="
+                        cursor: pointer; 
+                        padding: 5px 10px;
+                        background: ${index === this.path.length - 1 ? '#34495E' : 'transparent'};
+                        border-radius: 4px;
+                        margin-right: 5px;
+                        ${index < this.path.length - 1 ? 'color: #3498DB;' : ''}
+                    "
+                    data-index="${index}"
+                >
+                    ${node.data.name}
+                    ${index < this.path.length - 1 ? ' >' : ''}
+                </span>
+            `)
+            .join('');
+    }
+  
+    drillDown(node) {
+        if (!node || this.currentRoot === node) {
+            return;
         }
-    });
-
-    // Second pass: build hierarchy
-    data.forEach(row => {
-        const ticker = row[columnIndex.ticker];
-        const parentSector = row[columnIndex.sector];
+    
+        // Find if node exists in current path
+        const existingIndex = this.path.findIndex(n => n === node);
         
-        // Skip root node
-        if (ticker === rootRow[columnIndex.ticker]) {
+        if (existingIndex !== -1) {
+            // Node exists in path - trim to that point
+            this.path = this.path.slice(0, existingIndex + 1);
+        } else {
+            // Node is new - add it to path
+            // If we're clicking a visible node, first trim the path to current root
+            if (this.currentRoot && this.nodes.includes(node)) {
+                const currentRootIndex = this.path.findIndex(n => n === this.currentRoot);
+                if (currentRootIndex !== -1) {
+                    this.path = this.path.slice(0, currentRootIndex + 1);
+                }
+            }
+            this.path.push(node);
+        }
+    
+        this.renderFromNode(node);
+    }
+  
+    drillTo(index) {
+        if (!Number.isInteger(index) || index < 0 || index >= this.path.length) {
+            return;
+        }
+    
+        const targetNode = this.path[index];
+        this.path = this.path.slice(0, index + 1);
+        this.renderFromNode(targetNode);
+    }
+  
+    renderFromNode(node) {
+        if (!node || !node.data) {
+            return;
+        }
+    
+        this.currentRoot = node;
+    
+        if (!node.data.children?.length) {
+            this.renderLeafDetails(node);
+            return;
+        }
+    
+        const treemap = d3.treemap()
+            .size([this.width, this.height])
+            .padding(1)
+            .round(true);
+        
+        const root = d3.hierarchy(node.data)
+            .sum(d => d.type === 'sector' ? 0 : d.value)
+            .sort((a, b) => b.value - a.value);
+        
+        treemap(root);
+        this.nodes = root.descendants();
+        this.updatePathbar();
+        this.render();
+    }
+  
+    renderLeafDetails(node) {
+        if (!node?.data) {
+            return;
+        }
+    
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        this.updatePathbar();
+        this.nodes = [node];
+    
+        const padding = 20;
+        const contentPadding = padding * 2;
+        const dimensions = {
+            x: padding,
+            y: padding,
+            width: this.width - 2 * padding,
+            height: this.height - 2 * padding
+        };
+    
+        this.drawDetailBackground(dimensions);
+        this.drawDetailContent(node, dimensions, contentPadding);
+    }
+    
+    drawDetailBackground({ x, y, width, height }) {
+        this.ctx.fillStyle = '#2C3E50';
+        this.ctx.globalAlpha = 0.9;
+        this.ctx.fillRect(x, y, width, height);
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(x, y, width, height);
+        this.ctx.globalAlpha = 1;
+    }
+    
+    drawDetailContent(node, dims, padding) {
+        const formatNumber = d3.format(',.2f');
+        let currentY = dims.y + padding;
+        const lineHeight = 24;
+    
+        // Configure text rendering
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.textBaseline = 'top';
+    
+        // Draw title
+        this.ctx.font = 'bold 20px Arial';
+        this.ctx.fillText(node.data.name, dims.x + padding, currentY);
+        currentY += lineHeight * 1.5;
+    
+        // Draw rows
+        const details = [
+            ['Ticker', node.data.ticker],
+            ['Type', node.data.type],
+            ['Market Cap', node.value && `$${formatNumber(node.value)}M`],
+            ['Exchange', node.data.exchange],
+            ['Sector', node.data.sector],
+            ['Industry', node.data.industry]
+        ];
+    
+        // Add raw data details if available
+        if (node.data.rawData) {
+            const { rawData } = node.data;
+            const rawDetails = [
+                ['Last Sale Price', rawData[this.columnIndex.priceLastSale]],
+                ['Price Change %', rawData[this.columnIndex.priceChangePct] && 
+                    `${rawData[this.columnIndex.priceChangePct]}%`],
+                ['Volume', rawData[this.columnIndex.volume] && 
+                    formatNumber(rawData[this.columnIndex.volume])],
+                ['Number of Trades', rawData[this.columnIndex.numTrades] && 
+                    formatNumber(rawData[this.columnIndex.numTrades])],
+                ['Listed From', rawData[this.columnIndex.listedFrom]]
+            ];
+            details.push(...rawDetails);
+        }
+    
+        // Add last updated timestamp
+        const timestamp = new Date().toISOString()
+            .replace('T', ' ')
+            .replace(/\.\d{3}Z$/, ' UTC');
+        details.push(['Last Updated', timestamp]);
+    
+        // Draw all rows
+        details.forEach(([label, value]) => {
+            if (value) {
+                this.ctx.font = 'bold 14px Arial';
+                this.ctx.fillText(`${label}:`, dims.x + padding, currentY);
+                this.ctx.font = '14px Arial';
+                this.ctx.fillText(String(value), dims.x + padding + 150, currentY);
+                currentY += lineHeight;
+            }
+        });
+    }
+
+    findNodeAtPosition(x, y) {
+        if (!this.nodes?.length || typeof x !== 'number' || typeof y !== 'number') {
+            return null;
+        }
+    
+        const HEADER_HEIGHT = 24;
+        const sortedNodes = [...this.nodes].reverse();
+    
+        // Check for parent node headers first
+        const parentNode = sortedNodes.find(node => 
+            node.children && 
+            this.isPointInRect(x, y, {
+                x0: node.x0,
+                x1: node.x1,
+                y0: node.y0,
+                y1: node.y0 + HEADER_HEIGHT
+            })
+        );
+    
+        if (parentNode) {
+            return parentNode;
+        }
+    
+        // Then check for any node
+        return sortedNodes.find(node => 
+            this.isPointInRect(x, y, {
+                x0: node.x0,
+                x1: node.x1,
+                y0: node.y0,
+                y1: node.y1
+            })
+        );
+    }
+    
+    isPointInRect(x, y, rect) {
+        return x >= rect.x0 && 
+               x <= rect.x1 && 
+               y >= rect.y0 && 
+               y <= rect.y1;
+    }
+
+    
+    transformData(securitiesData) {
+        if (!securitiesData?.securities?.columns || !securitiesData?.securities?.data) {
+            throw new Error('Invalid securities data format');
+        }
+    
+        const { columns, data } = securitiesData.securities;
+        
+        // Set up column indices
+        this.setupColumnIndices(columns);
+        
+        // Find and validate root node
+        const rootRow = this.findRootNode(data);
+        
+        // Build node hierarchy
+        const { root, nodesMap } = this.buildNodeHierarchy(rootRow, data);
+        
+        // Calculate final values
+        this.calculateHierarchyValues(root);
+        
+        return root;
+    }
+    
+    setupColumnIndices(columns) {
+        columns.forEach((col, idx) => this.columnIndex[col] = idx);
+    }
+    
+    createNode(row) {
+        return {
+            name: row[this.columnIndex.nameEng],
+            value: row[this.columnIndex.type] !== 'sector' ? 
+                parseFloat(row[this.columnIndex.marketCap]) || 0 : 0,
+            type: row[this.columnIndex.type],
+            sector: row[this.columnIndex.sector],
+            ticker: row[this.columnIndex.ticker],
+            industry: row[this.columnIndex.industry],
+            exchange: row[this.columnIndex.exchange],
+            nestedItemsCount: parseInt(row[this.columnIndex.nestedItemsCount]) || 0,
+            rawData: row,
+            lastUpdated: '2025-03-17 11:08:51', // Using provided timestamp
+            updatedBy: 'ruslanbay' // Using provided user login
+        };
+    }
+    
+    findRootNode(data) {
+        const rootRow = data.find(row => row[this.columnIndex.sector] === '');
+        if (!rootRow) {
+            throw new Error('Root node not found in data');
+        }
+        return rootRow;
+    }
+    
+    buildNodeHierarchy(rootRow, data) {
+        const nodesMap = new Map();
+        
+        // Create root node
+        const root = {
+            ...this.createNode(rootRow),
+            children: []
+        };
+        nodesMap.set(rootRow[this.columnIndex.ticker], root);
+    
+        // Create all nodes
+        data.forEach(row => {
+            const ticker = row[this.columnIndex.ticker];
+            if (ticker !== rootRow[this.columnIndex.ticker]) {
+                nodesMap.set(ticker, {
+                    ...this.createNode(row),
+                    children: []
+                });
+            }
+        });
+    
+        // Build hierarchy
+        data.forEach(row => {
+            const ticker = row[this.columnIndex.ticker];
+            const parentSector = row[this.columnIndex.sector];
+            
+            if (ticker === rootRow[this.columnIndex.ticker]) {
+                return;
+            }
+    
+            const parentNode = Array.from(nodesMap.values())
+                .find(node => node.ticker === parentSector);
+    
+            if (parentNode) {
+                parentNode.children.push(nodesMap.get(ticker));
+            } else if (parentSector !== '') {
+                root.children.push(nodesMap.get(ticker));
+            }
+        });
+    
+        return { root, nodesMap };
+    }
+    
+    calculateHierarchyValues(node) {
+        if (!node.children?.length) {
+            return node.value;
+        }
+    
+        node.value = node.children.reduce((sum, child) => 
+            sum + this.calculateHierarchyValues(child), 0);
+    
+        return node.value;
+    }
+
+    class TreemapRenderer {
+    // Tooltip methods
+    showTooltip(node, event) {
+        if (!node?.data) {
             return;
         }
 
-        // Find parent node
-        const parentNode = Array.from(nodesMap.values()).find(node => 
-            node.ticker === parentSector
-        );
-
-        if (parentNode) {
-            parentNode.children.push(nodesMap.get(ticker));
-        } else if (parentSector !== '') {
-            // If parent not found but sector is specified, add to root
-            root.children.push(nodesMap.get(ticker));
-        }
-    });
-
-    // Function to recursively calculate values
-    const calculateValues = (node) => {
-        if (!node.children || node.children.length === 0) {
-            // Leaf node - already has its value set
-            return node.value;
-        }
-
-        // For parent nodes, sum up only their children's values
-        node.value = node.children.reduce((sum, child) => {
-            return sum + calculateValues(child);
-        }, 0);
-
-        return node.value;
-    };
-
-    // Calculate values starting from root
-    calculateValues(root);
-
-    return root;
-}
-
-showTooltip(node, event) {
-    const tooltip = d3.select(this.tooltip);
-    const formatNumber = d3.format(',.2f');
+        const tooltip = d3.select(this.tooltip);
+        const formatNumber = d3.format(',.2f');
+        
+        const tooltipContent = this.createTooltipContent(node, formatNumber);
     
-    let tooltipContent = `
-        <div style="font-weight: bold; margin-bottom: 5px;">
-            ${node.data.name}
-        </div>
-        <div style="font-size: 12px; color: #ddd;">
-            ${node.data.ticker}
-        </div>
-        <div style="margin-top: 5px;">
-            Market Cap: $${formatNumber(node.value)}M
-        </div>
-        <div>
-            Type: ${node.data.type}
-        </div>
-    `;
-  
-    if (node.children && node.children.length > 0) {
-        tooltipContent += `
-            <div style="margin-top: 5px; color: #8BE9FD;">
-                Click to view ${node.children.length} items
-            </div>
-        `;
-    } else {
-        tooltipContent += `
-            <div style="margin-top: 5px; color: #8BE9FD;">
-                Click to view details
-            </div>
-        `;
+        tooltip
+            .style('display', 'block')
+            .style('left', `${event.pageX + 10}px`)
+            .style('top', `${event.pageY + 10}px`)
+            .html(tooltipContent);
     }
-  
-    tooltip.style('display', 'block')
-        .style('left', (event.pageX + 10) + 'px')
-        .style('top', (event.pageY + 10) + 'px')
-        .html(tooltipContent);
-  }
 
-  hideTooltip() {
-      d3.select(this.tooltip).style('display', 'none');
-  }
+    createTooltipContent(node, formatNumber) {
+        const content = `
+            <div style="font-weight: bold; margin-bottom: 5px;">
+                ${node.data.name}
+            </div>
+            <div style="font-size: 12px; color: #ddd;">
+                ${node.data.ticker}
+            </div>
+            <div style="margin-top: 5px;">
+                Market Cap: $${formatNumber(node.value)}M
+            </div>
+            <div>
+                Type: ${node.data.type}
+            </div>
+            <div style="margin-top: 5px; color: #8BE9FD;">
+                ${node.children?.length ? 
+                    `Click to view ${node.children.length} items` : 
+                    'Click to view details'}
+            </div>
+            <div style="font-size: 10px; color: #999; margin-top: 5px;">
+                Last updated: ${node.data.lastUpdated || '2025-03-17 11:09:41'} UTC
+                by ${node.data.updatedBy || 'ruslanbay'}
+            </div>
+        `;
 
+        return content;
+    }
+
+    hideTooltip() {
+        d3.select(this.tooltip).style('display', 'none');
+    }
+
+    // Rendering methods
     render() {
-      // Clear canvas
-      this.ctx.clearRect(0, 0, this.width, this.height);
-  
-      // Color scale
-      const getNodeColor = (node) => {
-          if (node.data.type === 'sector') {
-              return node.children ? '#2C3E50' : '#34495E';
-          }
-          return '#3498DB';
-      };
-  
-      const HEADER_HEIGHT = 24;
-  
-      // 1. First, draw ONLY the main areas of parent nodes (no borders, no headers)
-      this.nodes.forEach(node => {
-        if (!node.parent || !node.children) return; // Skip root and leaf nodes
-  
-        const width = node.x1 - node.x0;
-        const height = node.y1 - node.y0;
-  
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        
+        this.renderParentNodes();
+        this.renderParentBorders();
+        this.renderLeafNodes();
+        this.renderParentHeaders();
+        this.renderNodeText();
+    }
+
+    getNodeColor(node) {
+        return node.data.type === 'sector' ?
+            (node.children ? '#2C3E50' : '#34495E') :
+            '#3498DB';
+    }
+
+    createGradient(node, color) {
         const gradient = this.ctx.createLinearGradient(
-            node.x0, 
-            node.y0, 
-            node.x0, 
-            node.y1
+            node.x0, node.y0, node.x0, node.y1
         );
-        gradient.addColorStop(0, getNodeColor(node));
-        gradient.addColorStop(1, d3.color(getNodeColor(node)).darker(0.5));
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, d3.color(color).darker(0.5));
+        return gradient;
+    }
+
+    renderParentNodes() {
+        const HEADER_HEIGHT = 24;
         
-        this.ctx.fillStyle = gradient;
-        this.ctx.globalAlpha = 0.85;
+        this.nodes.forEach(node => {
+            if (!node.parent || !node.children) return;
+
+            const width = node.x1 - node.x0;
+            const height = node.y1 - node.y0;
+            
+            this.ctx.fillStyle = this.createGradient(node, this.getNodeColor(node));
+            this.ctx.globalAlpha = 0.85;
+            
+            this.ctx.fillRect(
+                node.x0, 
+                node.y0 + HEADER_HEIGHT, 
+                width, 
+                height - HEADER_HEIGHT
+            );
+        });
+    }
+
+    renderParentBorders() {
+        const HEADER_HEIGHT = 24;
         
-        // Draw main area only (excluding header)
-        this.ctx.fillRect(
-            node.x0, 
-            node.y0 + HEADER_HEIGHT, 
-            width, 
-            height - HEADER_HEIGHT
-        );
-    });
-  
-    // 2. Draw parent node borders (but not headers)
-    this.nodes.forEach(node => {
-        if (!node.parent || !node.children) return; // Skip root and leaf nodes
-        if (node.parent === this.currentRoot) return; // Skip borders for direct children of current root
-  
-        const width = node.x1 - node.x0;
-        const height = node.y1 - node.y0;
-  
-        // Draw side and bottom borders only
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 1;
-        this.ctx.globalAlpha = 1;
+        this.nodes.forEach(node => {
+            if (!node.parent || !node.children || node.parent === this.currentRoot) return;
+
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 1;
+            this.ctx.globalAlpha = 1;
+            
+            this.drawNodeBorders(node, HEADER_HEIGHT);
+        });
+    }
+
+    drawNodeBorders(node, headerHeight) {
         this.ctx.beginPath();
         // Left border
-        this.ctx.moveTo(node.x0, node.y0 + HEADER_HEIGHT);
+        this.ctx.moveTo(node.x0, node.y0 + headerHeight);
         this.ctx.lineTo(node.x0, node.y1);
         // Bottom border
         this.ctx.moveTo(node.x0, node.y1);
         this.ctx.lineTo(node.x1, node.y1);
         // Right border
-        this.ctx.moveTo(node.x1, node.y0 + HEADER_HEIGHT);
+        this.ctx.moveTo(node.x1, node.y0 + headerHeight);
         this.ctx.lineTo(node.x1, node.y1);
         this.ctx.stroke();
-    });
-  
-    // 3. Draw leaf nodes (complete with borders)
-    this.nodes.forEach(node => {
-        if (!node.parent || node.children) return; // Skip root and parent nodes
-  
-        const width = node.x1 - node.x0;
-        const height = node.y1 - node.y0;
-  
-        const gradient = this.ctx.createLinearGradient(
-            node.x0, 
-            node.y0, 
-            node.x0, 
-            node.y1
-        );
-        gradient.addColorStop(0, getNodeColor(node));
-        gradient.addColorStop(1, d3.color(getNodeColor(node)).darker(0.5));
-        
-        // Draw background
-        this.ctx.fillStyle = gradient;
-        this.ctx.globalAlpha = 0.9;
-        this.ctx.fillRect(node.x0, node.y0, width, height);
-  
-        // Draw border
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 1;
-        this.ctx.globalAlpha = 1;
-        this.ctx.strokeRect(node.x0, node.y0, width, height);
-    });
-  
-    // 4. Finally, draw parent headers (completely on top)
-    this.nodes.forEach(node => {
-        if (!node.parent || !node.children) return; // Skip root and leaf nodes
-  
-        const width = node.x1 - node.x0;
-  
-        // Draw header background
-        this.ctx.fillStyle = d3.color(getNodeColor(node)).darker(0.5);
-        this.ctx.globalAlpha = 1;
-        this.ctx.fillRect(node.x0, node.y0, width, HEADER_HEIGHT);
-  
-        // Draw header borders
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        
-        // Draw header borders (all sides for header)
-        this.ctx.strokeRect(node.x0, node.y0, width, HEADER_HEIGHT);
-  
-        // Draw drill-down indicator
+    }
+
+    renderLeafNodes() {
+        this.nodes.forEach(node => {
+            if (!node.parent || node.children) return;
+
+            const width = node.x1 - node.x0;
+            const height = node.y1 - node.y0;
+
+            // Draw background with gradient
+            this.ctx.fillStyle = this.createGradient(node, this.getNodeColor(node));
+            this.ctx.globalAlpha = 0.9;
+            this.ctx.fillRect(node.x0, node.y0, width, height);
+
+            // Draw border
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 1;
+            this.ctx.globalAlpha = 1;
+            this.ctx.strokeRect(node.x0, node.y0, width, height);
+        });
+    }
+
+    renderParentHeaders() {
+        const HEADER_HEIGHT = 24;
+
+        this.nodes.forEach(node => {
+            if (!node.parent || !node.children) return;
+
+            const width = node.x1 - node.x0;
+
+            // Draw header background
+            this.ctx.fillStyle = d3.color(this.getNodeColor(node)).darker(0.5);
+            this.ctx.globalAlpha = 1;
+            this.ctx.fillRect(node.x0, node.y0, width, HEADER_HEIGHT);
+
+            // Draw header borders
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(node.x0, node.y0, width, HEADER_HEIGHT);
+
+            this.drawDrillDownIndicator(node, HEADER_HEIGHT);
+        });
+    }
+
+    drawDrillDownIndicator(node, headerHeight) {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.globalAlpha = 0.8;
         this.ctx.beginPath();
+        
         const centerX = node.x1 - 15;
-        const centerY = node.y0 + HEADER_HEIGHT/2;
+        const centerY = node.y0 + headerHeight/2;
+        
         this.ctx.moveTo(centerX - 5, centerY - 3);
         this.ctx.lineTo(centerX + 5, centerY - 3);
         this.ctx.lineTo(centerX, centerY + 4);
         this.ctx.closePath();
         this.ctx.fill();
-    });
-  
-    // 5. Draw all text last
-    this.nodes.forEach(node => {
-        if (!node.parent) return; // Skip root node
-  
-        const width = node.x1 - node.x0;
-        const height = node.y1 - node.y0;
-  
-        if (width > 30 && height > 15) {
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = node.children ? 'bold 12px Arial' : '10px Arial';
-            this.ctx.textBaseline = 'top';
-            
-            const value = d3.format(',.2f')(node.value);
-            const text = `${node.data.name} ($${value}M)`;
-            const maxWidth = width - (node.children ? 25 : 6);
-            let truncatedText = text;
-            
-            while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
-                truncatedText = truncatedText.slice(0, -1);
+    }
+
+    renderNodeText() {
+        const HEADER_HEIGHT = 24;
+        const MIN_WIDTH = 30;
+        const MIN_HEIGHT = 15;
+        const formatNumber = d3.format(',.2f');
+
+        this.nodes.forEach(node => {
+            if (!node.parent) return;
+
+            const width = node.x1 - node.x0;
+            const height = node.y1 - node.y0;
+
+            if (width > MIN_WIDTH && height > MIN_HEIGHT) {
+                this.drawNodeLabel(node, width, HEADER_HEIGHT, formatNumber);
             }
-            
-            if (truncatedText !== text) {
-                truncatedText += '...';
-            }
-            
-            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.shadowBlur = 4;
+        });
+    }
+
+    drawNodeLabel(node, width, headerHeight, formatNumber) {
+        const value = formatNumber(node.value);
+        const text = `${node.data.name} ($${value}M)`;
+        const padding = node.children ? 25 : 6;
+        const maxWidth = width - padding;
+
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = node.children ? 'bold 12px Arial' : '10px Arial';
+        this.ctx.textBaseline = 'top';
+
+        const truncatedText = this.getTruncatedText(text, maxWidth);
+
+        // Add text shadow
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.shadowBlur = 4;
+        
+        this.ctx.fillText(
+            truncatedText,
+            node.x0 + 3,
+            node.y0 + (node.children ? (headerHeight - 12)/2 : 3)
+        );
+        
+        this.ctx.shadowBlur = 0;
+
+        // Add timestamp in small text for leaf nodes
+        if (!node.children && height > 40) {
+            this.ctx.font = '8px Arial';
             this.ctx.fillText(
-                truncatedText,
+                `Updated: 2025-03-17 11:13:55 by ruslanbay`,
                 node.x0 + 3,
-                node.y0 + (node.children ? (HEADER_HEIGHT - 12)/2 : 3)
+                node.y1 - 12
             );
-            this.ctx.shadowBlur = 0;
         }
-    });
-  }
+    }
+
+    getTruncatedText(text, maxWidth) {
+        let truncatedText = text;
+        
+        while (this.ctx.measureText(truncatedText).width > maxWidth && 
+               truncatedText.length > 3) {
+            truncatedText = truncatedText.slice(0, -1);
+        }
+        
+        return truncatedText !== text ? truncatedText + '...' : truncatedText;
+    }
 }
 
-// Initialize and render
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-      console.log('Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted):', 
-          new Date().toISOString().slice(0, 19).replace('T', ' '));
-      console.log('Current User\'s Login:', window.ruslanbay || 'unknown');
-      console.log('Initializing application...');
+class TreemapInitializer {
+    static readonly DATA_URL = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
+    static readonly CONTAINER_ID = 'container';
 
-      const treemap = new D3CanvasTreemap('container');
-      
-      // Show loading indicator
-      const loadingDiv = document.createElement('div');
-      loadingDiv.style.cssText = `
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          padding: 20px;
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 8px;
-          text-align: center;
-          z-index: 1000;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      `;
-      loadingDiv.innerHTML = 'Loading data...';
-      treemap.container.appendChild(loadingDiv);
+    constructor() {
+        this.timestamp = '2025-03-17 11:15:57';
+        this.userLogin = 'ruslanbay';
+    }
 
-      // Fetch data
-      const response = await fetch('https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json');
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Remove loading indicator
-      treemap.container.removeChild(loadingDiv);
-      
-      // Initialize with root node
-      const root = d3.hierarchy(treemap.transformData(data))
-          .sum(d => d.type === 'sector' ? 0 : d.value)
-          .sort((a, b) => b.value - a.value);
-          
-      treemap.path = [root];
-      treemap.renderFromNode(root);
-      
-  } catch (error) {
-      console.error('Failed to initialize or render treemap:', error);
-      const container = document.getElementById('container');
-      container.innerHTML = `
-          <div style="padding: 20px; color: red;">
-              <h3>Error Initializing Treemap</h3>
-              <p>Error: ${error.message}</p>
-              <p>Stack: ${error.stack}</p>
-              <p>Time: ${new Date().toISOString().slice(0, 19).replace('T', ' ')}</p>
-              <p>User: ${window.ruslanbay || 'unknown'}</p>
-              <p>Browser: ${navigator.userAgent}</p>
-          </div>
-      `;
-  }
+    async initialize() {
+        try {
+            console.log('Initializing application...');
+            console.log('Current Date and Time (UTC):', this.timestamp);
+            console.log('Current User\'s Login:', this.userLogin);
+
+            const treemap = new D3CanvasTreemap(TreemapInitializer.CONTAINER_ID);
+            const loadingDiv = this.createLoadingIndicator();
+            treemap.container.appendChild(loadingDiv);
+
+            const data = await this.fetchData();
+            treemap.container.removeChild(loadingDiv);
+
+            this.initializeTreemap(treemap, data);
+
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    createLoadingIndicator() {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-family: Arial, sans-serif;
+        `;
+        loadingDiv.innerHTML = `
+            <div>Loading data...</div>
+            <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                ${this.timestamp} UTC
+            </div>
+        `;
+        return loadingDiv;
+    }
+
+    async fetchData() {
+        const response = await fetch(TreemapInitializer.DATA_URL);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    }
+
+    initializeTreemap(treemap, data) {
+        const root = d3.hierarchy(treemap.transformData(data))
+            .sum(d => d.type === 'sector' ? 0 : d.value)
+            .sort((a, b) => b.value - a.value);
+
+        treemap.path = [root];
+        treemap.renderFromNode(root);
+    }
+
+    handleError(error) {
+        console.error('Failed to initialize or render treemap:', error);
+        
+        const errorDiv = this.createErrorDisplay(error);
+        const container = document.getElementById(TreemapInitializer.CONTAINER_ID);
+        container.innerHTML = errorDiv;
+    }
+
+    createErrorDisplay(error) {
+        return `
+            <div style="
+                padding: 20px;
+                color: #721c24;
+                background-color: #f8d7da;
+                border: 1px solid #f5c6cb;
+                border-radius: 4px;
+                font-family: Arial, sans-serif;
+            ">
+                <h3 style="margin-top: 0;">Error Initializing Treemap</h3>
+                <div style="margin: 10px 0;">
+                    <strong>Error:</strong> ${this.escapeHtml(error.message)}
+                </div>
+                <div style="
+                    background: #fff;
+                    padding: 10px;
+                    border-radius: 4px;
+                    margin: 10px 0;
+                    font-family: monospace;
+                    font-size: 12px;
+                    white-space: pre-wrap;
+                ">
+                    ${this.escapeHtml(error.stack)}
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                    <div>Time: ${this.timestamp} UTC</div>
+                    <div>User: ${this.userLogin}</div>
+                    <div>Browser: ${navigator.userAgent}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+    const initializer = new TreemapInitializer();
+    initializer.initialize();
 });
