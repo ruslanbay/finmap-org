@@ -102,26 +102,23 @@ class TreemapRenderer {
     }
 
     renderParentNodeBorders(HEADER_HEIGHT) {
+        // Only render borders for direct children of current root
         this.nodes.forEach(node => {
             if (!node.parent || !node.children) return;
-            if (node.parent === this.currentRoot) return;
+            if (node.parent !== this.currentRoot) return;
     
             this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = 1;
-            this.ctx.globalAlpha = 1;
+            this.ctx.lineWidth = 2;
+            this.ctx.globalAlpha = 0.8;
             this.ctx.beginPath();
     
-            // Left border
-            this.ctx.moveTo(node.x0, node.y0 + HEADER_HEIGHT);
-            this.ctx.lineTo(node.x0, node.y1);
-            
-            // Bottom border
-            this.ctx.moveTo(node.x0, node.y1);
-            this.ctx.lineTo(node.x1, node.y1);
-            
-            // Right border
-            this.ctx.moveTo(node.x1, node.y0 + HEADER_HEIGHT);
-            this.ctx.lineTo(node.x1, node.y1);
+            // Complete rectangle border
+            this.ctx.rect(
+                node.x0, 
+                node.y0 + HEADER_HEIGHT, 
+                node.x1 - node.x0, 
+                node.y1 - (node.y0 + HEADER_HEIGHT)
+            );
             
             this.ctx.stroke();
         });
@@ -130,6 +127,7 @@ class TreemapRenderer {
     renderLeafNodes() {
         this.nodes.forEach(node => {
             if (!node.parent || node.children) return;
+            if (node.parent !== this.currentRoot) return;
     
             const width = node.x1 - node.x0;
             const height = node.y1 - node.y0;
@@ -148,10 +146,10 @@ class TreemapRenderer {
             this.ctx.globalAlpha = 0.9;
             this.ctx.fillRect(node.x0, node.y0, width, height);
     
-            // Draw border
+            // Draw border for leaf nodes
             this.ctx.strokeStyle = '#ffffff';
             this.ctx.lineWidth = 1;
-            this.ctx.globalAlpha = 1;
+            this.ctx.globalAlpha = 0.6;
             this.ctx.strokeRect(node.x0, node.y0, width, height);
         });
     }
