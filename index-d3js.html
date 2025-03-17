@@ -34,8 +34,27 @@
   <div id="container">
     <div id="tooltip"></div>
   </div>
+
+  <!-- Load D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- Load PIXI.js v8.8.1 -->
   <script src="https://pixijs.download/v8.8.1/pixi.min.js"></script>
+
+  <!-- Add error handling -->
+  <script>
+    window.addEventListener('error', function (event) {
+      console.error('Global error:', {
+        message: event.message,
+        source: event.source,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error
+      });
+    });
+  </script>
+
+  <!-- Load your treemap code -->
   <script src="scripts/treemap-d3js.js"></script>
 </body>
 
