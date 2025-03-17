@@ -483,26 +483,24 @@ showTooltip(node, event) {
       d3.select(this.tooltip).style('display', 'none');
   }
 
-  render() {
+    render() {
       // Clear canvas
       this.ctx.clearRect(0, 0, this.width, this.height);
   
       // Color scale
       const getNodeColor = (node) => {
           if (node.data.type === 'sector') {
-              // Darker blue for parent nodes
               return node.children ? '#2C3E50' : '#34495E';
           }
           return '#3498DB';
       };
   
-      // Header height for parent nodes
-      const HEADER_HEIGHT = 24; // Increased touch area
+      const HEADER_HEIGHT = 24;
   
-      // Draw nodes from bottom to top (parents first, then children)
+      // First, draw all non-header parts of parent nodes
       this.nodes.forEach(node => {
-          // Skip root node
-          if (!node.parent) return;
+          if (!node.parent) return; // Skip root node
+          if (!node.children) return; // Skip leaf nodes, will draw them later
   
           // Calculate node dimensions
           const width = node.x1 - node.x0;
@@ -519,44 +517,95 @@ showTooltip(node, event) {
           gradient.addColorStop(1, d3.color(getNodeColor(node)).darker(0.5));
           
           this.ctx.fillStyle = gradient;
-          this.ctx.globalAlpha = node.children ? 0.85 : 0.9;
+          this.ctx.globalAlpha = 0.85;
+          
+          // Draw main area (excluding header)
+          this.ctx.fillRect(
+              node.x0, 
+              node.y0 + HEADER_HEIGHT, 
+              width, 
+              height - HEADER_HEIGHT
+          );
+      });
+  
+      // Then draw leaf nodes
+      this.nodes.forEach(node => {
+          if (!node.parent || node.children) return; // Skip root and parent nodes
+  
+          // Calculate node dimensions
+          const width = node.x1 - node.x0;
+          const height = node.y1 - node.y0;
+  
+          // Draw rectangle with gradient
+          const gradient = this.ctx.createLinearGradient(
+              node.x0, 
+              node.y0, 
+              node.x0, 
+              node.y1
+          );
+          gradient.addColorStop(0, getNodeColor(node));
+          gradient.addColorStop(1, d3.color(getNodeColor(node)).darker(0.5));
+          
+          this.ctx.fillStyle = gradient;
+          this.ctx.globalAlpha = 0.9;
           this.ctx.fillRect(node.x0, node.y0, width, height);
   
-          // Draw border
+          // Draw border for leaf nodes
           this.ctx.strokeStyle = '#ffffff';
           this.ctx.lineWidth = 1;
           this.ctx.globalAlpha = 1;
           this.ctx.strokeRect(node.x0, node.y0, width, height);
+      });
   
-          // For parent nodes, draw a header area
-          if (node.children && node.children.length > 0) {
-              // Draw header background
-              this.ctx.fillStyle = d3.color(getNodeColor(node)).darker(0.5);
-              this.ctx.globalAlpha = 1;
-              this.ctx.fillRect(node.x0, node.y0, width, HEADER_HEIGHT);
+      // Finally, draw headers of parent nodes (on top of everything)
+      this.nodes.forEach(node => {
+          if (!node.parent || !node.children) return; // Skip root and leaf nodes
   
-              // Draw header border
-              this.ctx.strokeStyle = '#ffffff';
-              this.ctx.lineWidth = 2;
+          const width = node.x1 - node.x0;
+  
+          // Draw header background
+          this.ctx.fillStyle = d3.color(getNodeColor(node)).darker(0.5);
+          this.ctx.globalAlpha = 1;
+          this.ctx.fillRect(node.x0, node.y0, width, HEADER_HEIGHT);
+  
+          // Draw header border
+          this.ctx.strokeStyle = '#ffffff';
+          this.ctx.lineWidth = 2;
+          this.ctx.beginPath();
+          this.ctx.moveTo(node.x0, node.y0 + HEADER_HEIGHT);
+          this.ctx.lineTo(node.x1, node.y0 + HEADER_HEIGHT);
+          this.ctx.stroke();
+  
+          // Draw side borders for parent nodes (only if not current root's direct child)
+          if (node.parent !== this.currentRoot) {
               this.ctx.beginPath();
-              this.ctx.moveTo(node.x0, node.y0 + HEADER_HEIGHT);
-              this.ctx.lineTo(node.x1, node.y0 + HEADER_HEIGHT);
+              this.ctx.moveTo(node.x0, node.y0);
+              this.ctx.lineTo(node.x0, node.y1);
+              this.ctx.moveTo(node.x1, node.y0);
+              this.ctx.lineTo(node.x1, node.y1);
               this.ctx.stroke();
-  
-              // Draw drill-down indicator in header
-              this.ctx.fillStyle = '#ffffff';
-              this.ctx.globalAlpha = 0.8;
-              this.ctx.beginPath();
-              const centerX = node.x1 - 15;
-              const centerY = node.y0 + HEADER_HEIGHT/2;
-              this.ctx.moveTo(centerX - 5, centerY - 3);
-              this.ctx.lineTo(centerX + 5, centerY - 3);
-              this.ctx.lineTo(centerX, centerY + 4);
-              this.ctx.closePath();
-              this.ctx.fill();
           }
   
-          // Draw text
+          // Draw drill-down indicator in header
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.globalAlpha = 0.8;
+          this.ctx.beginPath();
+          const centerX = node.x1 - 15;
+          const centerY = node.y0 + HEADER_HEIGHT/2;
+          this.ctx.moveTo(centerX - 5, centerY - 3);
+          this.ctx.lineTo(centerX + 5, centerY - 3);
+          this.ctx.lineTo(centerX, centerY + 4);
+          this.ctx.closePath();
+          this.ctx.fill();
+      });
+  
+      // Draw all text last (so it's always on top)
+      this.nodes.forEach(node => {
+          if (!node.parent) return; // Skip root node
+  
+          const width = node.x1 - node.x0;
+          const height = node.y1 - node.y0;
+  
           if (width > 30 && height > 15) {
               this.ctx.fillStyle = '#ffffff';
               this.ctx.font = node.children ? 'bold 12px Arial' : '10px Arial';
@@ -564,7 +613,7 @@ showTooltip(node, event) {
               
               const value = d3.format(',.2f')(node.value);
               const text = `${node.data.name} ($${value}M)`;
-              const maxWidth = width - (node.children ? 25 : 6); // Leave space for drill-down indicator
+              const maxWidth = width - (node.children ? 25 : 6);
               let truncatedText = text;
               
               while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
@@ -581,29 +630,11 @@ showTooltip(node, event) {
               this.ctx.fillText(
                   truncatedText,
                   node.x0 + 3,
-                  node.y0 + (node.children ? (HEADER_HEIGHT - 12)/2 : 3) // Center text in header for parent nodes
+                  node.y0 + (node.children ? (HEADER_HEIGHT - 12)/2 : 3)
               );
               this.ctx.shadowBlur = 0;
           }
       });
-
-      // Modify the cursor style check
-      this.canvas.addEventListener('mousemove', (event) => {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        const node = this.findNodeAtPosition(x, y);
-        
-        if (node) {
-            // Make all nodes clickable
-            this.canvas.style.cursor = 'pointer';
-            this.showTooltip(node, event);
-        } else {
-            this.canvas.style.cursor = 'default';
-            this.hideTooltip();
-        }
-    });
   }
 }
 
