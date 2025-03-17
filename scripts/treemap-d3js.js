@@ -85,13 +85,13 @@ class D3CanvasTreemap {
     // Helper function to create a node object from a row
     const createNode = (row) => ({
         name: row[columnIndex.nameEng],
-        value: parseFloat(row[columnIndex.marketCap]) || 0,
+        // Don't set value here - it will be calculated later for parent nodes
+        originalValue: parseFloat(row[columnIndex.marketCap]) || 0,
         type: row[columnIndex.type],
         sector: row[columnIndex.sector],
         ticker: row[columnIndex.ticker],
         industry: row[columnIndex.industry],
         exchange: row[columnIndex.exchange],
-        marketCap: parseFloat(row[columnIndex.marketCap]) || 0,
         nestedItemsCount: parseInt(row[columnIndex.nestedItemsCount]) || 0,
         rawData: row // Keep the original data for tooltip
     });
@@ -146,11 +146,42 @@ class D3CanvasTreemap {
         }
     });
 
+    // Function to recursively calculate values
+    const calculateValues = (node) => {
+        if (!node.children || node.children.length === 0) {
+            // Leaf node - use its original value
+            node.value = node.originalValue;
+            return node.value;
+        }
+
+        // Parent node - sum up children's values
+        node.value = node.children.reduce((sum, child) => {
+            return sum + calculateValues(child);
+        }, 0);
+
+        // Log value calculations for debugging
+        if (node === root || node.children.length > 0) {
+            console.log(`Node: ${node.name}`);
+            console.log(`  Children count: ${node.children.length}`);
+            console.log(`  Calculated value: ${node.value}`);
+            console.log(`  Original value: ${node.originalValue}`);
+            console.log(`  Children values:`, node.children.map(c => ({
+                name: c.name,
+                value: c.value
+            })));
+        }
+
+        return node.value;
+    };
+
+    // Calculate values starting from root
+    calculateValues(root);
+
     // Debug info
     console.log('Data transformation complete');
     console.log('Total nodes:', nodesMap.size);
     console.log('Root children:', root.children.length);
-    console.log('Root market cap:', root.marketCap);
+    console.log('Root market cap:', root.value);
 
     return root;
 }
