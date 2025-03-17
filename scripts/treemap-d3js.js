@@ -780,7 +780,7 @@ class TreemapInitializer {
         `;
     }
 
-    escapeHtml(unsafe: string): string {
+    escapeHtml(unsafe) {
         if (!unsafe) return '';
         return unsafe
             .replace(/&/g, "&amp;")
