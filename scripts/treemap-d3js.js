@@ -107,6 +107,37 @@ class D3CanvasTreemap {
               this.drillTo(index);
           }
       });
+
+      this.canvas.addEventListener('click', (event) => {
+          const rect = this.canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+  
+          const node = this.findNodeAtPosition(x, y);
+          if (node && node.children && node.children.length > 0) {
+              this.drillDown(node);
+          }
+      });
+  
+      // Add hover effect
+      this.canvas.addEventListener('mousemove', (event) => {
+          const rect = this.canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+  
+          const node = this.findNodeAtPosition(x, y);
+          
+          if (node && node.children && node.children.length > 0) {
+              this.canvas.style.cursor = 'pointer';
+              this.showTooltip(node, event);
+          } else if (node) {
+              this.canvas.style.cursor = 'default';
+              this.showTooltip(node, event);
+          } else {
+              this.canvas.style.cursor = 'default';
+              this.hideTooltip();
+          }
+      });
   }
 
     updatePathbar() {
@@ -156,8 +187,8 @@ class D3CanvasTreemap {
       // Generate treemap layout
       treemap(root);
   
-      // Store nodes for interaction
-      this.nodes = root.leaves();
+      // Store ALL nodes, not just leaves
+      this.nodes = root.descendants();
   
       // Update pathbar
       this.updatePathbar();
@@ -167,12 +198,13 @@ class D3CanvasTreemap {
   }
 
   findNodeAtPosition(x, y) {
-      return this.nodes.find(node => 
-          x >= node.x0 && 
-          x <= node.x1 && 
-          y >= node.y0 && 
-          y <= node.y1
-      );
+    // Reverse the array to check children before parents (they're on top)
+    return [...this.nodes].reverse().find(node => 
+        x >= node.x0 && 
+        x <= node.x1 && 
+        y >= node.y0 && 
+        y <= node.y1
+    );
   }
 
   transformData(securitiesData) {
@@ -299,37 +331,59 @@ class D3CanvasTreemap {
 }
 
   showTooltip(node, event) {
-      const tooltip = d3.select(this.tooltip);
-      tooltip.style('display', 'block')
-          .style('left', (event.pageX + 10) + 'px')
-          .style('top', (event.pageY + 10) + 'px')
-          .html(`
-              <div><strong>${node.data.name}</strong></div>
-              <div>Type: ${node.data.type}</div>
-              <div>Ticker: ${node.data.ticker}</div>
-              <div>Market Cap: $${node.data.value.toFixed(2)}</div>
-              ${node.data.sector ? `<div>Sector: ${node.data.sector}</div>` : ''}
-          `);
-  }
+        const tooltip = d3.select(this.tooltip);
+        const formatNumber = d3.format(',.2f');
+        
+        tooltip.style('display', 'block')
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY + 10) + 'px')
+            .html(`
+                <div style="font-weight: bold; margin-bottom: 5px;">
+                    ${node.data.name}
+                </div>
+                <div style="font-size: 12px; color: #ddd;">
+                    ${node.data.ticker}
+                </div>
+                <div style="margin-top: 5px;">
+                    Market Cap: $${formatNumber(node.value)}M
+                </div>
+                <div>
+                    Type: ${node.data.type}
+                </div>
+                ${node.children ? `
+                    <div style="margin-top: 5px; color: #8BE9FD;">
+                        Click to drill down (${node.children.length} items)
+                    </div>
+                ` : ''}
+            `);
+    }
 
   hideTooltip() {
       d3.select(this.tooltip).style('display', 'none');
   }
 
-  render() {
+    render() {
       // Clear canvas
       this.ctx.clearRect(0, 0, this.width, this.height);
   
       // Color scale
       const getNodeColor = (node) => {
           if (node.data.type === 'sector') {
-              return '#34495E';
+              // Darker blue for parent nodes
+              return node.children ? '#2C3E50' : '#34495E';
           }
           return '#3498DB';
       };
   
-      // Draw nodes
+      // Draw nodes from bottom to top (parents first, then children)
       this.nodes.forEach(node => {
+          // Skip root node
+          if (!node.parent) return;
+  
+          // Calculate node dimensions
+          const width = node.x1 - node.x0;
+          const height = node.y1 - node.y0;
+  
           // Draw rectangle with gradient
           const gradient = this.ctx.createLinearGradient(
               node.x0, 
@@ -341,37 +395,24 @@ class D3CanvasTreemap {
           gradient.addColorStop(1, d3.color(getNodeColor(node)).darker(0.5));
           
           this.ctx.fillStyle = gradient;
-          this.ctx.globalAlpha = 0.9;
-          this.ctx.fillRect(
-              node.x0,
-              node.y0,
-              node.x1 - node.x0,
-              node.y1 - node.y0
-          );
+          this.ctx.globalAlpha = node.children ? 0.85 : 0.9; // More transparent for parent nodes
+          this.ctx.fillRect(node.x0, node.y0, width, height);
   
           // Draw border
           this.ctx.strokeStyle = '#ffffff';
-          this.ctx.lineWidth = 1;
+          this.ctx.lineWidth = node.children ? 2 : 1; // Thicker border for parent nodes
           this.ctx.globalAlpha = 1;
-          this.ctx.strokeRect(
-              node.x0,
-              node.y0,
-              node.x1 - node.x0,
-              node.y1 - node.y0
-          );
+          this.ctx.strokeRect(node.x0, node.y0, width, height);
   
           // Draw text if node is large enough
-          const nodeWidth = node.x1 - node.x0;
-          const nodeHeight = node.y1 - node.y0;
-          
-          if (nodeWidth > 30 && nodeHeight > 15) {
+          if (width > 30 && height > 15) {
               this.ctx.fillStyle = '#ffffff';
-              this.ctx.font = '10px Arial';
+              this.ctx.font = node.children ? 'bold 12px Arial' : '10px Arial';
               this.ctx.textBaseline = 'top';
               
               const value = d3.format(',.2f')(node.value);
               const text = `${node.data.name} ($${value}M)`;
-              const maxWidth = nodeWidth - 6;
+              const maxWidth = width - 6;
               let truncatedText = text;
               
               while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
@@ -382,11 +423,29 @@ class D3CanvasTreemap {
                   truncatedText += '...';
               }
               
+              // Draw text with shadow for better readability
+              this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+              this.ctx.shadowBlur = 4;
               this.ctx.fillText(
                   truncatedText,
                   node.x0 + 3,
                   node.y0 + 3
               );
+              this.ctx.shadowBlur = 0;
+          }
+  
+          // Draw "click to drill down" indicator for parent nodes
+          if (node.children && node.children.length > 0 && width > 40 && height > 40) {
+              this.ctx.fillStyle = '#ffffff';
+              this.ctx.globalAlpha = 0.8;
+              this.ctx.beginPath();
+              const centerX = node.x0 + width - 15;
+              const centerY = node.y0 + 15;
+              this.ctx.moveTo(centerX - 5, centerY);
+              this.ctx.lineTo(centerX + 5, centerY);
+              this.ctx.lineTo(centerX, centerY + 7);
+              this.ctx.closePath();
+              this.ctx.fill();
           }
       });
   }
