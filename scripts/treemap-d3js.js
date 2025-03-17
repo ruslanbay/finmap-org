@@ -217,87 +217,103 @@ class D3CanvasTreemap {
   }
 
   render(data) {
-      this.currentData = data;
-      const hierarchicalData = this.transformData(data);
-      
-      // Create treemap layout
-      const treemap = d3.treemap()
-          .size([this.width, this.height])
-          .padding(1)
-          .round(true);
-      
-      // Create hierarchy and compute values
-      const root = d3.hierarchy(hierarchicalData)
-          .sum(d => d.value)
-          .sort((a, b) => b.value - a.value);
-      
-      // Generate treemap layout
-      treemap(root);
+    this.currentData = data;
+    const hierarchicalData = this.transformData(data);
+    
+    // Create treemap layout with custom value accessor
+    const treemap = d3.treemap()
+        .size([this.width, this.height])
+        .padding(1)
+        .round(true);
+    
+    // Create hierarchy with custom value accessor
+    const root = d3.hierarchy(hierarchicalData)
+        .sum(d => d.type === 'sector' ? 0 : d.value) // Only count non-sector nodes
+        .sort((a, b) => b.value - a.value);
+    
+    // Generate treemap layout
+    treemap(root);
 
-      // Store nodes for interaction
-      this.nodes = root.leaves();
+    // Store nodes for interaction
+    this.nodes = root.leaves();
 
-      // Clear canvas
-      this.ctx.clearRect(0, 0, this.width, this.height);
+    // Clear canvas
+    this.ctx.clearRect(0, 0, this.width, this.height);
 
-      // Color scale for different types
-      const colorScale = d3.scaleOrdinal()
-          .domain(['sector', 'Pokemon', 'Stadium'])
-          .range(['#4CAF50', '#2196F3', '#FF9800']);
+    // Enhanced color scale for hierarchy levels
+    const getNodeColor = (node) => {
+        if (node.data.type === 'sector') {
+            return '#34495E';  // darker color for sectors
+        }
+        return '#3498DB';  // lighter color for leaves
+    };
 
-      // Draw nodes
-      this.nodes.forEach(node => {
-          // Draw rectangle
-          this.ctx.fillStyle = colorScale(node.data.type);
-          this.ctx.globalAlpha = 0.8;
-          this.ctx.fillRect(
-              node.x0,
-              node.y0,
-              node.x1 - node.x0,
-              node.y1 - node.y0
-          );
+    // Draw nodes
+    this.nodes.forEach(node => {
+        // Draw rectangle
+        this.ctx.fillStyle = getNodeColor(node);
+        this.ctx.globalAlpha = 0.8;
+        this.ctx.fillRect(
+            node.x0,
+            node.y0,
+            node.x1 - node.x0,
+            node.y1 - node.y0
+        );
 
-          // Draw border
-          this.ctx.strokeStyle = '#ffffff';
-          this.ctx.lineWidth = 1;
-          this.ctx.globalAlpha = 1;
-          this.ctx.strokeRect(
-              node.x0,
-              node.y0,
-              node.x1 - node.x0,
-              node.y1 - node.y0
-          );
+        // Draw border
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 1;
+        this.ctx.globalAlpha = 1;
+        this.ctx.strokeRect(
+            node.x0,
+            node.y0,
+            node.x1 - node.x0,
+            node.y1 - node.y0
+        );
 
-          // Draw text if node is large enough
-          const nodeWidth = node.x1 - node.x0;
-          const nodeHeight = node.y1 - node.y0;
-          
-          if (nodeWidth > 30 && nodeHeight > 15) {
-              this.ctx.fillStyle = '#ffffff';
-              this.ctx.font = '10px Arial';
-              this.ctx.textBaseline = 'top';
-              
-              // Truncate text if needed
-              const text = node.data.name;
-              const maxWidth = nodeWidth - 6;
-              let truncatedText = text;
-              
-              while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
-                  truncatedText = truncatedText.slice(0, -1);
-              }
-              
-              if (truncatedText !== text) {
-                  truncatedText += '...';
-              }
-              
-              this.ctx.fillText(
-                  truncatedText,
-                  node.x0 + 3,
-                  node.y0 + 3
-              );
-          }
-      });
-  }
+        // Draw text if node is large enough
+        const nodeWidth = node.x1 - node.x0;
+        const nodeHeight = node.y1 - node.y0;
+        
+        if (nodeWidth > 30 && nodeHeight > 15) {
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = '10px Arial';
+            this.ctx.textBaseline = 'top';
+            
+            // Add value to the label
+            const text = `${node.data.name} (${node.value.toFixed(2)})`;
+            const maxWidth = nodeWidth - 6;
+            let truncatedText = text;
+            
+            while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
+                truncatedText = truncatedText.slice(0, -1);
+            }
+            
+            if (truncatedText !== text) {
+                truncatedText += '...';
+            }
+            
+            this.ctx.fillText(
+                truncatedText,
+                node.x0 + 3,
+                node.y0 + 3
+            );
+        }
+    });
+
+    // Debug: print hierarchy information
+    const printNode = (node, level = 0) => {
+        const indent = '  '.repeat(level);
+        console.log(`${indent}${node.data.name}:`);
+        console.log(`${indent}  type: ${node.data.type}`);
+        console.log(`${indent}  value: ${node.value}`);
+        if (node.children) {
+            console.log(`${indent}  children sum: ${node.children.reduce((sum, child) => sum + child.value, 0)}`);
+            node.children.forEach(child => printNode(child, level + 1));
+        }
+    };
+    printNode(root);
+}
 }
 
 // Initialize and render
