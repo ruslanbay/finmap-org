@@ -83,27 +83,25 @@ class MinimalTreemap {
         });
     }
 
+    // Also update the updateLayout method to maintain consistency:
     updateLayout() {
-        // Reuse existing hierarchy data
         if (!this.cache.hierarchy) {
             this.cache.hierarchy = d3.hierarchy(this.currentRoot.data)
                 .sum(d => d.type === 'sector' ? 0 : d.value)
                 .sort((a, b) => b.value - a.value);
         }
-
-        // Only update treemap layout
+    
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(24)
+            .paddingTop(this.currentRoot === this.path[0] ? 0 : 24) // No padding for root node
             .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
             .round(true);
-
+    
         treemap(this.cache.hierarchy);
         this.nodes = this.cache.hierarchy.descendants();
         
-        // Just render without updating hierarchy
         this.render();
     }
 
@@ -206,15 +204,15 @@ class MinimalTreemap {
         this.cache.hierarchy = d3.hierarchy(node.data)
             .sum(d => d.type === 'sector' ? 0 : d.value)
             .sort((a, b) => b.value - a.value);
-
+    
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(24)
+            .paddingTop(node === this.path[0] ? 0 : 24) // No padding for root node
             .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
             .round(true);
-
+    
         treemap(this.cache.hierarchy);
         this.nodes = this.cache.hierarchy.descendants();
         
@@ -455,8 +453,8 @@ document.head.insertAdjacentHTML('beforeend', `
 const treemap = new MinimalTreemap('container');
 
 // Load and render data
-// const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
-const url = 'https://raw.githubusercontent.com/finmap-org/data-us/refs/heads/main/marketdata/2025/03/14/us-all.json';
+const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
+// const url = 'https://raw.githubusercontent.com/finmap-org/data-us/refs/heads/main/marketdata/2025/03/14/us-all.json';
 
 fetch(url)
     .then(response => response.json())
