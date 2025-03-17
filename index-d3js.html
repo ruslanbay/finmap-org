@@ -3,11 +3,14 @@
 
 <head>
   <title>WebGL Accelerated Treemap with Images</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     #container {
       width: 100vw;
       height: 100vh;
       position: relative;
+      overflow: hidden;
     }
 
     canvas {
@@ -26,6 +29,7 @@
       font-size: 12px;
       pointer-events: none;
       display: none;
+      z-index: 1000;
     }
   </style>
 </head>
@@ -41,7 +45,7 @@
   <!-- Load PIXI.js v8.8.1 -->
   <script src="https://pixijs.download/v8.8.1/pixi.min.js"></script>
 
-  <!-- Add error handling -->
+  <!-- Error tracking -->
   <script>
     window.addEventListener('error', function (event) {
       console.error('Global error:', {
@@ -49,7 +53,8 @@
         source: event.source,
         lineno: event.lineno,
         colno: event.colno,
-        error: event.error
+        error: event.error,
+        timestamp: new Date().toISOString()
       });
     });
   </script>
