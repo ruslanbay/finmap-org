@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>WebGL Accelerated Treemap with Images</title>
+  <style>
+    #container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #tooltip {
+      position: absolute;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      border-radius: 4px;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <div id="tooltip"></div>
+  </div>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://pixijs.download/v8.8.1/pixi.min.js"></script>
+  <script src="scripts/treemap-d3js.js"></script>
+</body>
+
+</html>
