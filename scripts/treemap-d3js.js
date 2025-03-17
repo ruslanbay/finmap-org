@@ -54,6 +54,10 @@ class D3CanvasTreemap {
       
       // Bind events
       this.bindEvents();
+
+      // Initialize path with just the root node
+      this.path = [];
+      this.currentRoot = null;
   }
 
     bindEvents() {
@@ -114,7 +118,9 @@ class D3CanvasTreemap {
       });
   }
 
-    updatePathbar() {
+  updatePathbar() {
+      console.log('Updating pathbar with path:', this.path.map(n => n.data.name));
+      
       this.pathbar.innerHTML = this.path
           .map((node, index) => `
               <span 
@@ -124,6 +130,7 @@ class D3CanvasTreemap {
                       background: ${index === this.path.length - 1 ? '#34495E' : 'transparent'};
                       border-radius: 4px;
                       margin-right: 5px;
+                      ${index < this.path.length - 1 ? 'color: #3498DB;' : ''}
                   "
                   data-index="${index}"
               >
@@ -135,28 +142,56 @@ class D3CanvasTreemap {
   }
   
   drillDown(node) {
-      console.log('Drilling down to:', node.data.name);
-      this.path.push(node);
+      // Log for debugging
+      console.log('Attempting to drill down to:', node.data.name);
+      console.log('Current path:', this.path.map(n => n.data.name));
+  
+      // Don't add to path if it's already the current node
+      if (this.currentRoot === node) {
+          console.log('Already at this node, ignoring drill down');
+          return;
+      }
+  
+      // Clear any existing path beyond current node if it exists
+      const currentIndex = this.path.findIndex(n => n === node);
+      if (currentIndex !== -1) {
+          // If node is already in path, trim path up to this node
+          this.path = this.path.slice(0, currentIndex + 1);
+          console.log('Node found in path, trimmed path to:', this.path.map(n => n.data.name));
+      } else {
+          // Only add to path if it's a new node
+          this.path.push(node);
+          console.log('Added node to path, new path:', this.path.map(n => n.data.name));
+      }
+  
       this.renderFromNode(node);
   }
   
   drillTo(index) {
-      this.path = this.path.slice(0, index + 1);
-      this.renderFromNode(this.path[this.path.length - 1]);
+      console.log('Drilling to index:', index);
+      console.log('Current path:', this.path.map(n => n.data.name));
+      
+      if (index >= 0 && index < this.path.length) {
+          // Trim the path to the selected index
+          this.path = this.path.slice(0, index + 1);
+          console.log('New path:', this.path.map(n => n.data.name));
+          this.renderFromNode(this.path[index]);
+      }
   }
   
   renderFromNode(node) {
+      console.log('Rendering node:', node.data.name);
       this.currentRoot = node;
       
-      // Check if this is a leaf node (no children)
+      // Handle leaf node
       if (!node.data.children || node.data.children.length === 0) {
-          console.log('Rendering leaf details for:', node.data.name);
+          console.log('Rendering leaf details');
           this.renderLeafDetails(node);
           return;
       }
       
       // Regular treemap rendering for non-leaf nodes
-      console.log('Rendering treemap for:', node.data.name);
+      console.log('Rendering treemap');
       const treemap = d3.treemap()
           .size([this.width, this.height])
           .padding(1)
