@@ -297,18 +297,23 @@ class D3CanvasTreemap extends TreemapRenderer {
 
     bindEvents() {
         window.addEventListener('resize', () => {
+            // Update dimensions
             this.width = this.container.clientWidth;
-            this.height = this.container.clientHeight - 40;
+            this.height = this.container.clientHeight - 40; // Subtract pathbar height
             
+            // Update canvas size
             this.canvas.width = this.width * window.devicePixelRatio;
             this.canvas.height = this.height * window.devicePixelRatio;
             this.canvas.style.width = this.width + 'px';
             this.canvas.style.height = this.height + 'px';
             
+            // Reset context scale
+            this.ctx = this.canvas.getContext('2d');
             this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
             
-            if (this.currentData) {
-                this.render(this.currentData);
+            // Re-render from current root
+            if (this.currentRoot) {
+                this.renderFromNode(this.currentRoot);
             }
         });
     
