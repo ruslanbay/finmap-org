@@ -3,25 +3,23 @@ class WebGLTreemap {
     this.container = document.getElementById(containerId);
     this.tooltip = document.getElementById('tooltip');
 
-    // Initialize PIXI Application with v8 syntax
+    // Initialize PIXI Application with v8.8.1 syntax
     this.app = new PIXI.Application({
       width: this.container.clientWidth,
       height: this.container.clientHeight,
       backgroundColor: 0xffffff,
       antialias: true,
       resolution: window.devicePixelRatio || 1,
-      // Add new required properties for PIXI v8
-      preference: 'webgl2',
-      hello: true // enables the "Hello WebGL" message
+      // PIXI v8 specific options
+      preference: 'webgl2'
     });
 
-    // Create the view and append it
-    const view = this.app.view;
-    if (view instanceof HTMLCanvasElement) {
-      this.container.appendChild(view);
-    } else {
-      throw new Error('Failed to create PIXI canvas element');
-    }
+    // In PIXI v8, we need to render first
+    this.app.renderer.render(this.app.stage);
+
+    // Then we can access the view
+    const canvas = this.app.renderer.view;
+    this.container.appendChild(canvas);
 
     // Create container for treemap nodes
     this.nodesContainer = new PIXI.Container();
@@ -35,37 +33,53 @@ class WebGLTreemap {
   }
 
   bindEvents() {
-    // Handle hover events - Updated for PIXI v8
-    const view = this.app.view;
-    if (view instanceof HTMLCanvasElement) {
-      view.addEventListener('mousemove', (e) => {
-        const bounds = view.getBoundingClientRect();
-        const x = e.clientX - bounds.left;
-        const y = e.clientY - bounds.top;
+    // Handle hover events
+    const canvas = this.app.renderer.view;
+    canvas.addEventListener('mousemove', (e) => {
+      const bounds = canvas.getBoundingClientRect();
+      const x = e.clientX - bounds.left;
+      const y = e.clientY - bounds.top;
 
-        const hit = this.nodesContainer.children.find(node => {
-          return x >= node.x && x <= node.x + node.width &&
-            y >= node.y && y <= node.y + node.height;
-        });
-
-        if (hit) {
-          this.showTooltip(hit.data, e.clientX, e.clientY);
-        } else {
-          this.hideTooltip();
-        }
+      const hit = this.nodesContainer.children.find(node => {
+        return x >= node.x && x <= node.x + node.width &&
+          y >= node.y && y <= node.y + node.height;
       });
-    }
+
+      if (hit) {
+        this.showTooltip(hit.data, e.clientX, e.clientY);
+      } else {
+        this.hideTooltip();
+      }
+    });
 
     // Handle window resize
     window.addEventListener('resize', () => {
-      this.app.renderer.resize(
-        this.container.clientWidth,
-        this.container.clientHeight
-      );
+      const width = this.container.clientWidth;
+      const height = this.container.clientHeight;
+
+      this.app.renderer.resize(width, height);
+
       if (this.currentData) {
         this.render(this.currentData);
       }
     });
+  }
+
+  async loadTexture(url) {
+    if (this.textureCache.has(url)) {
+      return this.textureCache.get(url);
+    }
+
+    try {
+      // Use PIXI.Assets for texture loading in v8
+      const texture = await PIXI.Assets.load(url);
+      this.textureCache.set(url, texture);
+      return texture;
+    } catch (error) {
+      console.error('Failed to load texture:', url, error);
+      // Load fallback texture
+      return PIXI.Assets.load('https://via.placeholder.com/200');
+    }
   }
 
   // ... rest of your code remains the same ...
@@ -74,27 +88,29 @@ class WebGLTreemap {
 // Initialize and render with proper error handling
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    console.log('PIXI Version:', PIXI.VERSION);
     console.log('Initializing application...');
-    console.log('Time:', new Date().toISOString());
-    console.log('User:', window.ruslanbay || 'unknown');
 
-    // Initialize PIXI
+    // Initialize PIXI Assets
     await PIXI.Assets.init();
 
-    // Create treemap instance
     const treemap = new WebGLTreemap('container');
 
-    // Example data (replace with your actual data)
-    const data = {
-      securities: {
-        columns: ["exchange", "country", "type", "sector", /* ... */],
-        data: [/* your data array */]
+    // Load your data
+    try {
+      const response = await fetch('your-data-endpoint.json');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+      const data = await response.json();
 
-    console.log('Rendering treemap...');
-    await treemap.render(data);
-    console.log('Render complete');
+      console.log('Data loaded, rendering treemap...');
+      await treemap.render(data);
+      console.log('Render complete');
+    } catch (error) {
+      console.error('Data loading or rendering error:', error);
+      throw error;
+    }
 
   } catch (error) {
     console.error('Failed to initialize or render treemap:', error);
@@ -108,6 +124,8 @@ document.addEventListener('DOMContentLoaded', async () => {
               <p>User: ${window.ruslanbay || 'unknown'}</p>
               <p>PIXI Version: ${PIXI.VERSION}</p>
               <p>Browser: ${navigator.userAgent}</p>
+              <p>Screen: ${window.innerWidth}x${window.innerHeight}</p>
+              <p>WebGL Support: ${PIXI.utils.isWebGLSupported()}</p>
           </div>
       `;
   }
