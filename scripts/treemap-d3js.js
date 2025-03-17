@@ -85,15 +85,15 @@ class D3CanvasTreemap {
     // Helper function to create a node object from a row
     const createNode = (row) => ({
         name: row[columnIndex.nameEng],
-        // Don't set value here - it will be calculated later for parent nodes
-        originalValue: parseFloat(row[columnIndex.marketCap]) || 0,
+        // Only set marketCap for non-sector nodes
+        value: row[columnIndex.type] !== 'sector' ? parseFloat(row[columnIndex.marketCap]) || 0 : 0,
         type: row[columnIndex.type],
         sector: row[columnIndex.sector],
         ticker: row[columnIndex.ticker],
         industry: row[columnIndex.industry],
         exchange: row[columnIndex.exchange],
         nestedItemsCount: parseInt(row[columnIndex.nestedItemsCount]) || 0,
-        rawData: row // Keep the original data for tooltip
+        rawData: row
     });
 
     // Find root node (where sector is empty)
@@ -149,27 +149,25 @@ class D3CanvasTreemap {
     // Function to recursively calculate values
     const calculateValues = (node) => {
         if (!node.children || node.children.length === 0) {
-            // Leaf node - use its original value
-            node.value = node.originalValue;
+            // Leaf node - already has its value set
             return node.value;
         }
 
-        // Parent node - sum up children's values
+        // For parent nodes, sum up only their children's values
         node.value = node.children.reduce((sum, child) => {
             return sum + calculateValues(child);
         }, 0);
 
-        // Log value calculations for debugging
-        if (node === root || node.children.length > 0) {
-            console.log(`Node: ${node.name}`);
-            console.log(`  Children count: ${node.children.length}`);
-            console.log(`  Calculated value: ${node.value}`);
-            console.log(`  Original value: ${node.originalValue}`);
-            console.log(`  Children values:`, node.children.map(c => ({
-                name: c.name,
-                value: c.value
-            })));
-        }
+        // Debug logging
+        console.log(`Node: ${node.name}`);
+        console.log(`  Type: ${node.type}`);
+        console.log(`  Children count: ${node.children.length}`);
+        console.log(`  Total value (sum of children): ${node.value}`);
+        console.log(`  Children:`, node.children.map(c => ({
+            name: c.name,
+            value: c.value,
+            type: c.type
+        })));
 
         return node.value;
     };
@@ -177,11 +175,25 @@ class D3CanvasTreemap {
     // Calculate values starting from root
     calculateValues(root);
 
+    // Verify calculations
+    const verifyNode = (node) => {
+        if (node.children && node.children.length > 0) {
+            const childrenSum = node.children.reduce((sum, child) => sum + child.value, 0);
+            if (Math.abs(childrenSum - node.value) > 0.01) {
+                console.error(`Value mismatch in node ${node.name}:`);
+                console.error(`  Node value: ${node.value}`);
+                console.error(`  Sum of children: ${childrenSum}`);
+            }
+            node.children.forEach(verifyNode);
+        }
+    };
+    verifyNode(root);
+
     // Debug info
     console.log('Data transformation complete');
     console.log('Total nodes:', nodesMap.size);
     console.log('Root children:', root.children.length);
-    console.log('Root market cap:', root.value);
+    console.log('Root value (total market cap):', root.value);
 
     return root;
 }
