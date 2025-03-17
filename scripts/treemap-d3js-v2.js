@@ -114,7 +114,6 @@ class MinimalTreemap {
             cancelAnimationFrame(this.rafId);
         }
     }
-    }
 
     setupCanvas() {
         this.width = this.container.clientWidth;
