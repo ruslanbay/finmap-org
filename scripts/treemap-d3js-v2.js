@@ -102,15 +102,18 @@ class MinimalTreemap {
         
         this.currentRoot = node;
         
-        // Create treemap layout
+        // Create treemap layout with padding
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .padding(1)
+            .paddingTop(24)    // Add padding for headers
+            .paddingRight(1)   // Keep small padding for borders
+            .paddingBottom(1)
+            .paddingLeft(1)
             .round(true);
         
         // Process data
         const root = d3.hierarchy(node.data)
-            .sum(d => d.value)
+            .sum(d => d.type === 'sector' ? 0 : d.value)
             .sort((a, b) => b.value - a.value);
         
         treemap(root);
@@ -122,8 +125,6 @@ class MinimalTreemap {
     }
 
     render() {
-        const HEADER_HEIGHT = 24; // Height for parent node headers
-        
         // Clear canvas
         this.ctx.clearRect(0, 0, this.width, this.height);
         
@@ -139,38 +140,28 @@ class MinimalTreemap {
                 
                 // Draw main area
                 this.ctx.fillStyle = '#2C3E50';
-                this.ctx.fillRect(
-                    node.x0, 
-                    node.y0 + HEADER_HEIGHT, 
-                    width, 
-                    height - HEADER_HEIGHT
-                );
+                this.ctx.fillRect(node.x0, node.y0, width, height);
                 
-                // Draw header background
+                // Draw header
                 this.ctx.fillStyle = '#34495E';
-                this.ctx.fillRect(
-                    node.x0,
-                    node.y0,
-                    width,
-                    HEADER_HEIGHT
-                );
+                this.ctx.fillRect(node.x0, node.y0, width, 24);
                 
                 // Draw header text
                 this.ctx.fillStyle = '#fff';
                 this.ctx.font = 'bold 12px Arial';
                 this.ctx.textBaseline = 'middle';
-                const text = node.data.name;
+                const text = `${node.data.name} ($${d3.format(',.2f')(node.value)}M)`;
                 const truncatedText = this.getTruncatedText(text, width - 25);
                 this.ctx.fillText(
                     truncatedText,
                     node.x0 + 4,
-                    node.y0 + HEADER_HEIGHT/2
+                    node.y0 + 12
                 );
                 
-                // Draw indicator for parent nodes
+                // Draw drill-down indicator
                 this.drawDrillDownIndicator(
                     node.x1 - 15,
-                    node.y0 + HEADER_HEIGHT/2
+                    node.y0 + 12
                 );
                 
             } else {
@@ -182,13 +173,13 @@ class MinimalTreemap {
                 if (width > 30 && height > 20) {
                     this.ctx.fillStyle = '#fff';
                     this.ctx.font = '11px Arial';
-                    this.ctx.textBaseline = 'top';
-                    const text = node.data.name;
+                    this.ctx.textBaseline = 'middle';
+                    const text = `${node.data.name} ($${d3.format(',.2f')(node.value)}M)`;
                     const truncatedText = this.getTruncatedText(text, width - 6);
                     this.ctx.fillText(
                         truncatedText,
                         node.x0 + 3,
-                        node.y0 + 3
+                        node.y0 + height/2
                     );
                 }
             }
