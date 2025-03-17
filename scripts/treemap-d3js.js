@@ -173,28 +173,100 @@ class D3CanvasTreemap {
   renderFromNode(node) {
       this.currentRoot = node;
       
-      // Create treemap layout
+      // Handle leaf node differently
+      if (!node.data.children || node.data.children.length === 0) {
+          this.renderLeafDetails(node);
+          return;
+      }
+      
+      // Regular treemap rendering for non-leaf nodes
       const treemap = d3.treemap()
           .size([this.width, this.height])
           .padding(1)
           .round(true);
       
-      // Create hierarchy starting from current node
       const root = d3.hierarchy(node.data)
           .sum(d => d.type === 'sector' ? 0 : d.value)
           .sort((a, b) => b.value - a.value);
       
-      // Generate treemap layout
       treemap(root);
-  
-      // Store ALL nodes, not just leaves
       this.nodes = root.descendants();
+      this.updatePathbar();
+      this.render();
+  }
   
+  renderLeafDetails(node) {
+      // Clear canvas
+      this.ctx.clearRect(0, 0, this.width, this.height);
+      
       // Update pathbar
       this.updatePathbar();
+      
+      // Store single node for interaction
+      this.nodes = [node];
   
-      // Render visualization
-      this.render();
+      // Draw detailed view
+      const padding = 20;
+      const x = padding;
+      const y = padding;
+      const width = this.width - 2 * padding;
+      const height = this.height - 2 * padding;
+  
+      // Draw background
+      this.ctx.fillStyle = '#2C3E50';
+      this.ctx.globalAlpha = 0.9;
+      this.ctx.fillRect(x, y, width, height);
+      this.ctx.strokeStyle = '#ffffff';
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeRect(x, y, width, height);
+  
+      // Draw content
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.font = 'bold 16px Arial';
+      this.ctx.textBaseline = 'top';
+      this.ctx.globalAlpha = 1;
+  
+      let currentY = y + padding;
+      const lineHeight = 24;
+  
+      // Helper function to draw a row
+      const drawRow = (label, value) => {
+          if (value !== undefined && value !== '') {
+              this.ctx.font = 'bold 14px Arial';
+              this.ctx.fillText(label + ':', x + padding, currentY);
+              this.ctx.font = '14px Arial';
+              this.ctx.fillText(value, x + padding + 150, currentY);
+              currentY += lineHeight;
+          }
+      };
+  
+      // Draw title
+      this.ctx.font = 'bold 20px Arial';
+      this.ctx.fillText(node.data.name, x + padding, currentY);
+      currentY += lineHeight * 1.5;
+  
+      // Draw details
+      const formatNumber = d3.format(',.2f');
+      drawRow('Ticker', node.data.ticker);
+      drawRow('Type', node.data.type);
+      drawRow('Market Cap', `$${formatNumber(node.value)}M`);
+      drawRow('Exchange', node.data.exchange);
+      if (node.data.sector) drawRow('Sector', node.data.sector);
+      if (node.data.industry) drawRow('Industry', node.data.industry);
+      
+      // Add more details from rawData if available
+      if (node.data.rawData) {
+          if (node.data.rawData[columnIndex.priceLastSale]) 
+              drawRow('Last Sale Price', node.data.rawData[columnIndex.priceLastSale]);
+          if (node.data.rawData[columnIndex.priceChangePct]) 
+              drawRow('Price Change %', `${node.data.rawData[columnIndex.priceChangePct]}%`);
+          if (node.data.rawData[columnIndex.volume]) 
+              drawRow('Volume', formatNumber(node.data.rawData[columnIndex.volume]));
+          if (node.data.rawData[columnIndex.numTrades]) 
+              drawRow('Number of Trades', formatNumber(node.data.rawData[columnIndex.numTrades]));
+          if (node.data.rawData[columnIndex.listedFrom]) 
+              drawRow('Listed From', node.data.rawData[columnIndex.listedFrom]);
+      }
   }
 
   // Modify findNodeAtPosition to prioritize header clicks for parent nodes
@@ -346,33 +418,44 @@ class D3CanvasTreemap {
     return root;
 }
 
-  showTooltip(node, event) {
-        const tooltip = d3.select(this.tooltip);
-        const formatNumber = d3.format(',.2f');
-        
-        tooltip.style('display', 'block')
-            .style('left', (event.pageX + 10) + 'px')
-            .style('top', (event.pageY + 10) + 'px')
-            .html(`
-                <div style="font-weight: bold; margin-bottom: 5px;">
-                    ${node.data.name}
-                </div>
-                <div style="font-size: 12px; color: #ddd;">
-                    ${node.data.ticker}
-                </div>
-                <div style="margin-top: 5px;">
-                    Market Cap: $${formatNumber(node.value)}M
-                </div>
-                <div>
-                    Type: ${node.data.type}
-                </div>
-                ${node.children ? `
-                    <div style="margin-top: 5px; color: #8BE9FD;">
-                        Click to drill down (${node.children.length} items)
-                    </div>
-                ` : ''}
-            `);
+showTooltip(node, event) {
+    const tooltip = d3.select(this.tooltip);
+    const formatNumber = d3.format(',.2f');
+    
+    let tooltipContent = `
+        <div style="font-weight: bold; margin-bottom: 5px;">
+            ${node.data.name}
+        </div>
+        <div style="font-size: 12px; color: #ddd;">
+            ${node.data.ticker}
+        </div>
+        <div style="margin-top: 5px;">
+            Market Cap: $${formatNumber(node.value)}M
+        </div>
+        <div>
+            Type: ${node.data.type}
+        </div>
+    `;
+  
+    if (node.children && node.children.length > 0) {
+        tooltipContent += `
+            <div style="margin-top: 5px; color: #8BE9FD;">
+                Click to view ${node.children.length} items
+            </div>
+        `;
+    } else {
+        tooltipContent += `
+            <div style="margin-top: 5px; color: #8BE9FD;">
+                Click to view details
+            </div>
+        `;
     }
+  
+    tooltip.style('display', 'block')
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY + 10) + 'px')
+        .html(tooltipContent);
+  }
 
   hideTooltip() {
       d3.select(this.tooltip).style('display', 'none');
@@ -481,6 +564,24 @@ class D3CanvasTreemap {
               this.ctx.shadowBlur = 0;
           }
       });
+
+      // Modify the cursor style check
+      this.canvas.addEventListener('mousemove', (event) => {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const node = this.findNodeAtPosition(x, y);
+        
+        if (node) {
+            // Make all nodes clickable
+            this.canvas.style.cursor = 'pointer';
+            this.showTooltip(node, event);
+        } else {
+            this.canvas.style.cursor = 'default';
+            this.hideTooltip();
+        }
+    });
   }
 }
 
