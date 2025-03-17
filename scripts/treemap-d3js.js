@@ -1,7 +1,9 @@
 // plot treemap using d3.js (canvas) for better performance
 
-class D3CanvasTreemap {
+class D3CanvasTreemap extends TreemapRenderer {
     constructor(containerId) {
+        super(); // Call TreemapRenderer's constructor
+        
         // Initialize container and tooltip
         this.container = document.getElementById(containerId);
         this.tooltip = document.getElementById('tooltip');
