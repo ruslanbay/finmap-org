@@ -1,3 +1,5 @@
+// plot treemap using d3.js (canvas) for better performance
+
 class D3CanvasTreemap {
   constructor(containerId) {
       this.container = document.getElementById(containerId);
