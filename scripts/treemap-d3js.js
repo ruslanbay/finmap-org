@@ -252,52 +252,65 @@ class WebGLTreemap {
 // Initialize and render with proper error handling
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    console.log('Current Date and Time (UTC):', new Date().toISOString());
-    console.log('Current User\'s Login:', window.ruslanbay || 'unknown');
-    console.log('PIXI Version:', PIXI.VERSION);
-    console.log('Initializing application...');
+      const currentDate = new Date();
+      console.log('Current Date and Time (UTC):', 
+          currentDate.toISOString().slice(0, 19).replace('T', ' '));
+      console.log('Current User\'s Login:', window.ruslanbay || 'unknown');
+      console.log('PIXI Version:', PIXI.VERSION);
+      console.log('Initializing application...');
 
-    // Check WebGL2 support
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2');
-    if (!gl) {
-      throw new Error('WebGL2 is not supported in your browser');
-    }
-
-    // Initialize PIXI Assets
-    if (PIXI.Assets) {
-      await PIXI.Assets.init();
-    }
-
-    const treemap = new WebGLTreemap('container');
-
-    // Example data (replace with your actual data)
-    const data = {
-      securities: {
-        columns: ["exchange", "country", "type", "sector"],
-        data: [/* your data array */]
+      // Check WebGL2 support
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl2');
+      if (!gl) {
+          throw new Error('WebGL2 is not supported in your browser');
       }
-    };
 
-    console.log('Rendering treemap...');
-    await treemap.render(data);
-    console.log('Render complete');
+      // Initialize PIXI Assets
+      if (PIXI.Assets) {
+          await PIXI.Assets.init();
+      }
+
+      const treemap = new WebGLTreemap('container');
+      
+      // Fetch data from remote JSON
+      console.log('Fetching data...');
+      try {
+          const response = await fetch('https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json');
+          if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log('Data fetched successfully');
+          
+          // Validate data structure
+          if (!data.securities || !data.securities.columns || !data.securities.data) {
+              throw new Error('Invalid data structure in JSON');
+          }
+
+          console.log('Rendering treemap...');
+          await treemap.render(data);
+          console.log('Render complete');
+      } catch (fetchError) {
+          console.error('Error fetching or parsing data:', fetchError);
+          throw new Error(`Data loading failed: ${fetchError.message}`);
+      }
 
   } catch (error) {
-    console.error('Failed to initialize or render treemap:', error);
-    const container = document.getElementById('container');
-    container.innerHTML = `
-            <div style="padding: 20px; color: red;">
-                <h3>Error Initializing Treemap</h3>
-                <p>Error: ${error.message}</p>
-                <p>Stack: ${error.stack}</p>
-                <p>Time: ${new Date().toISOString()}</p>
-                <p>User: ${window.ruslanbay || 'unknown'}</p>
-                <p>PIXI Version: ${PIXI.VERSION}</p>
-                <p>Browser: ${navigator.userAgent}</p>
-                <p>Screen: ${window.innerWidth}x${window.innerHeight}</p>
-                <p>WebGL2 Support: ${!!window.WebGL2RenderingContext}</p>
-            </div>
-        `;
+      console.error('Failed to initialize or render treemap:', error);
+      const container = document.getElementById('container');
+      container.innerHTML = `
+          <div style="padding: 20px; color: red;">
+              <h3>Error Initializing Treemap</h3>
+              <p>Error: ${error.message}</p>
+              <p>Stack: ${error.stack}</p>
+              <p>Time: ${new Date().toISOString().slice(0, 19).replace('T', ' ')}</p>
+              <p>User: ${window.ruslanbay || 'unknown'}</p>
+              <p>PIXI Version: ${PIXI.VERSION}</p>
+              <p>Browser: ${navigator.userAgent}</p>
+              <p>Screen: ${window.innerWidth}x${window.innerHeight}</p>
+              <p>WebGL2 Support: ${!!window.WebGL2RenderingContext}</p>
+          </div>
+      `;
   }
 });
