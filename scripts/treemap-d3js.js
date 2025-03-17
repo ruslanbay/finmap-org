@@ -673,7 +673,7 @@ class TreemapInitializer {
     static CONTAINER_ID = 'container';
 
     constructor() {
-        this.timestamp = '2025-03-17 11:46:35';
+        this.timestamp = '2025-03-17 11:51:04';
         this.userLogin = 'ruslanbay';
     }
 
@@ -721,7 +721,7 @@ class TreemapInitializer {
         return loadingDiv;
     }
 
-    async fetchData(): Promise<any> {
+    async fetchData() {
         const response = await fetch(TreemapInitializer.DATA_URL);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
