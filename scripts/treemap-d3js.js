@@ -1,4 +1,242 @@
-// plot treemap using d3.js (canvas) for better performance
+class TreemapRenderer {
+    // Tooltip methods
+    showTooltip(node, event) {
+        if (!node?.data || !event) {
+            return;
+        }
+    
+        const tooltip = d3.select(this.tooltip);
+        const formatNumber = d3.format(',.2f');
+        
+        const tooltipContent = `
+            <div style="font-weight: bold; margin-bottom: 5px;">
+                ${this.escapeHtml(node.data.name)}
+            </div>
+            <div style="font-size: 12px; color: #ddd;">
+                ${this.escapeHtml(node.data.ticker)}
+            </div>
+            <div style="margin-top: 5px;">
+                Market Cap: $${formatNumber(node.value)}M
+            </div>
+            <div>
+                Type: ${this.escapeHtml(node.data.type)}
+            </div>
+            <div style="margin-top: 5px; color: #8BE9FD;">
+                ${node.children?.length ? 
+                    `Click to view ${node.children.length} items` : 
+                    'Click to view details'}
+            </div>
+        `;
+    
+        tooltip
+            .style('display', 'block')
+            .style('left', `${event.pageX + 10}px`)
+            .style('top', `${event.pageY + 10}px`)
+            .html(tooltipContent);
+    }
+    
+    escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    hideTooltip() {
+        d3.select(this.tooltip).style('display', 'none');
+    }
+    
+    render() {
+        if (!this.ctx) return;
+    
+        // Clear canvas
+        this.ctx.clearRect(0, 0, this.width, this.height);
+    
+        const HEADER_HEIGHT = 24;
+        
+        // Render in correct order (background to foreground)
+        this.renderParentNodeAreas(HEADER_HEIGHT);
+        this.renderParentNodeBorders(HEADER_HEIGHT);
+        this.renderLeafNodes();
+        this.renderParentHeaders(HEADER_HEIGHT);
+        this.renderNodeText(HEADER_HEIGHT);
+    }
+    
+    getNodeColor(node) {
+        if (node.data.type === 'sector') {
+            return node.children ? '#2C3E50' : '#34495E';
+        }
+        return '#3498DB';
+    }
+    
+    renderParentNodeAreas(HEADER_HEIGHT) {
+        this.nodes.forEach(node => {
+            if (!node.parent || !node.children) return;
+    
+            const width = node.x1 - node.x0;
+            const height = node.y1 - node.y0;
+    
+            const gradient = this.ctx.createLinearGradient(
+                node.x0, 
+                node.y0, 
+                node.x0, 
+                node.y1
+            );
+            gradient.addColorStop(0, this.getNodeColor(node));
+            gradient.addColorStop(1, d3.color(this.getNodeColor(node)).darker(0.5));
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.globalAlpha = 0.85;
+            
+            this.ctx.fillRect(
+                node.x0, 
+                node.y0 + HEADER_HEIGHT, 
+                width, 
+                height - HEADER_HEIGHT
+            );
+        });
+    }
+
+    renderParentNodeBorders(HEADER_HEIGHT) {
+        this.nodes.forEach(node => {
+            if (!node.parent || !node.children) return;
+            if (node.parent === this.currentRoot) return;
+    
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 1;
+            this.ctx.globalAlpha = 1;
+            this.ctx.beginPath();
+    
+            // Left border
+            this.ctx.moveTo(node.x0, node.y0 + HEADER_HEIGHT);
+            this.ctx.lineTo(node.x0, node.y1);
+            
+            // Bottom border
+            this.ctx.moveTo(node.x0, node.y1);
+            this.ctx.lineTo(node.x1, node.y1);
+            
+            // Right border
+            this.ctx.moveTo(node.x1, node.y0 + HEADER_HEIGHT);
+            this.ctx.lineTo(node.x1, node.y1);
+            
+            this.ctx.stroke();
+        });
+    }
+
+    renderLeafNodes() {
+        this.nodes.forEach(node => {
+            if (!node.parent || node.children) return;
+    
+            const width = node.x1 - node.x0;
+            const height = node.y1 - node.y0;
+    
+            const gradient = this.ctx.createLinearGradient(
+                node.x0, 
+                node.y0, 
+                node.x0, 
+                node.y1
+            );
+            gradient.addColorStop(0, this.getNodeColor(node));
+            gradient.addColorStop(1, d3.color(this.getNodeColor(node)).darker(0.5));
+            
+            // Draw background
+            this.ctx.fillStyle = gradient;
+            this.ctx.globalAlpha = 0.9;
+            this.ctx.fillRect(node.x0, node.y0, width, height);
+    
+            // Draw border
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 1;
+            this.ctx.globalAlpha = 1;
+            this.ctx.strokeRect(node.x0, node.y0, width, height);
+        });
+    }
+
+    renderParentHeaders(HEADER_HEIGHT) {
+        this.nodes.forEach(node => {
+            if (!node.parent || !node.children) return;
+    
+            const width = node.x1 - node.x0;
+    
+            // Draw header background
+            this.ctx.fillStyle = d3.color(this.getNodeColor(node)).darker(0.5);
+            this.ctx.globalAlpha = 1;
+            this.ctx.fillRect(node.x0, node.y0, width, HEADER_HEIGHT);
+    
+            // Draw header borders
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(node.x0, node.y0, width, HEADER_HEIGHT);
+    
+            // Draw drill-down indicator
+            this.drawDrillDownIndicator(node, HEADER_HEIGHT);
+        });
+    }
+    
+    drawDrillDownIndicator(node, HEADER_HEIGHT) {
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.globalAlpha = 0.8;
+        this.ctx.beginPath();
+        
+        const centerX = node.x1 - 15;
+        const centerY = node.y0 + HEADER_HEIGHT/2;
+        
+        this.ctx.moveTo(centerX - 5, centerY - 3);
+        this.ctx.lineTo(centerX + 5, centerY - 3);
+        this.ctx.lineTo(centerX, centerY + 4);
+        this.ctx.closePath();
+        this.ctx.fill();
+    }
+
+    renderNodeText(HEADER_HEIGHT) {
+        const MIN_WIDTH = 30;
+        const MIN_HEIGHT = 15;
+        const formatNumber = d3.format(',.2f');
+    
+        this.nodes.forEach(node => {
+            if (!node.parent) return;
+    
+            const width = node.x1 - node.x0;
+            const height = node.y1 - node.y0;
+    
+            if (width > MIN_WIDTH && height > MIN_HEIGHT) {
+                const value = formatNumber(node.value);
+                const text = `${node.data.name} ($${value}M)`;
+                const maxWidth = width - (node.children ? 25 : 6);
+                
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = node.children ? 'bold 12px Arial' : '10px Arial';
+                this.ctx.textBaseline = 'top';
+                
+                const truncatedText = this.getTruncatedText(text, maxWidth);
+                
+                this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.fillText(
+                    truncatedText,
+                    node.x0 + 3,
+                    node.y0 + (node.children ? (HEADER_HEIGHT - 12)/2 : 3)
+                );
+                this.ctx.shadowBlur = 0;
+            }
+        });
+    }
+    
+    getTruncatedText(text, maxWidth) {
+        let truncatedText = text;
+        
+        while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
+            truncatedText = truncatedText.slice(0, -1);
+        }
+        
+        return truncatedText !== text ? truncatedText + '...' : truncatedText;
+    }
+}
+
 
 class D3CanvasTreemap extends TreemapRenderer {
     constructor(containerId) {
@@ -431,244 +669,6 @@ class D3CanvasTreemap extends TreemapRenderer {
     }
 }
 
-class TreemapRenderer {
-    // Tooltip methods
-    showTooltip(node, event) {
-        if (!node?.data || !event) {
-            return;
-        }
-    
-        const tooltip = d3.select(this.tooltip);
-        const formatNumber = d3.format(',.2f');
-        
-        const tooltipContent = `
-            <div style="font-weight: bold; margin-bottom: 5px;">
-                ${this.escapeHtml(node.data.name)}
-            </div>
-            <div style="font-size: 12px; color: #ddd;">
-                ${this.escapeHtml(node.data.ticker)}
-            </div>
-            <div style="margin-top: 5px;">
-                Market Cap: $${formatNumber(node.value)}M
-            </div>
-            <div>
-                Type: ${this.escapeHtml(node.data.type)}
-            </div>
-            <div style="margin-top: 5px; color: #8BE9FD;">
-                ${node.children?.length ? 
-                    `Click to view ${node.children.length} items` : 
-                    'Click to view details'}
-            </div>
-        `;
-    
-        tooltip
-            .style('display', 'block')
-            .style('left', `${event.pageX + 10}px`)
-            .style('top', `${event.pageY + 10}px`)
-            .html(tooltipContent);
-    }
-    
-    escapeHtml(unsafe) {
-        if (!unsafe) return '';
-        return unsafe
-            .toString()
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    hideTooltip() {
-        d3.select(this.tooltip).style('display', 'none');
-    }
-    
-    render() {
-        if (!this.ctx) return;
-    
-        // Clear canvas
-        this.ctx.clearRect(0, 0, this.width, this.height);
-    
-        const HEADER_HEIGHT = 24;
-        
-        // Render in correct order (background to foreground)
-        this.renderParentNodeAreas(HEADER_HEIGHT);
-        this.renderParentNodeBorders(HEADER_HEIGHT);
-        this.renderLeafNodes();
-        this.renderParentHeaders(HEADER_HEIGHT);
-        this.renderNodeText(HEADER_HEIGHT);
-    }
-    
-    getNodeColor(node) {
-        if (node.data.type === 'sector') {
-            return node.children ? '#2C3E50' : '#34495E';
-        }
-        return '#3498DB';
-    }
-    
-    renderParentNodeAreas(HEADER_HEIGHT) {
-        this.nodes.forEach(node => {
-            if (!node.parent || !node.children) return;
-    
-            const width = node.x1 - node.x0;
-            const height = node.y1 - node.y0;
-    
-            const gradient = this.ctx.createLinearGradient(
-                node.x0, 
-                node.y0, 
-                node.x0, 
-                node.y1
-            );
-            gradient.addColorStop(0, this.getNodeColor(node));
-            gradient.addColorStop(1, d3.color(this.getNodeColor(node)).darker(0.5));
-            
-            this.ctx.fillStyle = gradient;
-            this.ctx.globalAlpha = 0.85;
-            
-            this.ctx.fillRect(
-                node.x0, 
-                node.y0 + HEADER_HEIGHT, 
-                width, 
-                height - HEADER_HEIGHT
-            );
-        });
-    }
-
-    renderParentNodeBorders(HEADER_HEIGHT) {
-        this.nodes.forEach(node => {
-            if (!node.parent || !node.children) return;
-            if (node.parent === this.currentRoot) return;
-    
-            this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = 1;
-            this.ctx.globalAlpha = 1;
-            this.ctx.beginPath();
-    
-            // Left border
-            this.ctx.moveTo(node.x0, node.y0 + HEADER_HEIGHT);
-            this.ctx.lineTo(node.x0, node.y1);
-            
-            // Bottom border
-            this.ctx.moveTo(node.x0, node.y1);
-            this.ctx.lineTo(node.x1, node.y1);
-            
-            // Right border
-            this.ctx.moveTo(node.x1, node.y0 + HEADER_HEIGHT);
-            this.ctx.lineTo(node.x1, node.y1);
-            
-            this.ctx.stroke();
-        });
-    }
-
-    renderLeafNodes() {
-        this.nodes.forEach(node => {
-            if (!node.parent || node.children) return;
-    
-            const width = node.x1 - node.x0;
-            const height = node.y1 - node.y0;
-    
-            const gradient = this.ctx.createLinearGradient(
-                node.x0, 
-                node.y0, 
-                node.x0, 
-                node.y1
-            );
-            gradient.addColorStop(0, this.getNodeColor(node));
-            gradient.addColorStop(1, d3.color(this.getNodeColor(node)).darker(0.5));
-            
-            // Draw background
-            this.ctx.fillStyle = gradient;
-            this.ctx.globalAlpha = 0.9;
-            this.ctx.fillRect(node.x0, node.y0, width, height);
-    
-            // Draw border
-            this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = 1;
-            this.ctx.globalAlpha = 1;
-            this.ctx.strokeRect(node.x0, node.y0, width, height);
-        });
-    }
-
-    renderParentHeaders(HEADER_HEIGHT) {
-        this.nodes.forEach(node => {
-            if (!node.parent || !node.children) return;
-    
-            const width = node.x1 - node.x0;
-    
-            // Draw header background
-            this.ctx.fillStyle = d3.color(this.getNodeColor(node)).darker(0.5);
-            this.ctx.globalAlpha = 1;
-            this.ctx.fillRect(node.x0, node.y0, width, HEADER_HEIGHT);
-    
-            // Draw header borders
-            this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(node.x0, node.y0, width, HEADER_HEIGHT);
-    
-            // Draw drill-down indicator
-            this.drawDrillDownIndicator(node, HEADER_HEIGHT);
-        });
-    }
-    
-    drawDrillDownIndicator(node, HEADER_HEIGHT) {
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.globalAlpha = 0.8;
-        this.ctx.beginPath();
-        
-        const centerX = node.x1 - 15;
-        const centerY = node.y0 + HEADER_HEIGHT/2;
-        
-        this.ctx.moveTo(centerX - 5, centerY - 3);
-        this.ctx.lineTo(centerX + 5, centerY - 3);
-        this.ctx.lineTo(centerX, centerY + 4);
-        this.ctx.closePath();
-        this.ctx.fill();
-    }
-
-    renderNodeText(HEADER_HEIGHT) {
-        const MIN_WIDTH = 30;
-        const MIN_HEIGHT = 15;
-        const formatNumber = d3.format(',.2f');
-    
-        this.nodes.forEach(node => {
-            if (!node.parent) return;
-    
-            const width = node.x1 - node.x0;
-            const height = node.y1 - node.y0;
-    
-            if (width > MIN_WIDTH && height > MIN_HEIGHT) {
-                const value = formatNumber(node.value);
-                const text = `${node.data.name} ($${value}M)`;
-                const maxWidth = width - (node.children ? 25 : 6);
-                
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.font = node.children ? 'bold 12px Arial' : '10px Arial';
-                this.ctx.textBaseline = 'top';
-                
-                const truncatedText = this.getTruncatedText(text, maxWidth);
-                
-                this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                this.ctx.shadowBlur = 4;
-                this.ctx.fillText(
-                    truncatedText,
-                    node.x0 + 3,
-                    node.y0 + (node.children ? (HEADER_HEIGHT - 12)/2 : 3)
-                );
-                this.ctx.shadowBlur = 0;
-            }
-        });
-    }
-    
-    getTruncatedText(text, maxWidth) {
-        let truncatedText = text;
-        
-        while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
-            truncatedText = truncatedText.slice(0, -1);
-        }
-        
-        return truncatedText !== text ? truncatedText + '...' : truncatedText;
-    }
-}
 
 class TreemapInitializer {
     static DATA_URL = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
