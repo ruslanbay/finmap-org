@@ -56,11 +56,11 @@ class D3CanvasTreemap {
       this.bindEvents();
   }
 
-  bindEvents() {
+    bindEvents() {
       // Handle window resize
       window.addEventListener('resize', () => {
-        this.width = this.container.clientWidth;
-        this.height = this.container.clientHeight - 40;
+          this.width = this.container.clientWidth;
+          this.height = this.container.clientHeight - 40;
           
           this.canvas.width = this.width * window.devicePixelRatio;
           this.canvas.height = this.height * window.devicePixelRatio;
@@ -73,84 +73,43 @@ class D3CanvasTreemap {
               this.render(this.currentData);
           }
       });
-
-      // Handle mouse move for tooltips
+  
+      // Handle mouse interactions on canvas
       this.canvas.addEventListener('mousemove', (event) => {
           const rect = this.canvas.getBoundingClientRect();
           const x = event.clientX - rect.left;
           const y = event.clientY - rect.top;
-
-          // Find node under cursor
+  
           const node = this.findNodeAtPosition(x, y);
           
           if (node) {
-            this.canvas.style.cursor = 'pointer';
-            this.showTooltip(node, event);
+              // Always show pointer cursor and tooltip for any clickable node
+              this.canvas.style.cursor = 'pointer';
+              this.showTooltip(node, event);
           } else {
               this.canvas.style.cursor = 'default';
               this.hideTooltip();
           }
       });
-
+  
+      // Handle clicks on canvas
       this.canvas.addEventListener('click', (event) => {
           const rect = this.canvas.getBoundingClientRect();
           const x = event.clientX - rect.left;
           const y = event.clientY - rect.top;
-
+  
           const node = this.findNodeAtPosition(x, y);
-          if (node && node.data.children && node.data.children.length > 0) {
+          if (node) {
+              // Always drill down for any node
               this.drillDown(node);
           }
       });
-
+  
       // Handle pathbar clicks
       this.pathbar.addEventListener('click', (event) => {
           const index = parseInt(event.target.dataset.index);
           if (!isNaN(index)) {
               this.drillTo(index);
-          }
-      });
-
-      this.canvas.addEventListener('click', (event) => {
-          const rect = this.canvas.getBoundingClientRect();
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
-  
-          const node = this.findNodeAtPosition(x, y);
-          if (node && node.children && node.children.length > 0) {
-              this.drillDown(node);
-          }
-      });
-  
-      // Add hover effect
-      this.canvas.addEventListener('mousemove', (event) => {
-          const rect = this.canvas.getBoundingClientRect();
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
-  
-          const node = this.findNodeAtPosition(x, y);
-          
-          if (node && node.children && node.children.length > 0) {
-              this.canvas.style.cursor = 'pointer';
-              this.showTooltip(node, event);
-          } else if (node) {
-              this.canvas.style.cursor = 'default';
-              this.showTooltip(node, event);
-          } else {
-              this.canvas.style.cursor = 'default';
-              this.hideTooltip();
-          }
-      });
-
-      this.canvas.addEventListener('click', (event) => {
-          const rect = this.canvas.getBoundingClientRect();
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
-  
-          const node = this.findNodeAtPosition(x, y);
-          if (node) {
-              // Always drill down, regardless of whether it's a parent or leaf node
-              this.drillDown(node);
           }
       });
   }
@@ -400,42 +359,11 @@ class D3CanvasTreemap {
             return sum + calculateValues(child);
         }, 0);
 
-        // Debug logging
-        // console.log(`Node: ${node.name}`);
-        // console.log(`  Type: ${node.type}`);
-        // console.log(`  Children count: ${node.children.length}`);
-        // console.log(`  Total value (sum of children): ${node.value}`);
-        // console.log(`  Children:`, node.children.map(c => ({
-        //     name: c.name,
-        //     value: c.value,
-        //     type: c.type
-        // })));
-
         return node.value;
     };
 
     // Calculate values starting from root
     calculateValues(root);
-
-    // Verify calculations
-    const verifyNode = (node) => {
-        if (node.children && node.children.length > 0) {
-            const childrenSum = node.children.reduce((sum, child) => sum + child.value, 0);
-            if (Math.abs(childrenSum - node.value) > 0.01) {
-                // console.error(`Value mismatch in node ${node.name}:`);
-                // console.error(`  Node value: ${node.value}`);
-                // console.error(`  Sum of children: ${childrenSum}`);
-            }
-            node.children.forEach(verifyNode);
-        }
-    };
-    verifyNode(root);
-
-    // Debug info
-    // console.log('Data transformation complete');
-    // console.log('Total nodes:', nodesMap.size);
-    // console.log('Root children:', root.children.length);
-    // console.log('Root value (total market cap):', root.value);
 
     return root;
 }
