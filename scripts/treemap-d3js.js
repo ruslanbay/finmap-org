@@ -197,8 +197,24 @@ class D3CanvasTreemap {
       this.render();
   }
 
+  // Modify findNodeAtPosition to prioritize header clicks for parent nodes
   findNodeAtPosition(x, y) {
-    // Reverse the array to check children before parents (they're on top)
+    const HEADER_HEIGHT = 24;
+    
+    // First check for header clicks on parent nodes
+    const headerClick = [...this.nodes].reverse().find(node => 
+        node.children &&
+        x >= node.x0 && 
+        x <= node.x1 && 
+        y >= node.y0 && 
+        y <= node.y0 + HEADER_HEIGHT
+    );
+    
+    if (headerClick) {
+        return headerClick;
+    }
+  
+    // Then check for other nodes
     return [...this.nodes].reverse().find(node => 
         x >= node.x0 && 
         x <= node.x1 && 
@@ -362,7 +378,7 @@ class D3CanvasTreemap {
       d3.select(this.tooltip).style('display', 'none');
   }
 
-    render() {
+  render() {
       // Clear canvas
       this.ctx.clearRect(0, 0, this.width, this.height);
   
@@ -374,6 +390,9 @@ class D3CanvasTreemap {
           }
           return '#3498DB';
       };
+  
+      // Header height for parent nodes
+      const HEADER_HEIGHT = 24; // Increased touch area
   
       // Draw nodes from bottom to top (parents first, then children)
       this.nodes.forEach(node => {
@@ -395,16 +414,44 @@ class D3CanvasTreemap {
           gradient.addColorStop(1, d3.color(getNodeColor(node)).darker(0.5));
           
           this.ctx.fillStyle = gradient;
-          this.ctx.globalAlpha = node.children ? 0.85 : 0.9; // More transparent for parent nodes
+          this.ctx.globalAlpha = node.children ? 0.85 : 0.9;
           this.ctx.fillRect(node.x0, node.y0, width, height);
   
           // Draw border
           this.ctx.strokeStyle = '#ffffff';
-          this.ctx.lineWidth = node.children ? 2 : 1; // Thicker border for parent nodes
+          this.ctx.lineWidth = 1;
           this.ctx.globalAlpha = 1;
           this.ctx.strokeRect(node.x0, node.y0, width, height);
   
-          // Draw text if node is large enough
+          // For parent nodes, draw a header area
+          if (node.children && node.children.length > 0) {
+              // Draw header background
+              this.ctx.fillStyle = d3.color(getNodeColor(node)).darker(0.5);
+              this.ctx.globalAlpha = 1;
+              this.ctx.fillRect(node.x0, node.y0, width, HEADER_HEIGHT);
+  
+              // Draw header border
+              this.ctx.strokeStyle = '#ffffff';
+              this.ctx.lineWidth = 2;
+              this.ctx.beginPath();
+              this.ctx.moveTo(node.x0, node.y0 + HEADER_HEIGHT);
+              this.ctx.lineTo(node.x1, node.y0 + HEADER_HEIGHT);
+              this.ctx.stroke();
+  
+              // Draw drill-down indicator in header
+              this.ctx.fillStyle = '#ffffff';
+              this.ctx.globalAlpha = 0.8;
+              this.ctx.beginPath();
+              const centerX = node.x1 - 15;
+              const centerY = node.y0 + HEADER_HEIGHT/2;
+              this.ctx.moveTo(centerX - 5, centerY - 3);
+              this.ctx.lineTo(centerX + 5, centerY - 3);
+              this.ctx.lineTo(centerX, centerY + 4);
+              this.ctx.closePath();
+              this.ctx.fill();
+          }
+  
+          // Draw text
           if (width > 30 && height > 15) {
               this.ctx.fillStyle = '#ffffff';
               this.ctx.font = node.children ? 'bold 12px Arial' : '10px Arial';
@@ -412,7 +459,7 @@ class D3CanvasTreemap {
               
               const value = d3.format(',.2f')(node.value);
               const text = `${node.data.name} ($${value}M)`;
-              const maxWidth = width - 6;
+              const maxWidth = width - (node.children ? 25 : 6); // Leave space for drill-down indicator
               let truncatedText = text;
               
               while (this.ctx.measureText(truncatedText).width > maxWidth && truncatedText.length > 3) {
@@ -429,23 +476,9 @@ class D3CanvasTreemap {
               this.ctx.fillText(
                   truncatedText,
                   node.x0 + 3,
-                  node.y0 + 3
+                  node.y0 + (node.children ? (HEADER_HEIGHT - 12)/2 : 3) // Center text in header for parent nodes
               );
               this.ctx.shadowBlur = 0;
-          }
-  
-          // Draw "click to drill down" indicator for parent nodes
-          if (node.children && node.children.length > 0 && width > 40 && height > 40) {
-              this.ctx.fillStyle = '#ffffff';
-              this.ctx.globalAlpha = 0.8;
-              this.ctx.beginPath();
-              const centerX = node.x0 + width - 15;
-              const centerY = node.y0 + 15;
-              this.ctx.moveTo(centerX - 5, centerY);
-              this.ctx.lineTo(centerX + 5, centerY);
-              this.ctx.lineTo(centerX, centerY + 7);
-              this.ctx.closePath();
-              this.ctx.fill();
           }
       });
   }
