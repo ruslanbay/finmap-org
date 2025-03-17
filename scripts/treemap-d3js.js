@@ -146,36 +146,49 @@ class D3CanvasTreemap {
       console.log('Attempting to drill down to:', node.data.name);
       console.log('Current path:', this.path.map(n => n.data.name));
   
-      // Don't add to path if it's already the current node
+      // First, check if this node is already the current root
       if (this.currentRoot === node) {
           console.log('Already at this node, ignoring drill down');
           return;
       }
   
-      // Clear any existing path beyond current node if it exists
-      const currentIndex = this.path.findIndex(n => n === node);
-      if (currentIndex !== -1) {
-          // If node is already in path, trim path up to this node
-          this.path = this.path.slice(0, currentIndex + 1);
-          console.log('Node found in path, trimmed path to:', this.path.map(n => n.data.name));
-      } else {
-          // Only add to path if it's a new node
+      // Check if we're clicking a node that's already in our current view
+      if (this.currentRoot && this.nodes.includes(node)) {
+          // We're clicking a visible node in the current view
+          // Remove any paths after the current root and add this new node
+          const currentRootIndex = this.path.findIndex(n => n === this.currentRoot);
+          if (currentRootIndex !== -1) {
+              this.path = this.path.slice(0, currentRootIndex + 1);
+          }
           this.path.push(node);
-          console.log('Added node to path, new path:', this.path.map(n => n.data.name));
+      } else {
+          // We're either:
+          // 1. Clicking a node in the pathbar (handled by drillTo)
+          // 2. Starting fresh (shouldn't happen in normal operation)
+          const existingIndex = this.path.findIndex(n => n === node);
+          if (existingIndex !== -1) {
+              // If node exists in path, trim to that point
+              this.path = this.path.slice(0, existingIndex + 1);
+          } else {
+              // Only add if it's not already in the path
+              this.path.push(node);
+          }
       }
   
+      console.log('New path:', this.path.map(n => n.data.name));
       this.renderFromNode(node);
   }
   
   drillTo(index) {
       console.log('Drilling to index:', index);
-      console.log('Current path:', this.path.map(n => n.data.name));
+      console.log('Path before drill:', this.path.map(n => n.data.name));
       
       if (index >= 0 && index < this.path.length) {
-          // Trim the path to the selected index
+          const targetNode = this.path[index];
+          // Always trim the path when drilling to an index
           this.path = this.path.slice(0, index + 1);
-          console.log('New path:', this.path.map(n => n.data.name));
-          this.renderFromNode(this.path[index]);
+          console.log('Path after drill:', this.path.map(n => n.data.name));
+          this.renderFromNode(targetNode);
       }
   }
   
@@ -284,28 +297,28 @@ class D3CanvasTreemap {
 
   // Modify findNodeAtPosition to prioritize header clicks for parent nodes
   findNodeAtPosition(x, y) {
-    const HEADER_HEIGHT = 24;
-    
-    // First check for header clicks on parent nodes
-    const headerClick = [...this.nodes].reverse().find(node => 
-        node.children &&
-        x >= node.x0 && 
-        x <= node.x1 && 
-        y >= node.y0 && 
-        y <= node.y0 + HEADER_HEIGHT
-    );
-    
-    if (headerClick) {
-        return headerClick;
-    }
+      const HEADER_HEIGHT = 24;
+      
+      // First check for header clicks on parent nodes
+      const headerClick = [...this.nodes].reverse().find(node => 
+          node.children &&
+          x >= node.x0 && 
+          x <= node.x1 && 
+          y >= node.y0 && 
+          y <= node.y0 + HEADER_HEIGHT
+      );
+      
+      if (headerClick) {
+          return headerClick;
+      }
   
-    // Then check for other nodes
-    return [...this.nodes].reverse().find(node => 
-        x >= node.x0 && 
-        x <= node.x1 && 
-        y >= node.y0 && 
-        y <= node.y1
-    );
+      // Then check for other nodes
+      return [...this.nodes].reverse().find(node => 
+          x >= node.x0 && 
+          x <= node.x1 && 
+          y >= node.y0 && 
+          y <= node.y1
+      );
   }
 
   transformData(securitiesData) {
