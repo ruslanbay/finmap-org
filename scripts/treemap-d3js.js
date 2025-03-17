@@ -380,10 +380,15 @@ class D3CanvasTreemap extends TreemapRenderer {
             // Node exists in path - trim to that point
             this.path = this.path.slice(0, existingIndex + 1);
         } else {
-            // Node is new - add it to path if it's a direct child of current root
-            if (this.nodes.includes(node) && (!node.parent || node.parent === this.currentRoot)) {
-                this.path.push(node);
+            // Node is new - add it to path
+            // If we're clicking a visible node, first trim the path to current root
+            if (this.currentRoot && this.nodes.includes(node)) {
+                const currentRootIndex = this.path.findIndex(n => n === this.currentRoot);
+                if (currentRootIndex !== -1) {
+                    this.path = this.path.slice(0, currentRootIndex + 1);
+                }
             }
+            this.path.push(node);
         }
     
         this.renderFromNode(node);
@@ -524,26 +529,30 @@ class D3CanvasTreemap extends TreemapRenderer {
         const HEADER_HEIGHT = 24;
         const sortedNodes = [...this.nodes].reverse();
     
-        // First check only headers and leaf nodes
-        return sortedNodes.find(node => {
-            if (node.children) {
-                // For parent nodes, only check header area
-                return this.isPointInRect(x, y, {
-                    x0: node.x0,
-                    x1: node.x1,
-                    y0: node.y0,
-                    y1: node.y0 + HEADER_HEIGHT
-                });
-            } else {
-                // For leaf nodes, check entire area
-                return this.isPointInRect(x, y, {
-                    x0: node.x0,
-                    x1: node.x1,
-                    y0: node.y0,
-                    y1: node.y1
-                });
-            }
-        });
+        // Check for parent node headers first
+        const parentNode = sortedNodes.find(node => 
+            node.children && 
+            this.isPointInRect(x, y, {
+                x0: node.x0,
+                x1: node.x1,
+                y0: node.y0,
+                y1: node.y0 + HEADER_HEIGHT
+            })
+        );
+    
+        if (parentNode) {
+            return parentNode;
+        }
+    
+        // Then check for any node
+        return sortedNodes.find(node => 
+            this.isPointInRect(x, y, {
+                x0: node.x0,
+                x1: node.x1,
+                y0: node.y0,
+                y1: node.y1
+            })
+        );
     }
     
     isPointInRect(x, y, rect) {
