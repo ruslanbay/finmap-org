@@ -75,11 +75,26 @@ class MinimalTreemap {
         });
     }
 
+    // Update findNodeAtPoint to handle header areas
     findNodeAtPoint(x, y) {
-        return this.nodes.find(node => 
-            x >= node.x0 && x <= node.x1 && 
-            y >= node.y0 && y <= node.y1
-        );
+        const HEADER_HEIGHT = 24;
+        return this.nodes.find(node => {
+            if (!node.parent) return false; // Skip root node
+            
+            if (node.children) {
+                // For parent nodes, only check header area
+                return x >= node.x0 && 
+                       x <= node.x1 && 
+                       y >= node.y0 && 
+                       y <= node.y0 + HEADER_HEIGHT;
+            } else {
+                // For leaf nodes, check entire area
+                return x >= node.x0 && 
+                       x <= node.x1 && 
+                       y >= node.y0 && 
+                       y <= node.y1;
+            }
+        });
     }
 
     renderFromNode(node) {
@@ -107,33 +122,104 @@ class MinimalTreemap {
     }
 
     render() {
+        const HEADER_HEIGHT = 24; // Height for parent node headers
+        
         // Clear canvas
         this.ctx.clearRect(0, 0, this.width, this.height);
         
-        // Draw nodes
+        // Draw nodes in correct order (back to front)
         this.nodes.forEach(node => {
+            if (!node.parent) return; // Skip root node
+            
             const width = node.x1 - node.x0;
             const height = node.y1 - node.y0;
             
-            // Draw rectangle
-            this.ctx.fillStyle = node.children ? '#555' : '#777';
-            this.ctx.fillRect(node.x0, node.y0, width, height);
-            
-            // Draw border
-            this.ctx.strokeStyle = '#fff';
-            this.ctx.strokeRect(node.x0, node.y0, width, height);
-            
-            // Draw label if enough space
-            if (width > 30 && height > 20) {
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = '12px Arial';
-                this.ctx.fillText(
-                    node.data.name,
-                    node.x0 + 3,
-                    node.y0 + 15
+            if (node.children) {
+                // Parent node
+                
+                // Draw main area
+                this.ctx.fillStyle = '#2C3E50';
+                this.ctx.fillRect(
+                    node.x0, 
+                    node.y0 + HEADER_HEIGHT, 
+                    width, 
+                    height - HEADER_HEIGHT
                 );
+                
+                // Draw header background
+                this.ctx.fillStyle = '#34495E';
+                this.ctx.fillRect(
+                    node.x0,
+                    node.y0,
+                    width,
+                    HEADER_HEIGHT
+                );
+                
+                // Draw header text
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = 'bold 12px Arial';
+                this.ctx.textBaseline = 'middle';
+                const text = node.data.name;
+                const truncatedText = this.getTruncatedText(text, width - 25);
+                this.ctx.fillText(
+                    truncatedText,
+                    node.x0 + 4,
+                    node.y0 + HEADER_HEIGHT/2
+                );
+                
+                // Draw indicator for parent nodes
+                this.drawDrillDownIndicator(
+                    node.x1 - 15,
+                    node.y0 + HEADER_HEIGHT/2
+                );
+                
+            } else {
+                // Leaf node
+                this.ctx.fillStyle = '#3498DB';
+                this.ctx.fillRect(node.x0, node.y0, width, height);
+                
+                // Draw leaf node text if there's enough space
+                if (width > 30 && height > 20) {
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = '11px Arial';
+                    this.ctx.textBaseline = 'top';
+                    const text = node.data.name;
+                    const truncatedText = this.getTruncatedText(text, width - 6);
+                    this.ctx.fillText(
+                        truncatedText,
+                        node.x0 + 3,
+                        node.y0 + 3
+                    );
+                }
             }
+            
+            // Draw borders
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(node.x0, node.y0, width, height);
         });
+    }
+
+    drawDrillDownIndicator(x, y) {
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - 4, y - 3);
+        this.ctx.lineTo(x + 4, y - 3);
+        this.ctx.lineTo(x, y + 3);
+        this.ctx.closePath();
+        this.ctx.fill();
+    }
+
+    getTruncatedText(text, maxWidth) {
+        let truncated = text;
+        this.ctx.save();
+        
+        while (this.ctx.measureText(truncated).width > maxWidth && truncated.length > 3) {
+            truncated = truncated.slice(0, -1);
+        }
+        
+        this.ctx.restore();
+        return truncated !== text ? truncated + '...' : truncated;
     }
 
     updatePathbar() {
