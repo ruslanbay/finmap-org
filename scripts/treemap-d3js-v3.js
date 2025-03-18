@@ -306,10 +306,10 @@ class Treemap {
                     sx, sy, sWidth, sHeight,  // Source rectangle
                     node.x0, node.y0, width, height  // Destination rectangle
                 );
-            };
             
-            // Draw text overlay
-            this.renderNodeText(node, width, height);
+                // Draw text overlay
+                this.renderNodeText(node, width, height);
+            };
         }
     }
 
