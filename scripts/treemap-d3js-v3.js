@@ -290,19 +290,9 @@ class Treemap {
                       image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
                     }
                     image.onload = function() {
-                        const aspectRatioImage = image.width / image.height;
-                        const scaledWidth = width; // Match node's width
-                        const scaledHeight = width / aspectRatioImage; // Scale height to maintain aspect ratio
-                    
-                        if (scaledHeight > height) {
-                            // Crop vertically to fit the node's height
-                            const cropY = (scaledHeight - height) / 2;
-                            this.ctx.drawImage(image, 0, cropY * (image.width / scaledWidth), scaledWidth, height * (image.width / scaledWidth), node.x0, node.y0, width, height);
-                        } else {
-                            // Draw the scaled image centered vertically
-                            const offsetY = (height - scaledHeight) / 2;
-                            this.ctx.drawImage(image, 0, 0, image.width, image.height, node.x0, node.y0 + offsetY, width, scaledHeight);
-                        }
+                        this.ctx.drawImage(image, 
+                            0, 0, image.width, image.height, 
+                            node.x0, node.y0, width, height);
                     }.bind(this);
                 }
             }
