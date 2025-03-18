@@ -147,6 +147,7 @@ class Treemap {
             display: flex;
             align-items: center;
             padding: 0 10px;
+            // font-family: PokemonSolid;
         `;
         this.container.appendChild(this.pathbar);
     }
@@ -243,7 +244,7 @@ class Treemap {
                 
                 // Draw header text
                 this.ctx.fillStyle = '#fff';
-                this.ctx.font = 'bold 12px PokemonSolid';
+                this.ctx.font = 'bold 12px Arial';
                 this.ctx.textBaseline = 'middle';
                 const text = `${node.data.name}`;
                 const truncatedText = this.getTruncatedText(text, width - 25);
@@ -264,7 +265,7 @@ class Treemap {
                     const fontSize = Math.min(Math.max(width / 10, 8), Math.min(height / 3, 24));
 
                     this.ctx.fillStyle = '#fff';
-                    this.ctx.font = `${fontSize}px PokemonSolid`;
+                    this.ctx.font = `${fontSize}px Arial`;
                     this.ctx.textBaseline = 'middle';
                     const text = `${node.data.name}<br>$${d3.format(',.2f')(node.value)}`;
                     // Split the text into lines and draw each line separately
@@ -445,19 +446,19 @@ document.head.insertAdjacentHTML('beforeend', `
             overflow: hidden;
         }
         
-        @font-face {
-            font-family: 'PokemonHollow';
-            src: url('styles/PokemonHollow.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
+        // @font-face {
+        //     font-family: 'PokemonHollow';
+        //     src: url('styles/PokemonHollow.ttf') format('truetype');
+        //     font-weight: normal;
+        //     font-style: normal;
+        // }
         
-        @font-face {
-            font-family: 'PokemonSolid';
-            src: url('styles/PokemonSolid.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
+        // @font-face {
+        //     font-family: 'PokemonSolid';
+        //     src: url('styles/PokemonSolid.ttf') format('truetype');
+        //     font-weight: normal;
+        //     font-style: normal;
+        // }
     </style>
 `);
 
