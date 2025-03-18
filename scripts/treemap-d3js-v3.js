@@ -297,7 +297,7 @@ class Treemap {
                 } else {
                     // Image is taller than node - crop top/bottom
                     sHeight = Math.floor(image.width / nodeAspect);
-                    sy = Math.floor((image.height - sHeight) / 2);
+                    sy = 0; // Math.floor((image.height - sHeight) / 2);
                 }
                 
                 // Draw the image
@@ -321,12 +321,12 @@ class Treemap {
         );
     
         // Add semi-transparent background for better text readability
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.ctx.fillRect(node.x0, node.y0, width, Math.max(height * 0.4, fontSize * 2.5));
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillRect(node.x0, node.y0, width, height);
     
         // Draw text
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = `${fontSize}px Arial`;
+        this.ctx.font = `bold ${fontSize}px Arial`;
         this.ctx.textBaseline = 'middle';
         
         const text = `${node.data.name}<br>$${d3.format(',.2f')(node.value)}`;
