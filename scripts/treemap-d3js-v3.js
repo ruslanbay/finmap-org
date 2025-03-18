@@ -285,9 +285,32 @@ class Treemap {
                     const image = new Image();
                     image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
                     image.onload = function() {
-                      this.ctx.drawImage(image, 
-                          0, 0, image.width, image.height, 
-                          node.x0, node.y0, width, height);
+                        const aspectRatioImage = image.width / image.height;
+                        const aspectRatioNode = width / height;
+                    
+                        let scaledWidth, scaledHeight;
+                    
+                        if (aspectRatioImage > aspectRatioNode) {
+                            scaledWidth = width;
+                            scaledHeight = width / aspectRatioImage;
+                        } else {
+                            scaledHeight = height;
+                            scaledWidth = height * aspectRatioImage;
+                        }
+                    
+                        // Calculate the offset to center the image
+                        const offsetX = (width - scaledWidth) / 2;
+                        const offsetY = (height - scaledHeight) / 2;
+                    
+                        // Clip the canvas to the node area to prevent drawing outside
+                        this.ctx.save();
+                        this.ctx.beginPath();
+                        this.ctx.rect(node.x0, node.y0, width, height);
+                        this.ctx.clip();
+                    
+                        this.ctx.drawImage(image, node.x0 + offsetX, node.y0 + offsetY, scaledWidth, scaledHeight);
+                    
+                        this.ctx.restore();
                     }.bind(this); 
                 }
             }
