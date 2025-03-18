@@ -283,7 +283,12 @@ class Treemap {
                     }
                     // Load and draw an image for each node
                     const image = new Image();
-                    image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
+                    if (width > 50 || height > 50) {
+                      image.src = 'images/test/610758.jpg'; // node.data.ticker;
+                    }
+                    else {
+                      image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
+                    }
                     image.onload = function() {
                         const aspectRatioImage = image.width / image.height;
                         const aspectRatioNode = width / height;
