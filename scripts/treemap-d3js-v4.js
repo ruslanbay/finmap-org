@@ -32,7 +32,7 @@ class Treemap {
         };
 
         // Resize observer instead of window.resize
-        this.resizeObserver = new ResizeObserver(this.handleResize.bind(this));
+        this.resizeObserver = new await ResizeObserver(this.handleResize.bind(this));
         this.resizeObserver.observe(this.container);
 
         // Add parent references to make path building easier
@@ -53,7 +53,7 @@ class Treemap {
         this.ctx.scale(dpr, dpr);
     }
 
-    handleResize(entries) {
+    async handleResize(entries) {
         if (!entries?.length) return;
         
         // Use requestAnimationFrame for smooth resizing
@@ -82,7 +82,7 @@ class Treemap {
         });
     }
 
-    updateLayout() {
+    async updateLayout() {
         if (!this.cache.hierarchy) {
             this.cache.hierarchy = d3.hierarchy(this.currentRoot.data)
                 .sum(d => d.type === 'sector' ? 0 : d.value)
@@ -196,7 +196,7 @@ class Treemap {
         });
     }
 
-    renderFromNode(node) {
+    async renderFromNode(node) {
         if (!node?.data) return;
         
         this.currentRoot = node;
@@ -229,7 +229,7 @@ class Treemap {
         this.render();
     }
 
-    render() {
+    async render() {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.width, this.height);
         
@@ -265,7 +265,7 @@ class Treemap {
                 
             } else {
                 // Leaf node
-                await this.renderLeafNode(node, width, height);
+                this.renderLeafNode(node, width, height);
             }
             
             // Draw borders
@@ -394,7 +394,7 @@ class Treemap {
             .join('');
     }
 
-    drillDown(node) {
+    async drillDown(node) {
         if (!node || this.currentRoot === node) return;
 
         // Build complete path from node to root
@@ -414,7 +414,7 @@ class Treemap {
         this.renderFromNode(node);
     }
 
-    drillTo(index) {
+    async drillTo(index) {
         if (index >= 0 && index < this.path.length) {
             this.path = this.path.slice(0, index + 1);
             this.renderFromNode(this.path[index]);
