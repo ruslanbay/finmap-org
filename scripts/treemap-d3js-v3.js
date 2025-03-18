@@ -283,7 +283,7 @@ class Treemap {
                     }
                     // Load and draw an image for each node
                     const image = new Image();
-                    image.src = 'images/test/preview/85072.jpeg'; // node.data.ticker;
+                    image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
                     image.onload = function() {
                         this.ctx.drawImage(image, node.x0, node.y0, width, height);
                     }.bind(this); 
