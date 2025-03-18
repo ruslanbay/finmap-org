@@ -341,7 +341,7 @@ class Treemap {
         // Calculate font size based on node dimensions
         const fontSize = Math.min(
             Math.max(width / 10, 8), 
-            Math.min(height / 3, 48)
+            Math.min(height / 2, 48)
         );
     
         // Add semi-transparent background for better text readability
