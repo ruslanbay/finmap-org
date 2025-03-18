@@ -280,7 +280,7 @@ class Treemap {
         this.ctx.fillRect(node.x0, node.y0, width, height);
         
         // Only proceed if there's enough space
-        if (width > 60) {
+        if (width > 30) {
             this.renderNodeText(node, width, height);
 
             try {
@@ -298,8 +298,10 @@ class Treemap {
                 // Determine image source based on size
                 if (width > 100 || height > 150) {
                     imageSrc = 'images/test/610758.jpg'; // node.data.ticker;
+                } else if (width > 60 || height > 90) {
+                    imageSrc = 'images/test/previews/96370.jpeg';
                 } else {
-                    imageSrc = 'images/test/previews/96370.jpeg'; // node.data.ticker;
+                    imageSrc = 'images/test/default.jpeg';
                 }
                 
                 // Load image asynchronously
