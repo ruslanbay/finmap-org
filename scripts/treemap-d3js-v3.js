@@ -288,7 +288,8 @@ class Treemap {
               image.src = 'images/test/610758.jpg'; // node.data.ticker;
             }
             else {
-              image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
+            //   image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
+              image.src = 'images/test/previews/96370.jpeg'; // node.data.ticker;
             }
             image.onload = () => {
                 // Calculate scaling to maintain aspect ratio while filling width
