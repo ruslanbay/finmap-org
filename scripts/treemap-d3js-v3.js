@@ -283,12 +283,7 @@ class Treemap {
                     }
                     // Load and draw an image for each node
                     const image = new Image();
-                    if (width > 50 || height > 50) {
-                      image.src = 'images/test/610758.jpg'; // node.data.ticker;
-                    }
-                    else {
-                      image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
-                    }
+                    image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
                     image.onload = function() {
                         const aspectRatioImage = image.width / image.height;
                         const aspectRatioNode = width / height;
@@ -296,9 +291,11 @@ class Treemap {
                         let scaledWidth, scaledHeight;
                     
                         if (aspectRatioImage > aspectRatioNode) {
+                            // Image is wider than the node, scale by width
                             scaledWidth = width;
                             scaledHeight = width / aspectRatioImage;
                         } else {
+                            // Image is taller than the node, scale by height
                             scaledHeight = height;
                             scaledWidth = height * aspectRatioImage;
                         }
@@ -313,7 +310,19 @@ class Treemap {
                         this.ctx.rect(node.x0, node.y0, width, height);
                         this.ctx.clip();
                     
-                        this.ctx.drawImage(image, node.x0 + offsetX, node.y0 + offsetY, scaledWidth, scaledHeight);
+                        // Draw the image, cropping it if necessary
+                        if (scaledWidth > width) {
+                            // Crop horizontally
+                            const cropX = (scaledWidth - width) / 2;
+                            this.ctx.drawImage(image, cropX, 0, width, scaledHeight, node.x0, node.y0, width, height);
+                        } else if (scaledHeight > height) {
+                            // Crop vertically
+                            const cropY = (scaledHeight - height) / 2;
+                            this.ctx.drawImage(image, 0, cropY, scaledWidth, height, node.x0, node.y0, width, height);
+                        } else {
+                            // No cropping needed, draw centered
+                            this.ctx.drawImage(image, node.x0 + offsetX, node.y0 + offsetY, scaledWidth, scaledHeight);
+                        }
                     
                         this.ctx.restore();
                     }.bind(this); 
