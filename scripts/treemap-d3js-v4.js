@@ -293,15 +293,14 @@ class Treemap {
                     });
                 };
     
+                let imageSrc;
                 // Determine image source based on size
                 if (width > 100 || height > 150) {
-                    let imageSrc = 'images/test/610758.jpg'; // node.data.ticker;
-                  }
-                  else {
-                  //   image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
-                    let imageSrc = 'images/test/previews/96370.jpeg'; // node.data.ticker;
-                  }
-    
+                    imageSrc = 'images/test/610758.jpg'; // node.data.ticker;
+                } else {
+                    imageSrc = 'images/test/previews/96370.jpeg'; // node.data.ticker;
+                }
+                
                 // Load image asynchronously
                 const image = await loadImage(imageSrc);
                 
