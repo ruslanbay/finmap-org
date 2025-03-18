@@ -37,9 +37,6 @@ class Treemap {
 
         // Add parent references to make path building easier
         this.nodesMap = new Map();
-
-        // Store root node separately
-        this.rootNode = null;
     }
 
     updateDimensions(width, height) {
@@ -202,11 +199,6 @@ class Treemap {
         
         this.currentRoot = node;
         
-        // If this is our first render, set root node
-        if (!this.rootNode) {
-            this.rootNode = node;
-        }
-        
         // Clear cache when switching nodes
         this.cache.hierarchy = null;
         
@@ -214,15 +206,15 @@ class Treemap {
         this.cache.hierarchy = d3.hierarchy(node.data)
             .sum(d => d.type === 'sector' ? 0 : d.value)
             .sort((a, b) => b.value - a.value);
-
+    
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(node === this.rootNode ? 0 : 24) // Check against rootNode
+            .paddingTop(24)
             .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
             .round(true);
-
+    
         treemap(this.cache.hierarchy);
         this.nodes = this.cache.hierarchy.descendants();
         
@@ -266,43 +258,7 @@ class Treemap {
                 
             } else {
                 // Leaf node
-                this.ctx.fillStyle = '#3498DB';
-                this.ctx.fillRect(node.x0, node.y0, width, height);
-                
-                // Draw leaf node text if there's enough space
-                if (width > 30 && height > 20) {
-                    // Dynamically adjust font size based on node dimensions
-                    const fontSize = Math.min(Math.max(width / 10, 8), Math.min(height / 3, 24));
-
-                    this.ctx.fillStyle = '#fff';
-                    this.ctx.font = `${fontSize}px Arial`;
-                    this.ctx.textBaseline = 'middle';
-                    const text = `${node.data.name}<br>$${d3.format(',.2f')(node.value)}`;
-                    // Split the text into lines and draw each line separately
-                    const lines = text.split('<br>');
-                    const lineHeight = fontSize * 1.0;
-                    for (let i = 0; i < lines.length; i++) {
-                        const truncatedText = this.getTruncatedText(lines[i], width - 6);
-                        this.ctx.fillText(
-                            truncatedText,
-                            node.x0 + 3,
-                            node.y0 + (i * lineHeight) + (height / 2)
-                        );
-                    }
-                    // Load and draw an image for each node
-                    const image = new Image();
-                    if (width > 50 || height > 50) {
-                      image.src = 'images/test/610758.jpg'; // node.data.ticker;
-                    }
-                    else {
-                      image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
-                    }
-                    image.onload = function() {
-                        this.ctx.drawImage(image, 
-                            0, 0, image.width, image.height, 
-                            node.x0, node.y0, width, height);
-                    }.bind(this);
-                }
+                this.renderLeafNode(node, width, height);
             }
             
             // Draw borders
@@ -311,6 +267,101 @@ class Treemap {
             this.ctx.strokeRect(node.x0, node.y0, width, height);
         });
     }
+
+    renderLeafNode(node, width, height) {
+        // Draw background color first (fallback)
+        this.ctx.fillStyle = '#3498DB';
+        this.ctx.fillRect(node.x0, node.y0, width, height);
+        
+        // Draw leaf node text if there's enough space
+        if (width > 30 && height > 20) {
+            // Dynamically adjust font size based on node dimensions
+            const fontSize = Math.min(Math.max(width / 10, 8), Math.min(height / 3, 24));
+
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = `${fontSize}px Arial`;
+            this.ctx.textBaseline = 'middle';
+            const text = `${node.data.name}<br>$${d3.format(',.2f')(node.value)}`;
+            // Split the text into lines and draw each line separately
+            const lines = text.split('<br>');
+            const lineHeight = fontSize * 1.0;
+            for (let i = 0; i < lines.length; i++) {
+                const truncatedText = this.getTruncatedText(lines[i], width - 6);
+                this.ctx.fillText(
+                    truncatedText,
+                    node.x0 + 3,
+                    node.y0 + (i * lineHeight) + (height / 2)
+                );
+            }
+            // Load and draw an image for each node
+            const image = new Image();
+            if (width > 50 || height > 50) {
+              image.src = 'images/test/610758.jpg'; // node.data.ticker;
+            }
+            else {
+              image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
+            }
+            image.onload = () => {
+                // Calculate scaling to maintain aspect ratio while filling width
+                const imageAspect = image.width / image.height;
+                const nodeAspect = width / height;
+                
+                let sx = 0, sy = 0, sWidth = image.width, sHeight = image.height;
+                
+                if (imageAspect > nodeAspect) {
+                    // Image is wider than node - crop sides
+                    sWidth = Math.floor(image.height * nodeAspect);
+                    sx = Math.floor((image.width - sWidth) / 2);
+                } else {
+                    // Image is taller than node - crop top/bottom
+                    sHeight = Math.floor(image.width / nodeAspect);
+                    sy = Math.floor((image.height - sHeight) / 2);
+                }
+                
+                // Draw the image
+                this.ctx.drawImage(
+                    image,
+                    sx, sy, sWidth, sHeight,  // Source rectangle
+                    node.x0, node.y0, width, height  // Destination rectangle
+                );
+                
+                // Draw text overlay
+                // this.renderNodeText(node, width, height);
+            };
+        }
+    }
+
+    // renderNodeText(node, width, height) {
+    //     // Calculate font size based on node dimensions
+    //     const fontSize = Math.min(
+    //         Math.max(width / 10, 8), 
+    //         Math.min(height / 3, 24)
+    //     );
+    
+    //     // Add semi-transparent background for better text readability
+    //     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    //     this.ctx.fillRect(node.x0, node.y0, width, Math.max(height * 0.4, fontSize * 2.5));
+    
+    //     // Draw text
+    //     this.ctx.fillStyle = '#fff';
+    //     this.ctx.font = `${fontSize}px Arial`;
+    //     this.ctx.textBaseline = 'middle';
+        
+    //     const text = `${node.data.name}`;
+    //     const value = `$${d3.format(',.2f')(node.value)}M`;
+        
+    //     const lineHeight = fontSize * 1.2;
+        
+    //     // Draw name and value
+    //     [text, value].forEach((line, i) => {
+    //         const truncatedText = this.getTruncatedText(line, width - 6);
+    //         this.ctx.fillText(
+    //             truncatedText,
+    //             node.x0 + 3,
+    //             node.y0 + (i * lineHeight) + fontSize
+    //         );
+    //     });
+    // }
 
     getTruncatedText(text, maxWidth) {
         let truncated = text;
@@ -341,28 +392,20 @@ class Treemap {
     drillDown(node) {
         if (!node || this.currentRoot === node) return;
 
-        // Ensure root node is always first in path
-        if (!this.rootNode) {
-            this.rootNode = this.path[0];
-        }
-
-        if (node === this.rootNode) {
-            // Clicking root node - reset to just root
-            this.path = [this.rootNode];
-        } else {
-            // Build path from node up to its parent
-            const newPath = [];
-            let currentNode = node;
-            
-            while (currentNode && currentNode !== this.rootNode) {
-                newPath.unshift(currentNode);
-                currentNode = currentNode.parent;
-            }
-            
-            // Always include root node at start
-            this.path = [this.rootNode, ...newPath];
+        // Build complete path from node to root
+        const fullPath = [];
+        let currentNode = node;
+        
+        // Traverse up the hierarchy to build the path
+        while (currentNode) {
+            fullPath.unshift(currentNode);
+            currentNode = currentNode.parent;
         }
         
+        // Update path with the full hierarchy
+        this.path = fullPath;
+        
+        // Render the target node
         this.renderFromNode(node);
     }
 
@@ -464,25 +507,6 @@ class Treemap {
     
         return { root, nodesMap: this.nodesMap };
     }
-
-    initialize(data) {
-        const transformedData = this.transformData(data);
-        const root = d3.hierarchy(transformedData)
-            .sum(d => d.type === 'sector' ? 0 : d.value)
-            .sort((a, b) => b.value - a.value);
-        
-        this.rootNode = root;
-        this.path = [root];
-        this.renderFromNode(root);
-    }
-
-    // Optional: Add method to reset to root
-    resetToRoot() {
-        if (this.rootNode) {
-            this.path = [this.rootNode];
-            this.renderFromNode(this.rootNode);
-        }
-    }
 }
 
 document.head.insertAdjacentHTML('beforeend', `
@@ -522,7 +546,13 @@ const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb
 fetch(url)
     .then(response => response.json())
     .then(data => {
-        treemap.initialize(data);
+        const transformedData = treemap.transformData(data);
+        const root = d3.hierarchy(transformedData)
+            .sum(d => d.type === 'sector' ? 0 : d.value)
+            .sort((a, b) => b.value - a.value);
+        
+        treemap.path = [root];
+        treemap.renderFromNode(root);
     })
     .catch(error => {
         console.error('Error loading or processing data:', error);
