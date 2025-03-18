@@ -296,13 +296,13 @@ class Treemap {
                         let scaledWidth, scaledHeight;
                     
                         if (aspectRatioImage > aspectRatioNode) {
-                            // Image is wider than the node, scale by width
-                            scaledWidth = width;
-                            scaledHeight = width / aspectRatioImage;
-                        } else {
-                            // Image is taller than the node, scale by height
+                            // Image is wider than the node, scale by height
                             scaledHeight = height;
                             scaledWidth = height * aspectRatioImage;
+                        } else {
+                            // Image is taller than the node, scale by width
+                            scaledWidth = width;
+                            scaledHeight = width / aspectRatioImage;
                         }
                     
                         // Calculate the offset to center the image
@@ -330,7 +330,7 @@ class Treemap {
                         }
                     
                         this.ctx.restore();
-                    }.bind(this); 
+                    }.bind(this);
                 }
             }
             
