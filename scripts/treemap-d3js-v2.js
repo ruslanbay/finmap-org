@@ -266,13 +266,18 @@ class Treemap {
                     this.ctx.fillStyle = '#fff';
                     this.ctx.font = `${fontSize}px Arial`;
                     this.ctx.textBaseline = 'middle';
-                    const text = `${node.data.name}<br>${d3.format(',.2f')(node.value)}`;
-                    const truncatedText = this.getTruncatedText(text, width - 6);
-                    this.ctx.fillText(
-                        truncatedText,
-                        node.x0 + 3,
-                        node.y0 + height/2
-                    );
+                    const text = `${node.data.name}<br>$${d3.format(',.2f')(node.value)}`;
+                    // Split the text into lines and draw each line separately
+                    const lines = text.split('<br>');
+                    const lineHeight = fontSize * 0.8;
+                    for (let i = 0; i < lines.length; i++) {
+                        const truncatedText = getTruncatedText(lines[i]);
+                        this.ctx.fillText(
+                            truncatedText,
+                            node.x0 + 3,
+                            node.y0 + (i * lineHeight) + (height / 2)
+                        );
+                    }
                 }
             }
             
