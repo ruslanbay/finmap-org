@@ -1,4 +1,4 @@
-class MinimalTreemap {
+class Treemap {
     constructor(containerId) {
         // Add column index mapping
         this.columnIndex = {};
@@ -16,10 +16,6 @@ class MinimalTreemap {
         
         // Bind events
         this.bindEvents();
-        
-        // Add timestamp and user info as class properties
-        this.lastUpdated = '2025-03-17 19:25:46';
-        this.updatedBy = 'ruslanbay';
 
         // Initial size calculation
         this.updateDimensions();
@@ -249,17 +245,11 @@ class MinimalTreemap {
                 this.ctx.fillStyle = '#fff';
                 this.ctx.font = 'bold 12px Arial';
                 this.ctx.textBaseline = 'middle';
-                const text = `${node.data.name} ($${d3.format(',.2f')(node.value)}M)`;
+                const text = `${node.data.name}`;
                 const truncatedText = this.getTruncatedText(text, width - 25);
                 this.ctx.fillText(
                     truncatedText,
                     node.x0 + 4,
-                    node.y0 + 12
-                );
-                
-                // Draw drill-down indicator
-                this.drawDrillDownIndicator(
-                    node.x1 - 15,
                     node.y0 + 12
                 );
                 
@@ -270,10 +260,13 @@ class MinimalTreemap {
                 
                 // Draw leaf node text if there's enough space
                 if (width > 30 && height > 20) {
+                    // Dynamically adjust font size based on node dimensions
+                    const fontSize = Math.min(Math.max(width / 10, 8), Math.min(height / 3, 24));
+
                     this.ctx.fillStyle = '#fff';
-                    this.ctx.font = '11px Arial';
+                    this.ctx.font = `${fontSize}px Arial`;
                     this.ctx.textBaseline = 'middle';
-                    const text = `${node.data.name} ($${d3.format(',.2f')(node.value)}M)`;
+                    const text = `${node.data.name}<br>${d3.format(',.2f')(node.value)}`;
                     const truncatedText = this.getTruncatedText(text, width - 6);
                     this.ctx.fillText(
                         truncatedText,
@@ -288,16 +281,6 @@ class MinimalTreemap {
             this.ctx.lineWidth = 1;
             this.ctx.strokeRect(node.x0, node.y0, width, height);
         });
-    }
-
-    drawDrillDownIndicator(x, y) {
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.beginPath();
-        this.ctx.moveTo(x - 4, y - 3);
-        this.ctx.lineTo(x + 4, y - 3);
-        this.ctx.lineTo(x, y + 3);
-        this.ctx.closePath();
-        this.ctx.fill();
     }
 
     getTruncatedText(text, maxWidth) {
@@ -387,9 +370,7 @@ class MinimalTreemap {
             industry: row[this.columnIndex.industry],
             exchange: row[this.columnIndex.exchange],
             nestedItemsCount: parseInt(row[this.columnIndex.nestedItemsCount]) || 0,
-            rawData: row,
-            lastUpdated: '2025-03-17 19:01:29',
-            updatedBy: 'ruslanbay'
+            rawData: row
         };
     }
     
@@ -463,7 +444,7 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 // Initialize
-const treemap = new MinimalTreemap('container');
+const treemap = new Treemap('container');
 
 // Load and render data
 const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
