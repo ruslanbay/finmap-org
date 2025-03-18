@@ -1,5 +1,5 @@
 class Treemap {
-    constructor(containerId) {
+    async constructor(containerId) {
         // Add column index mapping
         this.columnIndex = {};
         // Initialize container and canvas
