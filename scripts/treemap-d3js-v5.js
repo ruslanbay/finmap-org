@@ -540,7 +540,7 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 
-async function createLoadingIndicator() {
+function createLoadingIndicator() {
   const loadingDiv = document.createElement('div');
   loadingDiv.style.cssText = `
       position: absolute;
@@ -561,7 +561,7 @@ async function createLoadingIndicator() {
 
 // Initialize
 const treemap = new Treemap('container');
-const loadingDiv = await createLoadingIndicator();
+const loadingDiv = createLoadingIndicator();
 treemap.container.appendChild(loadingDiv);
 
 // Load and render data
