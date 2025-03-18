@@ -82,7 +82,6 @@ class Treemap {
         });
     }
 
-    // Also update the updateLayout method to maintain consistency:
     updateLayout() {
         if (!this.cache.hierarchy) {
             this.cache.hierarchy = d3.hierarchy(this.currentRoot.data)
@@ -92,7 +91,10 @@ class Treemap {
     
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(24)
+            .paddingTop(d => {
+                if (d === this.cache.hierarchy || !d.children) return 0;
+                return 24;
+            })
             .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
@@ -209,7 +211,12 @@ class Treemap {
     
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(24)
+            .paddingTop(d => {
+                // No padding for root node and leaf nodes
+                if (d === this.cache.hierarchy || !d.children) return 0;
+                // Add padding only for parent nodes
+                return 24;
+            })
             .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
