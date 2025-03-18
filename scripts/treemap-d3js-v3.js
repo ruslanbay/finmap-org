@@ -294,17 +294,23 @@ class Treemap {
                         const scaledWidth = width; // Match node's width
                         const scaledHeight = width / aspectRatioImage; // Scale height to maintain aspect ratio
                     
-                        // Calculate the offset to center the image vertically
-                        let offsetY = 0;
-                    
                         if (scaledHeight > height) {
-                            // Crop vertically if the scaled image is taller than the node
+                            // Crop vertically to fit the node's height
                             const cropY = (scaledHeight - height) / 2;
                             this.ctx.drawImage(image, 0, cropY, scaledWidth, height, node.x0, node.y0, width, height);
                         } else {
-                            // No cropping needed, draw centered
-                            offsetY = (height - scaledHeight) / 2;
-                            this.ctx.drawImage(image, 0, 0, scaledWidth, scaledHeight, node.x0, node.y0 + offsetY, width, scaledHeight);
+                            // If the scaled image is shorter than the node, scale it to fit the height instead
+                            const scaledHeightFit = height;
+                            const scaledWidthFit = height * aspectRatioImage;
+                            const offsetX = (width - scaledWidthFit) / 2;
+                    
+                            // Crop horizontally if necessary
+                            if (scaledWidthFit > width) {
+                                const cropX = (scaledWidthFit - width) / 2;
+                                this.ctx.drawImage(image, cropX, 0, width, scaledHeightFit, node.x0, node.y0, width, height);
+                            } else {
+                                this.ctx.drawImage(image, 0, 0, scaledWidthFit, scaledHeightFit, node.x0 + offsetX, node.y0, scaledWidthFit, scaledHeightFit);
+                            }
                         }
                     }.bind(this);
                 }
