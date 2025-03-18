@@ -280,7 +280,7 @@ class Treemap {
         this.ctx.fillRect(node.x0, node.y0, width, height);
         
         // Only proceed if there's enough space
-        if (width > 30) {
+        if (width > 30 || height > 45) {
             this.renderNodeText(node, width, height);
 
             try {
