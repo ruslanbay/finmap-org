@@ -243,7 +243,7 @@ class Treemap {
                 
                 // Draw header text
                 this.ctx.fillStyle = '#fff';
-                this.ctx.font = 'bold 12px PokemonHollow';
+                this.ctx.font = 'bold 12px PokemonSolid';
                 this.ctx.textBaseline = 'middle';
                 const text = `${node.data.name}`;
                 const truncatedText = this.getTruncatedText(text, width - 25);
@@ -264,7 +264,7 @@ class Treemap {
                     const fontSize = Math.min(Math.max(width / 10, 8), Math.min(height / 3, 24));
 
                     this.ctx.fillStyle = '#fff';
-                    this.ctx.font = `${fontSize}px Arial`;
+                    this.ctx.font = `${fontSize}px PokemonSolid`;
                     this.ctx.textBaseline = 'middle';
                     const text = `${node.data.name}<br>$${d3.format(',.2f')(node.value)}`;
                     // Split the text into lines and draw each line separately
