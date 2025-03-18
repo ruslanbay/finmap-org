@@ -295,11 +295,11 @@ class Treemap {
     
                 // Determine image source based on size
                 if (width > 100 || height > 150) {
-                    image.src = 'images/test/610758.jpg'; // node.data.ticker;
+                    let imageSrc = 'images/test/610758.jpg'; // node.data.ticker;
                   }
                   else {
                   //   image.src = 'images/test/previews/85072.jpeg'; // node.data.ticker;
-                    image.src = 'images/test/previews/96370.jpeg'; // node.data.ticker;
+                    let imageSrc = 'images/test/previews/96370.jpeg'; // node.data.ticker;
                   }
     
                 // Load image asynchronously
