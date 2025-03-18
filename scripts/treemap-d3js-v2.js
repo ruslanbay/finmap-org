@@ -271,7 +271,7 @@ class Treemap {
                     const lines = text.split('<br>');
                     const lineHeight = fontSize * 0.8;
                     for (let i = 0; i < lines.length; i++) {
-                        const truncatedText = getTruncatedText(lines[i], width - 6);
+                        const truncatedText = this.getTruncatedText(lines[i], width - 6);
                         this.ctx.fillText(
                             truncatedText,
                             node.x0 + 3,
