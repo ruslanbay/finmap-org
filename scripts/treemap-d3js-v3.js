@@ -147,7 +147,7 @@ class Treemap {
             display: flex;
             align-items: center;
             padding: 0 10px;
-            // font-family: PokemonSolid;
+            font-family: PokemonSolid;
         `;
         this.container.appendChild(this.pathbar);
     }
@@ -446,19 +446,19 @@ document.head.insertAdjacentHTML('beforeend', `
             overflow: hidden;
         }
         
-        // @font-face {
-        //     font-family: 'PokemonHollow';
-        //     src: url('styles/PokemonHollow.ttf') format('truetype');
-        //     font-weight: normal;
-        //     font-style: normal;
-        // }
+        @font-face {
+            font-family: 'PokemonHollow';
+            src: url('styles/PokemonHollow.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
         
-        // @font-face {
-        //     font-family: 'PokemonSolid';
-        //     src: url('styles/PokemonSolid.ttf') format('truetype');
-        //     font-weight: normal;
-        //     font-style: normal;
-        // }
+        @font-face {
+            font-family: 'PokemonSolid';
+            src: url('styles/PokemonSolid.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
     </style>
 `);
 
