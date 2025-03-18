@@ -37,6 +37,9 @@ class Treemap {
 
         // Add parent references to make path building easier
         this.nodesMap = new Map();
+
+        // Store root node separately
+        this.rootNode = null;
     }
 
     updateDimensions(width, height) {
@@ -199,6 +202,11 @@ class Treemap {
         
         this.currentRoot = node;
         
+        // If this is our first render, set root node
+        if (!this.rootNode) {
+            this.rootNode = node;
+        }
+        
         // Clear cache when switching nodes
         this.cache.hierarchy = null;
         
@@ -206,15 +214,15 @@ class Treemap {
         this.cache.hierarchy = d3.hierarchy(node.data)
             .sum(d => d.type === 'sector' ? 0 : d.value)
             .sort((a, b) => b.value - a.value);
-    
+
         const treemap = d3.treemap()
             .size([this.width, this.height])
-            .paddingTop(24)
+            .paddingTop(node === this.rootNode ? 0 : 24) // Check against rootNode
             .paddingRight(1)
             .paddingBottom(1)
             .paddingLeft(1)
             .round(true);
-    
+
         treemap(this.cache.hierarchy);
         this.nodes = this.cache.hierarchy.descendants();
         
@@ -333,20 +341,28 @@ class Treemap {
     drillDown(node) {
         if (!node || this.currentRoot === node) return;
 
-        // Build complete path from node to root
-        const fullPath = [];
-        let currentNode = node;
-        
-        // Traverse up the hierarchy to build the path
-        while (currentNode) {
-            fullPath.unshift(currentNode);
-            currentNode = currentNode.parent;
+        // Ensure root node is always first in path
+        if (!this.rootNode) {
+            this.rootNode = this.path[0];
+        }
+
+        if (node === this.rootNode) {
+            // Clicking root node - reset to just root
+            this.path = [this.rootNode];
+        } else {
+            // Build path from node up to its parent
+            const newPath = [];
+            let currentNode = node;
+            
+            while (currentNode && currentNode !== this.rootNode) {
+                newPath.unshift(currentNode);
+                currentNode = currentNode.parent;
+            }
+            
+            // Always include root node at start
+            this.path = [this.rootNode, ...newPath];
         }
         
-        // Update path with the full hierarchy
-        this.path = fullPath;
-        
-        // Render the target node
         this.renderFromNode(node);
     }
 
@@ -448,6 +464,25 @@ class Treemap {
     
         return { root, nodesMap: this.nodesMap };
     }
+
+    initialize(data) {
+        const transformedData = this.transformData(data);
+        const root = d3.hierarchy(transformedData)
+            .sum(d => d.type === 'sector' ? 0 : d.value)
+            .sort((a, b) => b.value - a.value);
+        
+        this.rootNode = root;
+        this.path = [root];
+        this.renderFromNode(root);
+    }
+
+    // Optional: Add method to reset to root
+    resetToRoot() {
+        if (this.rootNode) {
+            this.path = [this.rootNode];
+            this.renderFromNode(this.rootNode);
+        }
+    }
 }
 
 document.head.insertAdjacentHTML('beforeend', `
@@ -487,13 +522,7 @@ const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb
 fetch(url)
     .then(response => response.json())
     .then(data => {
-        const transformedData = treemap.transformData(data);
-        const root = d3.hierarchy(transformedData)
-            .sum(d => d.type === 'sector' ? 0 : d.value)
-            .sort((a, b) => b.value - a.value);
-        
-        treemap.path = [root];
-        treemap.renderFromNode(root);
+        treemap.initialize(data);
     })
     .catch(error => {
         console.error('Error loading or processing data:', error);
