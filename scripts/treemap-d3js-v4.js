@@ -1,5 +1,5 @@
 class Treemap {
-    async constructor(containerId) {
+    constructor(containerId) {
         // Add column index mapping
         this.columnIndex = {};
         // Initialize container and canvas
@@ -32,7 +32,7 @@ class Treemap {
         };
 
         // Resize observer instead of window.resize
-        this.resizeObserver = new await ResizeObserver(this.handleResize.bind(this));
+        this.resizeObserver = new ResizeObserver(this.handleResize.bind(this));
         this.resizeObserver.observe(this.container);
 
         // Add parent references to make path building easier
