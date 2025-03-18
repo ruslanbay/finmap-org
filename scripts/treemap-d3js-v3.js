@@ -275,24 +275,6 @@ class Treemap {
         
         // Draw leaf node text if there's enough space
         if (width > 30 && height > 20) {
-            // Dynamically adjust font size based on node dimensions
-            const fontSize = Math.min(Math.max(width / 10, 8), Math.min(height / 3, 24));
-
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = `${fontSize}px Arial`;
-            this.ctx.textBaseline = 'middle';
-            const text = `${node.data.name}<br>$${d3.format(',.2f')(node.value)}`;
-            // Split the text into lines and draw each line separately
-            const lines = text.split('<br>');
-            const lineHeight = fontSize * 1.0;
-            for (let i = 0; i < lines.length; i++) {
-                const truncatedText = this.getTruncatedText(lines[i], width - 6);
-                this.ctx.fillText(
-                    truncatedText,
-                    node.x0 + 3,
-                    node.y0 + (i * lineHeight) + (height / 2)
-                );
-            }
             // Load and draw an image for each node
             const image = new Image();
             if (width > 50 || height > 50) {
@@ -324,44 +306,42 @@ class Treemap {
                     sx, sy, sWidth, sHeight,  // Source rectangle
                     node.x0, node.y0, width, height  // Destination rectangle
                 );
-                
-                // Draw text overlay
-                // this.renderNodeText(node, width, height);
             };
+            
+            // Draw text overlay
+            this.renderNodeText(node, width, height);
         }
     }
 
-    // renderNodeText(node, width, height) {
-    //     // Calculate font size based on node dimensions
-    //     const fontSize = Math.min(
-    //         Math.max(width / 10, 8), 
-    //         Math.min(height / 3, 24)
-    //     );
+    renderNodeText(node, width, height) {
+        // Calculate font size based on node dimensions
+        const fontSize = Math.min(
+            Math.max(width / 10, 8), 
+            Math.min(height / 3, 24)
+        );
     
-    //     // Add semi-transparent background for better text readability
-    //     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    //     this.ctx.fillRect(node.x0, node.y0, width, Math.max(height * 0.4, fontSize * 2.5));
+        // Add semi-transparent background for better text readability
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(node.x0, node.y0, width, Math.max(height * 0.4, fontSize * 2.5));
     
-    //     // Draw text
-    //     this.ctx.fillStyle = '#fff';
-    //     this.ctx.font = `${fontSize}px Arial`;
-    //     this.ctx.textBaseline = 'middle';
+        // Draw text
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = `${fontSize}px Arial`;
+        this.ctx.textBaseline = 'middle';
         
-    //     const text = `${node.data.name}`;
-    //     const value = `$${d3.format(',.2f')(node.value)}M`;
-        
-    //     const lineHeight = fontSize * 1.2;
-        
-    //     // Draw name and value
-    //     [text, value].forEach((line, i) => {
-    //         const truncatedText = this.getTruncatedText(line, width - 6);
-    //         this.ctx.fillText(
-    //             truncatedText,
-    //             node.x0 + 3,
-    //             node.y0 + (i * lineHeight) + fontSize
-    //         );
-    //     });
-    // }
+        const text = `${node.data.name}<br>$${d3.format(',.2f')(node.value)}`;
+            // Split the text into lines and draw each line separately
+            const lines = text.split('<br>');
+            const lineHeight = fontSize * 1.0;
+            for (let i = 0; i < lines.length; i++) {
+                const truncatedText = this.getTruncatedText(lines[i], width - 6);
+                this.ctx.fillText(
+                    truncatedText,
+                    node.x0 + 3,
+                    node.y0 + (i * lineHeight) + (height / 2)
+                );
+            }
+    }
 
     getTruncatedText(text, maxWidth) {
         let truncated = text;
