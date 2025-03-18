@@ -148,6 +148,8 @@ class Treemap {
             align-items: center;
             padding: 0 10px;
             font-family: PokemonSolid;
+            letter-spacing: 0.1em;
+
         `;
         this.container.appendChild(this.pathbar);
     }
