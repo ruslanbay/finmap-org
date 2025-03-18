@@ -301,9 +301,9 @@ class Treemap {
                 } else if (width > 60 || height > 90) {
                     imageSrc = 'images/test/previews/96370.jpeg';
                 } else {
-                    imageSrc = 'images/test/default.jpeg';
+                    imageSrc = 'images/test/default.png';
                 }
-                
+
                 // Load image asynchronously
                 const image = await loadImage(imageSrc);
                 
