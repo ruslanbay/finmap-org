@@ -284,7 +284,7 @@ class Treemap {
         if (width > 30 && height > 20) {
             // Load and draw an image for each node
             const image = new Image();
-            if (width > 50 || height > 50) {
+            if (width > 100 || height > 150) {
               image.src = 'images/test/610758.jpg'; // node.data.ticker;
             }
             else {
@@ -328,7 +328,7 @@ class Treemap {
         );
     
         // Add semi-transparent background for better text readability
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
         this.ctx.fillRect(node.x0, node.y0, width, height);
     
         // Draw text
