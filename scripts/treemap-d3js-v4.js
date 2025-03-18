@@ -280,9 +280,6 @@ class Treemap {
         this.ctx.fillStyle = '#577a9d';
         this.ctx.fillRect(node.x0, node.y0, width, height);
         
-        // Draw text immediately
-        this.renderNodeText(node, width, height);
-        
         // Only proceed with image loading if there's enough space
         if (width > 30 && height > 20) {
             try {
@@ -330,10 +327,12 @@ class Treemap {
                     node.x0, node.y0, width, height  // Destination rectangle
                 );
             
-                // Render text again on top of the image
+                // Draw text overlay
                 this.renderNodeText(node, width, height);
             } catch (error) {
                 console.error(`Failed to load image for node:`, error);
+                // The background color is already drawn as fallback
+                this.renderNodeText(node, width, height);
             }
         }
     }
