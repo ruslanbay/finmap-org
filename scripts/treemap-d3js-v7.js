@@ -568,7 +568,6 @@ function updateOverlayWidget(divName, content = null) {
         overlayDiv = document.createElement("div");
         overlayDiv.id = divName;
         overlayDiv.style.position = "absolute";
-        overlayDiv.innerHTML = "";
         // Position the div based on the bounding box of the leaf node
         overlayDiv.style.left = "20px"; // bbox.x + 10 + "px";
         overlayDiv.style.top = "20px"; // bbox.y + 150 + "px";
@@ -579,6 +578,10 @@ function updateOverlayWidget(divName, content = null) {
         overlayDiv.style.height = "75%";
         overlayDiv.style.display = "flex";
         overlayDiv.style.visibility = "hidden";
+        overlayDiv.style.opacity = "0.8";
+        overlayDiv.style.backgroundColor = "#f0f0f0";
+        overlayDiv.style.padding = "10px";
+        overlayDiv.innerHTML = "";
 
         document.body.appendChild(overlayDiv);
     }
@@ -590,7 +593,7 @@ function updateOverlayWidget(divName, content = null) {
     }
 
     if (content) {
-        container.appendChild(content);
+        overlayDiv.appendChild(content);
     }
 
     overlayDiv.style.visibility = "visible";
