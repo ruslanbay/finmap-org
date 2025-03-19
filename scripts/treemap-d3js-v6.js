@@ -251,7 +251,7 @@ class Treemap {
         const productRawData = this.rawData.find(item => item.productId == node.data.ticker);
         const customAttributesJson = productRawData ? productRawData.customAttributes : null;
 
-        if (customAttributes) {
+        if (customAttributesJson) {
             const customAttributes = Object.entries(customAttributesJson).map(([key, value]) => [key, value]);
             details.push(...customAttributes);
         }
