@@ -213,8 +213,18 @@ class Treemap {
             height: this.height - 2 * padding
         };
     
-        // this.drawDetailBackground(dimensions);
+        this.drawDetailBackground(dimensions);
         this.drawDetailContent(node, dimensions, contentPadding);
+    }
+
+    drawDetailBackground({ x, y, width, height }) {
+        this.ctx.fillStyle = '#2C3E50';
+        this.ctx.globalAlpha = 0.9;
+        this.ctx.fillRect(x, y, width, height);
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(x, y, width, height);
+        this.ctx.globalAlpha = 1;
     }
 
     drawDetailContent(node, dims, padding) {
@@ -256,12 +266,6 @@ class Treemap {
             ];
             details.push(...rawDetails);
         }
-    
-        // Add last updated timestamp
-        const timestamp = new Date().toISOString()
-            .replace('T', ' ')
-            .replace(/\.\d{3}Z$/, ' UTC');
-        details.push(['Last Updated', timestamp]);
     
         // Draw all rows
         details.forEach(([label, value]) => {
