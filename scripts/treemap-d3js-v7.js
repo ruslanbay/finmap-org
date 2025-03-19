@@ -585,7 +585,7 @@ function updateOverlayWidget(divName, content = null) {
 
         document.body.appendChild(overlayDiv);
         document.addEventListener('click', function(event) {
-            if (overlayDiv && !overlayDiv.contains(event.target)) {
+            if (overlayDiv && overlayDiv.style.visibility === "visible" && !overlayDiv.contains(event.target)) {
                 overlayDiv.innerHTML = "";
                 overlayDiv.style.visibility = "hidden";
             }
