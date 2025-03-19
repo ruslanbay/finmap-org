@@ -276,7 +276,7 @@ class Treemap {
 
     async renderLeafNode(node, width, height) {
         // Draw background color first (fallback)
-        this.ctx.fillStyle = '#577a9d';
+        this.ctx.fillStyle = '#41475d';
         this.ctx.fillRect(node.x0, node.y0, width, height);
         
         // Only proceed if there's enough space
