@@ -578,9 +578,7 @@ function updateOverlayWidget(divName, content = null) {
         overlayDiv.style["max-width"] = "960px";
         overlayDiv.style.height = "75%";
         overlayDiv.style.display = "flex";
-    }
-
-    if (overlayDiv.style.visibility === "visible") {
+    } else if (overlayDiv.style.visibility === "visible") {
         overlayDiv.innerHTML = "";
         overlayDiv.style.visibility = "hidden";
         return;
