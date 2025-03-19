@@ -586,13 +586,14 @@ function updateOverlayWidget(divName, content = null) {
         document.body.appendChild(overlayDiv);
     }
 
-    if (overlayDiv && overlayDiv.style.visibility === "visible") {
-        overlayDiv.innerHTML = "";
-        overlayDiv.style.visibility = "hidden";
-        return;
-    }
+    // if (overlayDiv && overlayDiv.style.visibility === "visible") {
+    //     overlayDiv.innerHTML = "";
+    //     overlayDiv.style.visibility = "hidden";
+    //     return;
+    // }
 
     if (content) {
+        overlayDiv.innerHTML = "";
         overlayDiv.appendChild(content);
     }
 
