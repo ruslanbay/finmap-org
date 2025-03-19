@@ -1,5 +1,6 @@
 class Treemap {
-    constructor(containerId) {
+    constructor(containerId, rawData) {
+        this.rawData = rawData;
         // Add column index mapping
         this.columnIndex = {};
         // Initialize container and canvas
@@ -243,28 +244,16 @@ class Treemap {
     
         // Draw rows
         const details = [
-            ['Ticker', node.data.ticker],
-            ['Type', node.data.type],
-            ['Market Cap', node.value && `$${formatNumber(node.value)}M`],
-            ['Exchange', node.data.exchange],
-            ['Sector', node.data.sector],
-            ['Industry', node.data.industry]
+            ['Market Price', node.value && `$${formatNumber(node.value)}`]
         ];
     
         // Add raw data details if available
-        if (node.data.rawData) {
-            const { rawData } = node.data;
-            const rawDetails = [
-                ['Last Sale Price', rawData[this.columnIndex.priceLastSale]],
-                ['Price Change %', rawData[this.columnIndex.priceChangePct] && 
-                    `${rawData[this.columnIndex.priceChangePct]}%`],
-                ['Volume', rawData[this.columnIndex.volume] && 
-                    formatNumber(rawData[this.columnIndex.volume])],
-                ['Number of Trades', rawData[this.columnIndex.numTrades] && 
-                    formatNumber(rawData[this.columnIndex.numTrades])],
-                ['Listed From', rawData[this.columnIndex.listedFrom]]
-            ];
-            details.push(...rawDetails);
+        const productRawData = this.rawData.find(item => item.productId == node.data.ticker);
+        const customAttributesJson = productRawData ? productRawData.customAttributes : null;
+
+        if (customAttributes) {
+            const customAttributes = Object.entries(customAttributesJson).map(([key, value]) => [key, value]);
+            details.push(...customAttributes);
         }
     
         // Draw all rows
@@ -650,18 +639,31 @@ function createLoadingIndicator() {
   return loadingDiv;
 }
 
-// Initialize
-const treemap = new Treemap('container');
-// const loadingDiv = createLoadingIndicator();
-// treemap.container.appendChild(loadingDiv);
 
-// Load and render data
-const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
-// const url = 'https://raw.githubusercontent.com/finmap-org/data-us/refs/heads/main/marketdata/2025/03/14/us-all.json';
+async function renderTreemap() {
+    // fetch raw datafile
+    let rawDatafile;
+    try {
+        const url = 'images/test/pokemon_raw.json';
+        const response = await fetch(url);
+        rawDatafile = await response.json();
+    } catch (error) {
+        console.error('Error loading raw datafile:', error);
+    }
 
-fetch(url)
-    .then(response => response.json())
-    .then(data => {
+
+    const treemap = new Treemap('container', rawDatafile.results[0].results);
+    // const loadingDiv = createLoadingIndicator();
+    // treemap.container.appendChild(loadingDiv);
+
+
+    // fetch and render treemap datafile
+    try {
+        const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
+        // const url = 'https://raw.githubusercontent.com/finmap-org/data-us/refs/heads/main/marketdata/2025/03/14/us-all.json';
+        const response = await fetch(url);
+        const data = await response.json();
+        
         const transformedData = treemap.transformData(data);
         const root = d3.hierarchy(transformedData)
             .sum(d => d.type === 'sector' ? 0 : d.value)
@@ -669,11 +671,11 @@ fetch(url)
         
         treemap.path = [root];
         treemap.renderFromNode(root);
-    })
-    .then(() => {
-        // treemap.container.removeChild(loadingDiv);
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Error loading or processing data:', error);
+    } finally {
         // treemap.container.removeChild(loadingDiv);
-    });
+    }
+}
+
+renderTreemap();
