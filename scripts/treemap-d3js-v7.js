@@ -561,8 +561,6 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 
-let isOverlayVisible = false;
-
 function updateOverlayWidget(divName, content = null) {
     let overlayDiv = document.getElementById(divName);
 
@@ -586,13 +584,6 @@ function updateOverlayWidget(divName, content = null) {
         overlayDiv.innerHTML = "";
 
         document.body.appendChild(overlayDiv);
-        document.addEventListener('click', function(event) {
-            if (overlayDiv && isOverlayVisible && !overlayDiv.contains(event.target)) {
-                overlayDiv.innerHTML = "";
-                overlayDiv.style.visibility = "hidden";
-                isOverlayVisible = false;
-            }
-        });
     }
 
     if (content) {
@@ -601,7 +592,6 @@ function updateOverlayWidget(divName, content = null) {
     }
 
     overlayDiv.style.visibility = "visible";
-    isOverlayVisible = true;
 }
 
 
