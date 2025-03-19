@@ -563,11 +563,11 @@ document.head.insertAdjacentHTML('beforeend', `
 
 function updateOverlayWidget(divName, content = null) {
     let overlayDiv = document.getElementById(divName);
-    
-    if (typeof overlayDiv == "undefined") {
+
+    if (!overlayDiv) {
         overlayDiv = document.createElement("div");
         overlayDiv.id = divName;
-        overlayDiv.style.visibility = "visible";
+        overlayDiv.style.position = "absolute";
         overlayDiv.innerHTML = "";
         // Position the div based on the bounding box of the leaf node
         overlayDiv.style.left = "20px"; // bbox.x + 10 + "px";
@@ -578,14 +578,22 @@ function updateOverlayWidget(divName, content = null) {
         overlayDiv.style["max-width"] = "960px";
         overlayDiv.style.height = "75%";
         overlayDiv.style.display = "flex";
-    } else if (overlayDiv.style.visibility === "visible") {
+        overlayDiv.style.visibility = "hidden";
+
+        document.body.appendChild(overlayDiv);
+    }
+
+    if (overlayDiv && overlayDiv.style.visibility === "visible") {
         overlayDiv.innerHTML = "";
         overlayDiv.style.visibility = "hidden";
         return;
     }
 
+    if (content) {
+        overlayDiv.innerHTML = content;
+    }
+
     overlayDiv.style.visibility = "visible";
-    container.appendChild(contentTable);
 }
 
 
