@@ -563,8 +563,8 @@ function createLoadingIndicator() {
 
 // Initialize
 const treemap = new Treemap('container');
-const loadingDiv = createLoadingIndicator();
-treemap.container.appendChild(loadingDiv);
+// const loadingDiv = createLoadingIndicator();
+// treemap.container.appendChild(loadingDiv);
 
 // Load and render data
 const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
@@ -582,9 +582,9 @@ fetch(url)
         treemap.renderFromNode(root);
     })
     .then(() => {
-        treemap.container.removeChild(loadingDiv);
+        // treemap.container.removeChild(loadingDiv);
     })
     .catch(error => {
         console.error('Error loading or processing data:', error);
-        treemap.container.removeChild(loadingDiv);
+        // treemap.container.removeChild(loadingDiv);
     });
