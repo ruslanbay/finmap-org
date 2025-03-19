@@ -590,7 +590,7 @@ function updateOverlayWidget(divName, content = null) {
     }
 
     if (content) {
-        overlayDiv.innerHTML = content;
+        container.appendChild(content);
     }
 
     overlayDiv.style.visibility = "visible";
