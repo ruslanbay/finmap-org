@@ -203,7 +203,7 @@ class Treemap {
         
         if (customAttributesJson) {
             // const customAttributes = Object.entries(customAttributesJson).map(([key, value]) => [key, value]);
-            const customAttributes = Object.entries(customAttributes);
+            const customAttributes = Object.entries(customAttributesJson);
             const contentTable = createContentTable(customAttributes);
             updateOverlayWidget("overlay", contentTable);
         }
