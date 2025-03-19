@@ -584,13 +584,13 @@ function updateOverlayWidget(divName, content = null) {
         overlayDiv.innerHTML = "";
 
         document.body.appendChild(overlayDiv);
+        document.addEventListener('click', function(event) {
+            if (overlayDiv && !overlayDiv.contains(event.target)) {
+                overlayDiv.innerHTML = "";
+                overlayDiv.style.visibility = "hidden";
+            }
+        });
     }
-
-    // if (overlayDiv && overlayDiv.style.visibility === "visible") {
-    //     overlayDiv.innerHTML = "";
-    //     overlayDiv.style.visibility = "hidden";
-    //     return;
-    // }
 
     if (content) {
         overlayDiv.innerHTML = "";
