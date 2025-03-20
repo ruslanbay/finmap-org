@@ -32,7 +32,7 @@
       ]
     },
     {
-      "name": "AMEX",
+      "name": "American Exchange",
       "short_name": "AMEX",
       "description": "AMEX",
       "url": "/?exchange=amex",
@@ -44,9 +44,33 @@
       ]
     },
     {
-      "name": "MOEX",
+      "name": "London Stock Exchange",
+      "short_name": "LSE",
+      "description": "LSE",
+      "url": "/?exchange=lse",
+      "icons": [
+        {
+          "src": "/images/icons/ios/192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Turkish Stock Market",
+      "short_name": "BIST",
+      "description": "Borsa Istanbul, Turkish Stock Market",
+      "url": "/?exchange=bist",
+      "icons": [
+        {
+          "src": "/images/icons/ios/192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Moscow Exchange",
       "short_name": "MOEX",
-      "description": "MOEX",
+      "description": "Moscow Exchange, Russian Stock Market",
       "url": "/?exchange=moex",
       "icons": [
         {

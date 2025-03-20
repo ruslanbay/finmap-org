@@ -71,6 +71,7 @@ async function getCompanyInfo(exchange, clickedTreemapItem) {
   let html = "";
   let description;
   let sourceLink;
+  let infoLang;
   switch (exchange) {
     case "nasdaq":
     case "nyse":
@@ -90,7 +91,6 @@ async function getCompanyInfo(exchange, clickedTreemapItem) {
       }
       break;
     case "moex":
-      let infoLang;
       switch (currentLanguage) {
         case "ENG":
           infoLang = "en";

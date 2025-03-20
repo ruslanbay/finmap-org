@@ -27,7 +27,7 @@ linkLangToggle.addEventListener("click", () => {
 // Exchange
 let exchange;
 let reponame;
-if (urlExchange && ["nasdaq", "nyse", "amex", "us-all", "moex", "lse"].includes(urlExchange)) {
+if (urlExchange && ["nasdaq", "nyse", "amex", "us-all", "moex", "lse", "bist"].includes(urlExchange)) {
   exchange = urlExchange;
 }
 else {
@@ -136,6 +136,9 @@ switch (exchange) {
   case "moex":
     openHour = 8;
     break;
+  case "bist":
+    openHour = 8;
+    break;
   case "nasdaq":
   case "nyse":
   case "amex":
@@ -155,12 +158,23 @@ var formattedDate = date.toISOString().split("T")[0];
 const inputDate = document.getElementById("inputDate");
 inputDate.addEventListener("change", refreshChart);
 inputDate.value = formattedDate;
+
+if (urlDate) {
+  inputDate.value = urlDate;
+}
+
+inputDate.max = new Date().toISOString().split("T")[0];
+
 switch (exchange) {
   case "lse":
     inputDate.min = new Date(`2025-02-07T13:00:00`).toISOString().split("T")[0];
     break;
   case "moex":
     inputDate.min = new Date(`2011-12-19T13:00:00`).toISOString().split("T")[0];
+    break;
+  case "bist":
+    inputDate.min = new Date(`2015-11-30T13:00:00`).toISOString().split("T")[0];
+    inputDate.value = inputDate.max = '2025-02-28';
     break;
   case "nasdaq":
   case "nyse":
@@ -171,11 +185,6 @@ switch (exchange) {
   default:
     inputDate.min = new Date(`2024-12-09T13:00:00`).toISOString().split("T")[0];
     break;
-}
-inputDate.max = new Date().toISOString().split("T")[0];
-
-if (urlDate) {
-  inputDate.value = urlDate;
 }
 
 let chartType = "treemap";
