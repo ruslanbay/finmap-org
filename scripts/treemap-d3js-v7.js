@@ -205,7 +205,7 @@ class Treemap {
             // const customAttributes = Object.entries(customAttributesJson).map(([key, value]) => [key, value]);
             const customAttributes = Object.entries(customAttributesJson);
             const contentTable = createContentTable(customAttributes);
-            updateOverlayWidget("overlay", contentTable);
+            await updateOverlayWidget("overlay", contentTable);
         }
     }
 
@@ -561,26 +561,29 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 
-function updateOverlayWidget(divName, content = null) {
+async function updateOverlayWidget(divName, content = null) {
     let overlayDiv = document.getElementById(divName);
 
     if (!overlayDiv) {
         overlayDiv = document.createElement("div");
         overlayDiv.id = divName;
-        overlayDiv.style.position = "absolute";
-        // Position the div based on the bounding box of the leaf node
-        overlayDiv.style.left = "20px"; // bbox.x + 10 + "px";
-        overlayDiv.style.top = "20px"; // bbox.y + 150 + "px";
-        // overlayDiv.style.width = bbox.width - 20 + "px";
-        // overlayDiv.style.height = bbox.height - 120 + "px";
-        overlayDiv.style.width = "95%";
-        overlayDiv.style["max-width"] = "960px";
-        overlayDiv.style.height = "75%";
+        overlayDiv.style.position = "fixed"; // "absolute";
+        overlayDiv.style.width = "63%";
+        overlayDiv.style["max-width"] = "630px";
+        overlayDiv.style.height = "88%";
+        overlayDiv.style["max-height"] = "880px";
         overlayDiv.style.display = "flex";
         overlayDiv.style.visibility = "hidden";
         overlayDiv.style.opacity = "0.8";
         overlayDiv.style.backgroundColor = "#f0f0f0";
         overlayDiv.style.padding = "10px";
+        overlayDiv.style.top = "50%";
+        overlayDiv.style.left = "50%";
+        overlayDiv.style.transform = "translate(-50%, -50%)";
+        overlayDiv.style.backgroundImage = "url('images/test/610758.jpg')";
+        overlayDiv.style.backgroundSize = "cover";
+        overlayDiv.style.backgroundPosition = "center";
+        overlayDiv.style.backgroundRepeat = "no-repeat"; 
         overlayDiv.innerHTML = "";
 
         document.body.appendChild(overlayDiv);
