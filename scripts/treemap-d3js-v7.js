@@ -313,14 +313,13 @@ class Treemap {
                     });
                 };
     
-                let imageSrc;
+                let productId = node.data.ticker;
+                let roundedProductId = Math.floor(productId / 1000) * 1000;
+                let imageSrc = 'images/test/default.png';
+
                 // Determine image source based on size
-                if (width > 100 || height > 150) {
-                    imageSrc = 'images/test/610758.jpg'; // node.data.ticker;
-                } else if (width > 60 || height > 90) {
-                    imageSrc = 'images/test/previews/96370.jpeg';
-                } else {
-                    imageSrc = 'images/test/default.png';
+                if (width > 60 || height > 90) { // (width > 100 || height > 150) {
+                    imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/${roundedProductId}/${productId}.webp`;
                 }
 
                 // Load image asynchronously
@@ -682,7 +681,7 @@ async function renderTreemap() {
     // fetch raw datafile
     let rawDatafile;
     try {
-        const url = 'images/test/pokemon_raw.json';
+        const url = 'https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/marketdata/raw/pokemon.json';
         const response = await fetch(url);
         rawDatafile = await response.json();
     } catch (error) {
@@ -697,8 +696,7 @@ async function renderTreemap() {
 
     // fetch and render treemap datafile
     try {
-        const url = 'https://gist.githubusercontent.com/ruslanbay/4e50cd8df640d24f9e64bb7672cdf3a2/raw/7950eaf289bb1b8a4c2214209e460ae481156652/pokemon.json';
-        // const url = 'https://raw.githubusercontent.com/finmap-org/data-us/refs/heads/main/marketdata/2025/03/14/us-all.json';
+        const url = 'https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/marketdata/pokemon.json';
         const response = await fetch(url);
         const data = await response.json();
         
