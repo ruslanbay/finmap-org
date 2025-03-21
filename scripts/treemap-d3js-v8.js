@@ -562,6 +562,7 @@ document.head.insertAdjacentHTML('beforeend', `
 
 async function updateOverlayWidget(divName, productId, content) {
     let overlayDiv = document.getElementById(divName);
+    let closeButton = document.getElementById("closeButton");
 
     let roundedProductId = Math.floor(productId / 1000) * 1000;
     let imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/pokemon/${roundedProductId}/${productId}.jpg`;
@@ -588,7 +589,8 @@ async function updateOverlayWidget(divName, productId, content) {
         overlayDiv.style.backgroundRepeat = "no-repeat"; 
         overlayDiv.innerHTML = "";
 
-        const closeButton = document.createElement("button");
+        closeButton = document.createElement("button");
+        closeButton.id = "closeButton";
         closeButton.textContent = "×"; 
         closeButton.style.position = "absolute";
         closeButton.style.top = "10px";
@@ -598,6 +600,9 @@ async function updateOverlayWidget(divName, productId, content) {
         closeButton.style.background = "none";
         closeButton.style.border = "none";
         closeButton.style.cursor = "pointer";
+        
+        overlayDiv.appendChild(closeButton);
+        
         closeButton.addEventListener("click", function() {
             overlayDiv.style.visibility = "hidden";
         });
@@ -608,7 +613,6 @@ async function updateOverlayWidget(divName, productId, content) {
     overlayDiv.innerHTML = "";
     overlayDiv.appendChild(content);
     overlayDiv.appendChild(closeButton);
-
     overlayDiv.style.visibility = "visible";
     overlayDiv.style.backgroundImage = `url(${imageSrc})`;
 }
