@@ -595,11 +595,20 @@ async function updateOverlayWidget(divName, productId, content) {
         closeButton.style.position = "absolute";
         closeButton.style.top = "10px";
         closeButton.style.right = "10px";
-        closeButton.style.fontSize = "24px";
+        closeButton.style.fontSize = "96px";
         closeButton.style.fontWeight = "bold";
         closeButton.style.background = "none";
         closeButton.style.border = "none";
         closeButton.style.cursor = "pointer";
+        closeButton.style.background = "white";
+        closeButton.style.opacity = "0.7";
+        closeButton.style.borderRadius = "50%";
+        closeButton.style.width = "48px";
+        closeButton.style.height = "48px";
+        closeButton.style.display = "flex";
+        closeButton.style.justifyContent = "center";
+        closeButton.style.alignContent = "center";
+        closeButton.style.flexWrap = "wrap";
         
         overlayDiv.appendChild(closeButton);
         
