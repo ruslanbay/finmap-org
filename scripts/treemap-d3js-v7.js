@@ -316,7 +316,7 @@ class Treemap {
     
                 let productId = node.data.ticker;
                 let roundedProductId = Math.floor(productId / 1000) * 1000;
-                let imageSrc = 'images/test/default.png';
+                let imageSrc = 'https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/default.png';
 
                 // Determine image source based on size
                 if (width > 60 || height > 90) { // (width > 100 || height > 150) {
