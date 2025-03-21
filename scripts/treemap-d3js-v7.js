@@ -584,7 +584,7 @@ async function updateOverlayWidget(divName, productId, content) {
         overlayDiv.style.top = "50%";
         overlayDiv.style.left = "50%";
         overlayDiv.style.transform = "translate(-50%, -50%)";
-        overlayDiv.style.backgroundImage = `"url('${imageSrc}')"`;
+        overlayDiv.style.backgroundImage = `url(${imageSrc})`;
         overlayDiv.style.backgroundSize = "cover";
         overlayDiv.style.backgroundPosition = "center";
         overlayDiv.style.backgroundRepeat = "no-repeat"; 
