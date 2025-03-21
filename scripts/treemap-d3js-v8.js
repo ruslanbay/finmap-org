@@ -595,7 +595,7 @@ async function updateOverlayWidget(divName, productId, content) {
         closeButton.style.position = "absolute";
         closeButton.style.top = "10px";
         closeButton.style.right = "10px";
-        closeButton.style.fontSize = "96px";
+        closeButton.style.fontSize = "48px";
         closeButton.style.fontWeight = "bold";
         closeButton.style.background = "none";
         closeButton.style.border = "none";
