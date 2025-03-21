@@ -198,14 +198,15 @@ class Treemap {
 
     async renderLeafDetails(node) {
         // Add raw data details if available
-        const productRawData = this.rawData.find(item => item.productId == node.data.ticker);
+        const productId = node.data.ticker;
+        const productRawData = this.rawData.find(item => item.productId == productId);
         const customAttributesJson = productRawData ? productRawData.customAttributes : null;
         
         if (customAttributesJson) {
             // const customAttributes = Object.entries(customAttributesJson).map(([key, value]) => [key, value]);
             const customAttributes = Object.entries(customAttributesJson);
             const contentTable = createContentTable(customAttributes);
-            await updateOverlayWidget("overlay", contentTable);
+            await updateOverlayWidget("overlay", productId, contentTable);
         }
     }
 
@@ -560,8 +561,11 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 
-async function updateOverlayWidget(divName, content = null) {
+async function updateOverlayWidget(divName, productId, content) {
     let overlayDiv = document.getElementById(divName);
+
+    let roundedProductId = Math.floor(productId / 1000) * 1000;
+    let imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/pokemon/${roundedProductId}/${productId}.webp`;
 
     if (!overlayDiv) {
         overlayDiv = document.createElement("div");
@@ -580,7 +584,7 @@ async function updateOverlayWidget(divName, content = null) {
         overlayDiv.style.top = "50%";
         overlayDiv.style.left = "50%";
         overlayDiv.style.transform = "translate(-50%, -50%)";
-        overlayDiv.style.backgroundImage = "url('images/test/610758.jpg')";
+        overlayDiv.style.backgroundImage = `"url('${imageSrc}')"`;
         overlayDiv.style.backgroundSize = "cover";
         overlayDiv.style.backgroundPosition = "center";
         overlayDiv.style.backgroundRepeat = "no-repeat"; 
@@ -589,10 +593,8 @@ async function updateOverlayWidget(divName, content = null) {
         document.body.appendChild(overlayDiv);
     }
 
-    if (content) {
-        overlayDiv.innerHTML = "";
-        overlayDiv.appendChild(content);
-    }
+    overlayDiv.innerHTML = "";
+    overlayDiv.appendChild(content);
 
     overlayDiv.style.visibility = "visible";
 }
