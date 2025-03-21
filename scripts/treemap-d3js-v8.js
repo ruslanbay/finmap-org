@@ -598,7 +598,6 @@ async function updateOverlayWidget(divName, productId, content) {
         closeButton.style.background = "none";
         closeButton.style.border = "none";
         closeButton.style.cursor = "pointer";
-        overlayDiv.appendChild(closeButton);
         closeButton.addEventListener("click", function() {
             overlayDiv.style.visibility = "hidden";
         });
@@ -608,6 +607,7 @@ async function updateOverlayWidget(divName, productId, content) {
 
     overlayDiv.innerHTML = "";
     overlayDiv.appendChild(content);
+    overlayDiv.appendChild(closeButton);
 
     overlayDiv.style.visibility = "visible";
     overlayDiv.style.backgroundImage = `url(${imageSrc})`;
