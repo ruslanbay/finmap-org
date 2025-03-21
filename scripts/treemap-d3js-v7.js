@@ -565,7 +565,7 @@ async function updateOverlayWidget(divName, productId, content) {
     let overlayDiv = document.getElementById(divName);
 
     let roundedProductId = Math.floor(productId / 1000) * 1000;
-    let imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/pokemon/${roundedProductId}/${productId}.webp`;
+    let imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/pokemon/${roundedProductId}/${productId}.jpg`;
 
     if (!overlayDiv) {
         overlayDiv = document.createElement("div");
