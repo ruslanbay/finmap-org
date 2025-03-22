@@ -589,6 +589,30 @@ async function updateOverlayWidget(divName, productId, content) {
         overlayDiv.style.backgroundRepeat = "no-repeat"; 
         overlayDiv.innerHTML = "";
 
+        infoButton = document.createElement("button");
+        infoButton.id = "infoButton";
+        infoButton.textContent = "i";
+        infoButton.style.position = "absolute";
+        infoButton.style.top = "10px";
+        infoButton.style.left = "10px";
+        infoButton.style.fontSize = "48px";
+        infoButton.style.fontWeight = "bold";
+        infoButton.style.fontStyle = "italic";
+        infoButton.style.background = "none";
+        infoButton.style.border = "none";
+        infoButton.style.cursor = "pointer";
+        infoButton.style.background = "white";
+        infoButton.style.opacity = "0.7";
+        infoButton.style.borderRadius = "50%";
+        infoButton.style.width = "48px";
+        infoButton.style.height = "48px";
+        infoButton.style.display = "flex";
+        infoButton.style.justifyContent = "center";
+        infoButton.style.alignContent = "center";
+        infoButton.style.flexWrap = "wrap";
+        
+        overlayDiv.appendChild(infoButton);
+
         closeButton = document.createElement("button");
         closeButton.id = "closeButton";
         closeButton.textContent = "×"; 
@@ -611,6 +635,10 @@ async function updateOverlayWidget(divName, productId, content) {
         closeButton.style.flexWrap = "wrap";
         
         overlayDiv.appendChild(closeButton);
+
+        infoButton.addEventListener("click", function() {
+            content.classList.toggle("hidden");
+        });
         
         closeButton.addEventListener("click", function() {
             overlayDiv.style.visibility = "hidden";
@@ -632,6 +660,9 @@ function createContentTable(content) {
     const table = document.createElement('table');
     table.style.width = '100%';
     table.style.borderCollapse = 'collapse';
+    table.style.visibility = 'hidden';
+    table.style.background = "white";
+    table.style.opacity = "0.7";
 
     // Create the table header row
     const thead = document.createElement('thead');
