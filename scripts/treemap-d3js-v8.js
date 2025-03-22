@@ -562,7 +562,6 @@ document.head.insertAdjacentHTML('beforeend', `
 
 async function updateOverlayWidget(divName, productId, content) {
     let overlayDiv = document.getElementById(divName);
-    let table = document.getElementById("table");
     let infoButton = document.getElementById("infoButton");
     let closeButton = document.getElementById("closeButton");
 
@@ -633,7 +632,7 @@ async function updateOverlayWidget(divName, productId, content) {
         overlayDiv.appendChild(closeButton);
 
         infoButton.addEventListener("click", function() {
-            table.classList.toggle("hidden");
+            content.classList.toggle("hidden");
         });
 
         closeButton.addEventListener("click", function() {
