@@ -543,6 +543,22 @@ document.head.insertAdjacentHTML('beforeend', `
             overflow: hidden;
         }
         
+        .button {
+            position: absolute;
+            fontSize: 48px;
+            fontWeight: bold;
+            background: #aaa1a1;
+            border: none;
+            cursor: pointer;
+            opacity: 0.7;
+            borderRadius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justifyContent: center;
+            alignItems: center;
+        }
+        
         @font-face {
             font-family: 'PokemonHollow';
             src: url('styles/PokemonHollow.ttf') format('truetype');
@@ -590,44 +606,19 @@ async function updateOverlayWidget(divName, productId, contentTable) {
 
         infoButton = document.createElement("button");
         infoButton.id = "infoButton";
+        infoButton.class = "button";
         infoButton.textContent = "i";
-        infoButton.style.position = "absolute";
         infoButton.style.top = "10px";
         infoButton.style.left = "10px";
-        infoButton.style.fontSize = "48px";
-        infoButton.style.fontWeight = "bold";
-        infoButton.style.fontStyle = "italic";
-        infoButton.style.background = "white";
-        infoButton.style.border = "none";
-        infoButton.style.cursor = "pointer";
-        infoButton.style.opacity = "0.7";
-        infoButton.style.borderRadius = "50%";
-        infoButton.style.width = "48px";
-        infoButton.style.height = "48px";
-        infoButton.style.display = "flex";
-        infoButton.style.justifyContent = "center";
-        infoButton.style.alignItems = "center";
 
         overlayDiv.appendChild(infoButton);
 
         closeButton = document.createElement("button");
         closeButton.id = "closeButton";
+        infoButton.class = "button";
         closeButton.textContent = "×";
-        closeButton.style.position = "absolute";
         closeButton.style.top = "10px";
         closeButton.style.right = "10px";
-        closeButton.style.fontSize = "48px";
-        closeButton.style.fontWeight = "bold";
-        closeButton.style.background = "white";
-        closeButton.style.border = "none";
-        closeButton.style.cursor = "pointer";
-        closeButton.style.opacity = "0.7";
-        closeButton.style.borderRadius = "50%";
-        closeButton.style.width = "48px";
-        closeButton.style.height = "48px";
-        closeButton.style.display = "flex";
-        closeButton.style.justifyContent = "center";
-        closeButton.style.alignItems = "center";
 
         overlayDiv.appendChild(closeButton);
 
@@ -636,10 +627,10 @@ async function updateOverlayWidget(divName, productId, contentTable) {
         });
 
         infoButton.addEventListener("click", function() {
-            if (contentTable.style.display === "none") {
-                contentTable.style.display = "table";
+            if (contentTable.style.visibility === "hidden") {
+                contentTable.style.visibility = "visible";
             } else {
-                contentTable.style.display = "none";
+                contentTable.style.visibility = "hidden";
             }
         });
 
