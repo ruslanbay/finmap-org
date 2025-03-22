@@ -606,7 +606,7 @@ async function updateOverlayWidget(divName, productId, contentTable) {
 
         infoButton = document.createElement("button");
         infoButton.id = "infoButton";
-        infoButton.class = "button";
+        infoButton.className = "button";
         infoButton.textContent = "i";
         infoButton.style.top = "10px";
         infoButton.style.left = "10px";
@@ -615,7 +615,7 @@ async function updateOverlayWidget(divName, productId, contentTable) {
 
         closeButton = document.createElement("button");
         closeButton.id = "closeButton";
-        infoButton.class = "button";
+        infoButton.className = "button";
         closeButton.textContent = "×";
         closeButton.style.top = "10px";
         closeButton.style.right = "10px";
