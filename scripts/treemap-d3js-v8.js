@@ -583,6 +583,7 @@ document.head.insertAdjacentHTML('beforeend', `
 async function updateOverlayWidget(divName, productId, cardInfoDiv) {
     let overlayDiv = document.getElementById(divName);
     let infoButton = document.getElementById("infoButton");
+    let buyButton = document.getElementById("buyButton");
     let closeButton = document.getElementById("closeButton");
 
     let roundedProductId = Math.floor(productId / 1000) * 1000;
@@ -608,11 +609,21 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
         overlayDiv.style.backgroundRepeat = "no-repeat";
         overlayDiv.innerHTML = "";
 
+        buyButton = document.createElement("button");
+        buyButton.id = "buyButton";
+        buyButton.className = "button";
+        buyButton.textContent = "buy";
+        buyButton.style.top = "15px";
+        buyButton.style.right = "68px";
+        buyButton.style.width = "87px";
+        buyButton.style.borderRadius = "10px";
+        buyButton.style.fontStyle = "italic";
+
         infoButton = document.createElement("button");
         infoButton.id = "infoButton";
         infoButton.className = "button";
         infoButton.textContent = "i";
-        infoButton.style.top = "10px";
+        infoButton.style.top = "15px";
         infoButton.style.right = "68px";
         infoButton.style.fontStyle = "italic";
 
@@ -620,9 +631,10 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
         closeButton.id = "closeButton";
         closeButton.className = "button";
         closeButton.textContent = "×";
-        closeButton.style.top = "10px";
+        closeButton.style.top = "15px";
         closeButton.style.right = "10px";
 
+        overlayDiv.appendChild(buyButton);
         overlayDiv.appendChild(infoButton);
         overlayDiv.appendChild(closeButton);
 
@@ -631,9 +643,13 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
 
     overlayDiv.innerHTML = "";
     overlayDiv.appendChild(cardInfoDiv);
+    overlayDiv.appendChild(buyButton);
     overlayDiv.appendChild(infoButton);
     overlayDiv.appendChild(closeButton);
     overlayDiv.style.visibility = "visible";
+
+    buyButton.onclick = function() {
+        window.open(`https://www.tcgplayer.com/product/${productId}`, "_blank");
 
     infoButton.addEventListener("click", function() {
         if (cardInfoDiv.style.visibility === "hidden") {
