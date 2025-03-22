@@ -562,8 +562,9 @@ document.head.insertAdjacentHTML('beforeend', `
 
 async function updateOverlayWidget(divName, productId, content) {
     let overlayDiv = document.getElementById(divName);
-    let closeButton = document.getElementById("closeButton");
+    let table = document.getElementById("table");
     let infoButton = document.getElementById("infoButton");
+    let closeButton = document.getElementById("closeButton");
 
     let roundedProductId = Math.floor(productId / 1000) * 1000;
     let imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/pokemon/${roundedProductId}/${productId}.jpg`;
@@ -632,7 +633,7 @@ async function updateOverlayWidget(divName, productId, content) {
         overlayDiv.appendChild(closeButton);
 
         infoButton.addEventListener("click", function() {
-            content.classList.toggle("hidden");
+            table.classList.toggle("hidden");
         });
 
         closeButton.addEventListener("click", function() {
@@ -659,6 +660,7 @@ async function updateOverlayWidget(divName, productId, content) {
 function createContentTable(content) {
     // Create the table element
     const table = document.createElement('table');
+    table.id = "table";
     table.style.width = '100%';
     table.style.borderCollapse = 'collapse';
     table.style.visibility = 'visible';
