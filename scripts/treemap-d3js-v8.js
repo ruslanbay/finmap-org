@@ -542,22 +542,23 @@ document.head.insertAdjacentHTML('beforeend', `
             bottom: 0;
             overflow: hidden;
         }
-        
+            
         .button {
             position: absolute;
-            fontSize: 48px;
-            fontWeight: bold;
+            font-size: 48px;
+            font-weight: bold;
             background: #aaa1a1;
             border: none;
             cursor: pointer;
             opacity: 0.7;
-            borderRadius: 50%;
+            border-radius: 50%;
             width: 48px;
             height: 48px;
             display: flex;
-            justifyContent: center;
-            alignItems: center;
+            justify-content: center;
+            align-items: center;
         }
+
         
         @font-face {
             font-family: 'PokemonHollow';
@@ -610,12 +611,13 @@ async function updateOverlayWidget(divName, productId, contentTable) {
         infoButton.textContent = "i";
         infoButton.style.top = "10px";
         infoButton.style.left = "10px";
+        infoButton.style.fontStyle = "italic";
 
         overlayDiv.appendChild(infoButton);
 
         closeButton = document.createElement("button");
         closeButton.id = "closeButton";
-        infoButton.className = "button";
+        closeButton.className = "button";
         closeButton.textContent = "×";
         closeButton.style.top = "10px";
         closeButton.style.right = "10px";
