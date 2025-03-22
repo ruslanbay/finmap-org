@@ -18,6 +18,9 @@ class Treemap {
         // Bind events
         this.bindEvents();
 
+        // 
+        this.hasEventListener.infoButton.click = false;
+
         // Initial size calculation
         this.updateDimensions();
 
@@ -560,7 +563,7 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 
-async function updateOverlayWidget(divName, productId, content) {
+async function updateOverlayWidget(divName, productId, contentTable) {
     let overlayDiv = document.getElementById(divName);
     let infoButton = document.getElementById("infoButton");
     let closeButton = document.getElementById("closeButton");
@@ -631,10 +634,6 @@ async function updateOverlayWidget(divName, productId, content) {
 
         overlayDiv.appendChild(closeButton);
 
-        infoButton.addEventListener("click", function() {
-            content.classList.toggle("hidden");
-        });
-
         closeButton.addEventListener("click", function() {
             overlayDiv.style.visibility = "hidden";
         });
@@ -643,10 +642,16 @@ async function updateOverlayWidget(divName, productId, content) {
     }
 
     overlayDiv.innerHTML = "";
-    overlayDiv.appendChild(content);
+    overlayDiv.appendChild(contentTable);
     overlayDiv.appendChild(infoButton);
     overlayDiv.appendChild(closeButton);
     overlayDiv.style.visibility = "visible";
+
+    if (!this.hasEventListener.infoButton.click) {
+        infoButton.addEventListener("click", function() {
+            contentTable.classList.toggle("hidden");
+        });
+    }
 
     const img = new Image();
     img.src = imageSrc;
