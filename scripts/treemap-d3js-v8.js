@@ -665,7 +665,7 @@ function createCardInfoDiv(cardInfo) {
     div.style.overflowY = "auto";
     div.style.padding = "16px";
 
-    const releaseDate = cardInfo.releaseDate ? cardInfo.releaseDate.split("T")[0] 
+    const releaseDate = cardInfo.releaseDate ? cardInfo.releaseDate.split("T")[0];
 
     const html = `
         <p><b>${cardInfo.name || "Unknown"}</b></p>
