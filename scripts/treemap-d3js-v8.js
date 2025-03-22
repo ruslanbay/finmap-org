@@ -665,18 +665,24 @@ function createCardInfoDiv(cardInfo) {
     div.style.overflowY = "auto";
     div.style.padding = "16px";
 
+    const releaseDate = cardInfo.releaseDate ? cardInfo.releaseDate.split("T")[0] 
+
     const html = `
         <p><b>${cardInfo.name || "Unknown"}</b></p>
         <p><b>MARKET PRICE</b> ${cardInfo.marketPrice || "N/A"}</p>
-        <p><b>RELEASE DATE</b> ${cardInfo.releaseDate || "N/A"}</p>
-        <p>${cardInfo.number} ${cardInfo.rarityDbName || ""}</p>
-        <p><b>DESCRIPTION</b> ${cardInfo.description || ""}</p>
-        <p><b>FLAVOR TEXT</b> ${cardInfo.flavorText || ""}</p>
-        <p><b>HP</b> ${cardInfo.hp || "N/A"} 
-           <b>Energy Type</b> ${cardInfo.energyType || "N/A"} 
-           <b>RESISTANCE</b> ${cardInfo.resistance || "N/A"} 
-           <b>WEAKNESS</b> ${cardInfo.weakness || "N/A"} 
-           <b>STAGE</b> ${cardInfo.stage || "N/A"}</p>
+        <p><b>RELEASE DATE</b> ${releaseDate}</p>
+        <p>${cardInfo.number} | ${cardInfo.rarityDbName || ""}</p>
+        <p>${cardInfo.description || ""}</p>
+        <p>${cardInfo.flavorText || ""}</p>
+        <p>
+          <b>HP</b> ${cardInfo.hp || "N/A"}<br>
+          <b>ENERGY TYPE</b> ${cardInfo.energyType || "N/A"}<br>
+          <b>STAGE</b> ${cardInfo.stage || "N/A"}
+        </p>
+        <p>
+          <b>RESISTANCE</b> ${cardInfo.resistance || "N/A"}<br>
+          <b>WEAKNESS</b> ${cardInfo.weakness || "N/A"}
+        </p>
         <p><b>ATTACKS</b></p>
         <ul>
             ${cardInfo.attack1 ? `<li>${cardInfo.attack1}</li>` : ""}
