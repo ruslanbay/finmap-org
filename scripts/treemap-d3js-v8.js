@@ -658,9 +658,11 @@ function createContentTable(content) {
     const table = document.createElement('table');
     table.id = "table";
     table.style.width = '100%';
+    table.style.height = '100%';
     table.style.borderCollapse = 'collapse';
     table.style.background = "white";
     table.style.opacity = "0.9";
+    table.style.overflowY = "auto";
 
     // Create the table header row
     const thead = document.createElement('thead');
