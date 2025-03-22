@@ -646,7 +646,11 @@ async function updateOverlayWidget(divName, productId, contentTable) {
 
     let table = document.getElementById("table");
     infoButton.addEventListener("click", function() {
-        table.classList.toggle("hidden");
+        if (table.style.display === "none") {
+            table.style.display = "table";
+        } else {
+            table.style.display = "none";
+        }
     });
 
     const img = new Image();
