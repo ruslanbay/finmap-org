@@ -658,7 +658,7 @@ function createContentTable(content) {
     const table = document.createElement('table');
     table.id = "table";
     table.style.width = '100%';
-    table.style.height = '100%';
+    table.style.aspectRatio = "630 / 880";
     table.style.borderCollapse = 'collapse';
     table.style.background = "white";
     table.style.opacity = "0.9";
