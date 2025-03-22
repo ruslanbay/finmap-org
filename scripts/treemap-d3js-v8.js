@@ -203,9 +203,10 @@ class Treemap {
         const customAttributesJson = productRawData ? productRawData.customAttributes : null;
         
         if (customAttributesJson) {
-            const customAttributes = Object.entries(customAttributesJson);
-            const contentTable = createContentTable(customAttributes);
-            await updateOverlayWidget("overlay", productId, contentTable);
+            let customAttributes = Object.entries(customAttributesJson);
+            customAttributes = Object.fromEntries(customAttributes);
+            const cardInfoDiv = createCardInfoDiv(customAttributes);
+            await updateOverlayWidget("overlay", productId, cardInfoDiv);
         }
     }
 
@@ -578,7 +579,7 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 
-async function updateOverlayWidget(divName, productId, contentTable) {
+async function updateOverlayWidget(divName, productId, cardInfoDiv) {
     let overlayDiv = document.getElementById(divName);
     let infoButton = document.getElementById("infoButton");
     let closeButton = document.getElementById("closeButton");
@@ -628,22 +629,22 @@ async function updateOverlayWidget(divName, productId, contentTable) {
     }
 
     overlayDiv.innerHTML = "";
-    overlayDiv.appendChild(contentTable);
+    overlayDiv.appendChild(cardInfoDiv);
     overlayDiv.appendChild(infoButton);
     overlayDiv.appendChild(closeButton);
     overlayDiv.style.visibility = "visible";
 
     infoButton.addEventListener("click", function() {
-        if (contentTable.style.visibility === "hidden") {
-            contentTable.style.visibility = "visible";
+        if (cardInfoDiv.style.visibility === "hidden") {
+            cardInfoDiv.style.visibility = "visible";
         } else {
-            contentTable.style.visibility = "hidden";
+            cardInfoDiv.style.visibility = "hidden";
         }
     });
 
     closeButton.addEventListener("click", function() {
         overlayDiv.style.visibility = "hidden";
-        contentTable.style.visibility = "hidden";
+        cardInfoDiv.style.visibility = "hidden";
     });
 
     const img = new Image();
@@ -654,68 +655,42 @@ async function updateOverlayWidget(divName, productId, contentTable) {
 }
 
 
-function createContentTable(content) {
-    // Create the table element
-    const table = document.createElement('table');
-    table.id = "table";
-    table.style.width = '100%';
-    table.style.aspectRatio = "630 / 880";
-    table.style.borderCollapse = 'collapse';
-    table.style.background = "white";
-    table.style.opacity = "0.9";
-    table.style.overflowY = "auto";
+function createCardInfoDiv(cardInfo) {
+    const div = document.createElement('div');
+    div.id = "cardInfoDiv";
+    div.style.width = '100%';
+    div.style.aspectRatio = "630 / 880";
+    div.style.background = "white";
+    div.style.opacity = "0.9";
+    div.style.overflowY = "auto";
+    div.style.padding = "16px";
 
-    // Create the table header row
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    const labelHeader = document.createElement('th');
-    const valueHeader = document.createElement('th');
+    const html = `
+        <p><b>${cardInfo.name || "Unknown"}</b></p>
+        <p><b>MARKET PRICE</b> ${cardInfo.marketPrice || "N/A"}</p>
+        <p><b>RELEASE DATE</b> ${cardInfo.releaseDate || "N/A"}</p>
+        <p>${cardInfo.number} ${cardInfo.rarityDbName || ""}</p>
+        <p><b>DESCRIPTION</b> ${cardInfo.description || ""}</p>
+        <p><b>FLAVOR TEXT</b> ${cardInfo.flavorText || ""}</p>
+        <p><b>HP</b> ${cardInfo.hp || "N/A"} 
+           <b>Energy Type</b> ${cardInfo.energyType || "N/A"} 
+           <b>RESISTANCE</b> ${cardInfo.resistance || "N/A"} 
+           <b>WEAKNESS</b> ${cardInfo.weakness || "N/A"} 
+           <b>STAGE</b> ${cardInfo.stage || "N/A"}</p>
+        <p><b>ATTACKS</b></p>
+        <ul>
+            ${cardInfo.attack1 ? `<li>${cardInfo.attack1}</li>` : ""}
+            ${cardInfo.attack2 ? `<li>${cardInfo.attack2}</li>` : ""}
+            ${cardInfo.attack3 ? `<li>${cardInfo.attack3}</li>` : ""}
+            ${cardInfo.attack4 ? `<li>${cardInfo.attack4}</li>` : ""}
+        </ul>
+    `;
 
-    labelHeader.textContent = 'Label';
-    valueHeader.textContent = 'Value';
+    div.innerHTML = html;
 
-    // Style headers
-    labelHeader.style.textAlign = 'left';
-    labelHeader.style.padding = '8px';
-    labelHeader.style.borderBottom = '1px solid #ddd';
-    valueHeader.style.textAlign = 'left';
-    valueHeader.style.padding = '8px';
-    valueHeader.style.borderBottom = '1px solid #ddd';
-
-    headerRow.appendChild(labelHeader);
-    headerRow.appendChild(valueHeader);
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    // Create the table body
-    const tbody = document.createElement('tbody');
-
-    content.forEach(([label, value]) => {
-        if (value !== null && value !== undefined) {
-            const row = document.createElement('tr');
-
-            // Create label cell
-            const labelCell = document.createElement('td');
-            labelCell.textContent = label;
-            labelCell.style.padding = '8px';
-            labelCell.style.borderBottom = '1px solid #ddd';
-
-            // Create value cell
-            const valueCell = document.createElement('td');
-            valueCell.innerHTML = String(value); // Allow HTML content
-            valueCell.style.padding = '8px';
-            valueCell.style.borderBottom = '1px solid #ddd';
-
-            row.appendChild(labelCell);
-            row.appendChild(valueCell);
-            tbody.appendChild(row);
-        }
-    });
-
-    table.appendChild(tbody);
-
-    return table;
+    return div;
 }
+
 
 
 function createLoadingIndicator() {
