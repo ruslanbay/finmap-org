@@ -197,18 +197,19 @@ class Treemap {
     }
 
     async renderLeafDetails(node) {
-        // Add raw data details if available
         const productId = node.data.ticker;
-        const productRawData = this.rawData.find(item => item.productId == productId);
-        const customAttributesJson = productRawData ? productRawData.customAttributes : null;
-        
-        if (customAttributesJson) {
-            let customAttributes = Object.entries(customAttributesJson);
-            customAttributes = Object.fromEntries(customAttributes);
+        const productRawData = this.rawData.find(item => item.productId === productId);
+    
+        if (productRawData && productRawData.customAttributes) {
+            const customAttributes = { ...productRawData.customAttributes };
+            customAttributes.name = node.data.name;
+            customAttributes.marketPrice = node.value;
+    
             const cardInfoDiv = createCardInfoDiv(customAttributes);
             await updateOverlayWidget("overlay", productId, cardInfoDiv);
         }
     }
+    
 
     async renderFromNode(node) {
         if (!node?.data) return;
@@ -665,7 +666,7 @@ function createCardInfoDiv(cardInfo) {
     div.style.overflowY = "auto";
     div.style.padding = "16px";
 
-    const releaseDate = cardInfo.releaseDate ? cardInfo.releaseDate.split("T")[0];
+    const releaseDate = cardInfo.releaseDate ? cardInfo.releaseDate.split("T")[0] : "N/A";
 
     const html = `
         <p><b>${cardInfo.name || "Unknown"}</b></p>
@@ -696,7 +697,6 @@ function createCardInfoDiv(cardInfo) {
 
     return div;
 }
-
 
 
 function createLoadingIndicator() {
