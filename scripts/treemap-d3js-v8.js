@@ -613,8 +613,6 @@ async function updateOverlayWidget(divName, productId, contentTable) {
         infoButton.style.left = "10px";
         infoButton.style.fontStyle = "italic";
 
-        overlayDiv.appendChild(infoButton);
-
         closeButton = document.createElement("button");
         closeButton.id = "closeButton";
         closeButton.className = "button";
@@ -622,11 +620,8 @@ async function updateOverlayWidget(divName, productId, contentTable) {
         closeButton.style.top = "10px";
         closeButton.style.right = "10px";
 
+        overlayDiv.appendChild(infoButton);
         overlayDiv.appendChild(closeButton);
-
-        closeButton.addEventListener("click", function() {
-            overlayDiv.style.visibility = "hidden";
-        });
 
         document.body.appendChild(overlayDiv);
     }
@@ -643,6 +638,11 @@ async function updateOverlayWidget(divName, productId, contentTable) {
         } else {
             contentTable.style.visibility = "hidden";
         }
+    });
+
+    closeButton.addEventListener("click", function() {
+        overlayDiv.style.visibility = "hidden";
+        contentTable.style.visibility = "hidden";
     });
 
     const img = new Image();
