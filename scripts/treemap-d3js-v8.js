@@ -614,7 +614,7 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
         buyButton.className = "button";
         buyButton.textContent = "buy";
         buyButton.style.top = "15px";
-        buyButton.style.right = "68px";
+        buyButton.style.right = "128px";
         buyButton.style.width = "87px";
         buyButton.style.borderRadius = "10px";
         buyButton.style.fontStyle = "italic";
