@@ -18,9 +18,6 @@ class Treemap {
         // Bind events
         this.bindEvents();
 
-        // 
-        this.hasEventListener.infoButton.click = false;
-
         // Initial size calculation
         this.updateDimensions();
 
@@ -647,11 +644,10 @@ async function updateOverlayWidget(divName, productId, contentTable) {
     overlayDiv.appendChild(closeButton);
     overlayDiv.style.visibility = "visible";
 
-    if (!this.hasEventListener.infoButton.click) {
-        infoButton.addEventListener("click", function() {
-            contentTable.classList.toggle("hidden");
-        });
-    }
+    let table = document.getElementById("table");
+    infoButton.addEventListener("click", function() {
+        table.classList.toggle("hidden");
+    });
 
     const img = new Image();
     img.src = imageSrc;
