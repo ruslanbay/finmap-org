@@ -563,6 +563,7 @@ document.head.insertAdjacentHTML('beforeend', `
 async function updateOverlayWidget(divName, productId, content) {
     let overlayDiv = document.getElementById(divName);
     let closeButton = document.getElementById("closeButton");
+    let infoButton = document.getElementById("infoButton");
 
     let roundedProductId = Math.floor(productId / 1000) * 1000;
     let imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/pokemon/${roundedProductId}/${productId}.jpg`;
@@ -570,10 +571,8 @@ async function updateOverlayWidget(divName, productId, content) {
     if (!overlayDiv) {
         overlayDiv = document.createElement("div");
         overlayDiv.id = divName;
-        overlayDiv.style.position = "fixed"; // "absolute";
+        overlayDiv.style.position = "fixed";
         overlayDiv.style.aspectRatio = "630 / 880";
-        // overlayDiv.style.width = "63%";
-        // overlayDiv.style.maxWidth = "630px";
         overlayDiv.style.height = "88%";
         overlayDiv.style.maxHeight = "880px";
         overlayDiv.style.display = "flex";
@@ -586,7 +585,7 @@ async function updateOverlayWidget(divName, productId, content) {
         overlayDiv.style.transform = "translate(-50%, -50%)";
         overlayDiv.style.backgroundSize = "cover";
         overlayDiv.style.backgroundPosition = "center";
-        overlayDiv.style.backgroundRepeat = "no-repeat"; 
+        overlayDiv.style.backgroundRepeat = "no-repeat";
         overlayDiv.innerHTML = "";
 
         infoButton = document.createElement("button");
@@ -598,48 +597,44 @@ async function updateOverlayWidget(divName, productId, content) {
         infoButton.style.fontSize = "48px";
         infoButton.style.fontWeight = "bold";
         infoButton.style.fontStyle = "italic";
-        infoButton.style.background = "none";
+        infoButton.style.background = "white";
         infoButton.style.border = "none";
         infoButton.style.cursor = "pointer";
-        infoButton.style.background = "white";
         infoButton.style.opacity = "0.7";
         infoButton.style.borderRadius = "50%";
         infoButton.style.width = "48px";
         infoButton.style.height = "48px";
         infoButton.style.display = "flex";
         infoButton.style.justifyContent = "center";
-        infoButton.style.alignContent = "center";
-        infoButton.style.flexWrap = "wrap";
-        
+        infoButton.style.alignItems = "center";
+
         overlayDiv.appendChild(infoButton);
 
         closeButton = document.createElement("button");
         closeButton.id = "closeButton";
-        closeButton.textContent = "×"; 
+        closeButton.textContent = "×";
         closeButton.style.position = "absolute";
         closeButton.style.top = "10px";
         closeButton.style.right = "10px";
         closeButton.style.fontSize = "48px";
         closeButton.style.fontWeight = "bold";
-        closeButton.style.background = "none";
+        closeButton.style.background = "white";
         closeButton.style.border = "none";
         closeButton.style.cursor = "pointer";
-        closeButton.style.background = "white";
         closeButton.style.opacity = "0.7";
         closeButton.style.borderRadius = "50%";
         closeButton.style.width = "48px";
         closeButton.style.height = "48px";
         closeButton.style.display = "flex";
         closeButton.style.justifyContent = "center";
-        closeButton.style.alignContent = "center";
-        closeButton.style.flexWrap = "wrap";
-        
+        closeButton.style.alignItems = "center";
+
         overlayDiv.appendChild(closeButton);
 
         infoButton.addEventListener("click", function() {
             content.classList.toggle("hidden");
         });
-        
+
         closeButton.addEventListener("click", function() {
             overlayDiv.style.visibility = "hidden";
         });
@@ -649,9 +644,15 @@ async function updateOverlayWidget(divName, productId, content) {
 
     overlayDiv.innerHTML = "";
     overlayDiv.appendChild(content);
+    overlayDiv.appendChild(infoButton);
     overlayDiv.appendChild(closeButton);
     overlayDiv.style.visibility = "visible";
-    overlayDiv.style.backgroundImage = `url(${imageSrc})`;
+
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = function() {
+        overlayDiv.style.backgroundImage = `url(${imageSrc})`;
+    };
 }
 
 
@@ -660,7 +661,7 @@ function createContentTable(content) {
     const table = document.createElement('table');
     table.style.width = '100%';
     table.style.borderCollapse = 'collapse';
-    table.style.visibility = 'hidden';
+    table.style.visibility = 'visible';
     table.style.background = "white";
     table.style.opacity = "0.7";
 
