@@ -650,6 +650,7 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
 
     buyButton.onclick = function() {
         window.open(`https://www.tcgplayer.com/product/${productId}`, "_blank");
+    }
 
     infoButton.addEventListener("click", function() {
         if (cardInfoDiv.style.visibility === "hidden") {
