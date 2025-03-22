@@ -667,10 +667,13 @@ function createCardInfoDiv(cardInfo) {
     div.style.padding = "16px";
 
     const releaseDate = cardInfo.releaseDate ? cardInfo.releaseDate.split("T")[0] : "N/A";
+    const formattedMarketPrice = cardInfo.marketPrice
+    ? `$${cardInfo.marketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : "N/A";
 
     const html = `
         <p><b>${cardInfo.name || "Unknown"}</b></p>
-        <p><b>MARKET PRICE</b> ${cardInfo.marketPrice || "N/A"}</p>
+        <p><b>MARKET PRICE</b> ${formattedMarketPrice || "N/A"}</p>
         <p><b>RELEASE DATE</b> ${releaseDate}</p>
         <p>${cardInfo.number} | ${cardInfo.rarityDbName || ""}</p>
         <p>${cardInfo.description || ""}</p>
