@@ -546,7 +546,8 @@ document.head.insertAdjacentHTML('beforeend', `
         .button {
             position: absolute;
             font-size: 48px;
-            font-weight: bold;
+            font-weight: normal;
+            font-family: Georgia;
             background: #aaa1a1;
             border: none;
             cursor: pointer;
@@ -610,7 +611,7 @@ async function updateOverlayWidget(divName, productId, contentTable) {
         infoButton.className = "button";
         infoButton.textContent = "i";
         infoButton.style.top = "10px";
-        infoButton.style.left = "10px";
+        infoButton.style.right = "68px";
         infoButton.style.fontStyle = "italic";
 
         closeButton = document.createElement("button");
