@@ -626,14 +626,6 @@ async function updateOverlayWidget(divName, productId, contentTable) {
             overlayDiv.style.visibility = "hidden";
         });
 
-        infoButton.addEventListener("click", function() {
-            if (contentTable.style.visibility === "hidden") {
-                contentTable.style.visibility = "visible";
-            } else {
-                contentTable.style.visibility = "hidden";
-            }
-        });
-
         document.body.appendChild(overlayDiv);
     }
 
@@ -643,14 +635,13 @@ async function updateOverlayWidget(divName, productId, contentTable) {
     overlayDiv.appendChild(closeButton);
     overlayDiv.style.visibility = "visible";
 
-    // let table = document.getElementById("table");
-    // infoButton.addEventListener("click", function() {
-    //     if (table.style.display === "none") {
-    //         table.style.display = "table";
-    //     } else {
-    //         table.style.display = "none";
-    //     }
-    // });
+    infoButton.addEventListener("click", function() {
+        if (contentTable.style.visibility === "hidden") {
+            contentTable.style.visibility = "visible";
+        } else {
+            contentTable.style.visibility = "hidden";
+        }
+    });
 
     const img = new Image();
     img.src = imageSrc;
