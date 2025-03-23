@@ -766,7 +766,6 @@ function formatCardInfo(cardInfo, details = "verbose") {
         <p><b>${cardInfo.name || "Unknown"}</b></p>
         <p><b>MARKET PRICE</b> ${formattedMarketPrice || "N/A"}</p>
         <p><b>RELEASE DATE</b> ${releaseDate}</p>
-        <p>${cardInfo.number} | ${cardInfo.rarityDbName || ""}</p>
     `;
 
     switch (details) {
@@ -787,6 +786,7 @@ function formatCardInfo(cardInfo, details = "verbose") {
         case "verbose":
         default:
             html = `${html}
+            <p>${cardInfo.number} | ${cardInfo.rarityDbName || ""}</p>
             <p>${cardInfo.description || ""}</p>
             <p>${cardInfo.flavorText || ""}</p>
             <p>
