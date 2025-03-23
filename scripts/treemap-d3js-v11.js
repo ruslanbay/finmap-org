@@ -609,7 +609,7 @@ document.head.insertAdjacentHTML('beforeend', `
             overflow: hidden;
         }
             
-        .overlayStyle {
+        .overlay {
             position: fixed;
             aspect-ratio: 630 / 880;
             height: 88%;
@@ -627,7 +627,7 @@ document.head.insertAdjacentHTML('beforeend', `
             background-repeat: no-repeat;
         }
 
-        .cardInfoDivStyle {
+        .cardInfoDiv {
             width: 100%;
             aspect-ratio: 630 / 880;
             background: white;
@@ -636,7 +636,7 @@ document.head.insertAdjacentHTML('beforeend', `
             padding: 16px;
         }
 
-        .buyButtonStyle {
+        #buyButton {
             top: 15px;
             right: 128px;
             width: 87px;
@@ -644,13 +644,13 @@ document.head.insertAdjacentHTML('beforeend', `
             font-style: italic;
         }
 
-        .infoButtonStyle {
+        #infoButton {
             top: 15px;
             right: 70px;
             font-style: italic;
         }
         
-        .closeButtonStyle {
+        #closeButton {
             top: 15px;
             right: 15px;
         }
@@ -702,9 +702,9 @@ async function updateOverlayWidget(cardInfo, productId) {
     if (!overlayDiv) {
         overlayDiv = createOverlayDiv();
         cardInfoDiv = createCardInfoDiv(cardInfo);
-        buyButton = createButton("buyButton", "buy", "buyButtonStyle");
-        infoButton = createButton("infoButton", "i", "infoButtonStyle");
-        closeButton = createButton("closeButton", "×", "closeButtonStyle");
+        buyButton = createButton("buyButton", "buy", "button");
+        infoButton = createButton("infoButton", "i", "button");
+        closeButton = createButton("closeButton", "×", "button");
 
         overlayDiv.appendChild(cardInfoDiv);
         overlayDiv.appendChild(buyButton);
@@ -747,14 +747,14 @@ async function updateOverlayWidget(cardInfo, productId) {
 function createOverlayDiv() {
     const div = document.createElement("div");
     div.id = "overlay";
-    div.className = "overlayStyle";
+    div.className = "overlay";
     return div;
 }
 
 function createCardInfoDiv(cardInfo) {
     const div = document.createElement("div");
     div.id = "cardInfoDiv";
-    div.className = "cardInfoDivStyle";
+    div.className = "cardInfoDiv";
     div.innerHTML = cardInfo;
     return div;
 }
