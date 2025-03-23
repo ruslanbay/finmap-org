@@ -768,12 +768,18 @@ function formatCardInfo(cardInfo, details = "verbose") {
 
     switch (details) {
         case "short":
-            html = `${html}
-            <div style="margin-top: 5px; color: #8BE9FD;">
-                ${nodeChildrenLength ? 
-                    `Click to view ${nodeChildrenLength} items` : 
-                    'Click to view details'}
-            </div>`;
+            if (cardInfo.nodeChildrenLength) {
+                html = `${html}
+                <div style="margin-top: 5px; color: #8BE9FD;">
+                    Click to view ${cardInfo.nodeChildrenLength} items
+                </div>`;
+            }
+            else {
+                html = `${html}
+                <div style="margin-top: 5px; color: #8BE9FD;">
+                    'Click to view details'
+                </div>`;
+            }
             break;
         case "verbose":
         default:
