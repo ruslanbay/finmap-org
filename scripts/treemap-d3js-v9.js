@@ -533,8 +533,7 @@ class Treemap {
             if (ticker === rootRow[this.columnIndex.ticker]) return;
         
             const node = this.nodesMap.get(ticker);
-            const parentNode = Array.from(this.nodesMap.values())
-                .find(n => n.ticker === parentSector);
+            const parentNode = this.nodesMap.get(parentSector);
         
             if (parentNode) {
                 parentNode.children.push(node);
