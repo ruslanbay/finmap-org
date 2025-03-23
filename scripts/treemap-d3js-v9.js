@@ -423,8 +423,8 @@ class Treemap {
     
         // Traverse up the hierarchy to build the path
         while (currentNode) {
-            fullPath.unshift(currentNode);
-            currentNode = currentNode.parent;
+            fullPath.unshift(currentNode.data.name);
+            currentNode = currentNode.data.parent;
         }
     
         // Update path with the full hierarchy
