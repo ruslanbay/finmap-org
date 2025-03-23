@@ -661,11 +661,10 @@ document.head.insertAdjacentHTML('beforeend', `
         }
             
         .button {
-            position: absolute;
+            background-color: white;
             font-size: 48px;
             font-weight: normal;
             font-family: Georgia;
-            background: #aaa1a1;
             border: none;
             cursor: pointer;
             opacity: 0.7;
@@ -675,6 +674,10 @@ document.head.insertAdjacentHTML('beforeend', `
             display: flex;
             justify-content: center;
             align-items: center;
+        }
+
+        .button.active {
+            background-color: #aaa1a1;
         }
         
         @font-face {
@@ -698,7 +701,7 @@ async function updateOverlayWidget(cardInfo, productId) {
     let overlayDiv = document.getElementById("overlay");
     let cardInfoDiv = document.getElementById("cardInfoDiv");
     let infoButton = document.getElementById("infoButton");
-    let buyButton = document.getElementById("buyButton");
+    let buyLink = document.getElementById("buyButton");
     let closeButton = document.getElementById("closeButton");
   
     const roundedProductId = Math.floor(productId / 1000) * 1000;
@@ -710,8 +713,9 @@ async function updateOverlayWidget(cardInfo, productId) {
       cardInfoDiv = createCardInfoDiv(cardInfo);
       infoButton = createButton("infoButton", "i", "button");
       closeButton = createButton("closeButton", "×", "button");
-      const buyLink = document.createElement('a');
+      buyLink = document.createElement('a');
       buyLink.id = "buyButton";
+      buyLink.className = "button";
       buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
       buyLink.target = "_blank";
       buyLink.textContent = "buy";
@@ -731,12 +735,10 @@ async function updateOverlayWidget(cardInfo, productId) {
   
     cardInfoDiv.innerHTML = cardInfo;
   
-    const buyLink = overlayDiv.querySelector('#buyButton');
     buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
   
-    infoButton.removeEventListener('click', toggleVisibility);
-  
-    infoButton.addEventListener("click", () => toggleVisibility(cardInfoDiv, buyButton, infoButton, closeButton));
+    infoButton.removeEventListener('click', () => toggleVisibility(cardInfoDiv, buyLink, infoButton, closeButton));
+    infoButton.addEventListener("click", () => toggleVisibility(cardInfoDiv, buyLink, infoButton, closeButton));
   
     overlayDiv.style.visibility = "visible";
     cardInfoDiv.style.visibility = "visible";
@@ -752,43 +754,43 @@ async function updateOverlayWidget(cardInfo, productId) {
       overlayDiv.style.backgroundColor = '#41475d';
     };
   }
-
-function createOverlayDiv() {
+  
+  function createOverlayDiv() {
     const div = document.createElement("div");
     div.id = "overlay";
     div.className = "overlay";
     return div;
-}
-
-function createCardInfoDiv(cardInfo) {
+  }
+  
+  function createCardInfoDiv(cardInfo) {
     const div = document.createElement("div");
     div.id = "cardInfoDiv";
     div.className = "cardInfoDiv";
     div.innerHTML = cardInfo;
     return div;
-}
-
-function createButton(id, text, className) {
+  }
+  
+  function createButton(id, text, className) {
     const button = document.createElement("button");
     button.id = id;
     button.className = className;
     button.textContent = text;
     return button;
-}
-
-function toggleVisibility(cardInfoDiv, buyButton, infoButton, closeButton) {
+  }
+  
+  function toggleVisibility(cardInfoDiv, buyLink, infoButton, closeButton) {
     if (cardInfoDiv.style.visibility === "hidden") {
-        cardInfoDiv.style.visibility = "visible";
-        buyButton.style.background = "#aaa1a1";
-        infoButton.style.background = "#aaa1a1";
-        closeButton.style.background = "#aaa1a1";
+      cardInfoDiv.style.visibility = "visible";
+      infoButton.classList.add('active');
+      closeButton.classList.add('active');
+      buyLink.classList.add('active');
     } else {
-        cardInfoDiv.style.visibility = "hidden";
-        buyButton.style.background = "white";
-        infoButton.style.background = "white";
-        closeButton.style.background = "white";
+      cardInfoDiv.style.visibility = "hidden";
+      infoButton.classList.remove('active');
+      closeButton.classList.remove('active');
+      buyLink.classList.remove('active');
     }
-}
+  }  
 
 
 function formatCardInfo(cardInfo, details = "verbose") {
