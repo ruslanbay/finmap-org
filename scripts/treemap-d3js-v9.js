@@ -401,34 +401,27 @@ class Treemap {
     }
 
     updatePathbar() {
-        this.pathbar.innerHTML = this.path
-            .map((node, index) => `
-                <span
-                    style="cursor: pointer; padding: 5px 10px;"
-                    data-index="${index}"
-                >
-                    ${node.data.name}
-                    ${index < this.path.length - 1 ? ' >' : ''}
-                </span>
-            `)
-            .join('');
+      this.pathbar.innerHTML = this.path;
     }
 
     async drillDown(node) {
         if (!node || this.currentRoot === node) return;
-      
-        // Build complete path from node to root
-        const fullPath = [];
-        let currentNode = node;
-      
+
+        let fullPath = "";
+        const currentNode = node;
+        
         // Traverse up the hierarchy to build the path
-        while (currentNode && currentNode.data) {
-            fullPath.push(currentNode.data.name);
-            currentNode = currentNode.data.parent;
+        while (currentNode) {
+            if (fullPath) {
+              fullPath = currentNode.name + ' > ' + fullPath;
+            } else {
+              fullPath = currentNode.name;
+            }
+            currentNode = currentNode.parent;
         }
       
         // Update path with the full hierarchy
-        this.path = fullPath.reverse().join(' > ');
+        this.path = fullPath;
       
         // Update the pathbar
         this.updatePathbar();
