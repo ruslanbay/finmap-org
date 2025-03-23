@@ -413,7 +413,7 @@ class Treemap {
             `)
             .join('');
     }
-
+    
     async drillDown(node) {
         if (!node || this.currentRoot === node) return;
     
@@ -436,24 +436,13 @@ class Treemap {
         // Render the target node
         this.renderFromNode(node);
     }
-
+    
     async drillTo(index) {
         if (index >= 0 && index < this.path.length) {
-            const node = this.path[index];
-            const fullPath = [];
-            let currentNode = node;
-      
-            // Traverse up the hierarchy to build the path
-            while (currentNode) {
-              fullPath.unshift(currentNode);
-              currentNode = currentNode.parent;
-            }
-
-            // Update path with the full hierarchy
-            this.path = fullPath;
-            
+            this.path = this.path.slice(0, index + 1);
+    
             this.updatePathbar();
-            this.renderFromNode(node);
+            this.renderFromNode(this.path[index]);
         }
     }
 
