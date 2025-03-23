@@ -170,7 +170,7 @@ class Treemap {
         // Pathbar navigation
         this.pathbar.addEventListener('click', (event) => {
             const index = parseInt(event.target.closest('span').dataset.index);
-            if (!isNaN(index)) this.drillTo(index);
+            // if (!isNaN(index)) this.drillTo(index);
         });
     }
 
