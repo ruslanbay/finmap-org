@@ -222,7 +222,9 @@ class Treemap {
             const customAttributes = { ...productRawData.customAttributes };
             customAttributes.name = node.data.name;
             customAttributes.marketPrice = node.value;
-            customAttributes.nodeChildrenLength = node.children.length;
+            if (node.children && node.children.length) {
+                customAttributes.nodeChildrenLength = node.children.length;
+            }
     
             const cardInfo = formatCardInfo(customAttributes, details);
             return cardInfo;
