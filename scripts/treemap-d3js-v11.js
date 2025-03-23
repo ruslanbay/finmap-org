@@ -700,54 +700,58 @@ async function updateOverlayWidget(cardInfo, productId) {
     let infoButton = document.getElementById("infoButton");
     let buyButton = document.getElementById("buyButton");
     let closeButton = document.getElementById("closeButton");
-
+  
     const roundedProductId = Math.floor(productId / 1000) * 1000;
     const imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/pokemon/${roundedProductId}/${productId}.jpg`;
-
+  
     if (!overlayDiv) {
-        overlayDiv = createOverlayDiv();
-        cardInfoDiv = createCardInfoDiv(cardInfo);
-        buyButton = createButton("buyButton", "buy", "button");
-        infoButton = createButton("infoButton", "i", "button");
-        closeButton = createButton("closeButton", "×", "button");
-
-        overlayDiv.appendChild(cardInfoDiv);
-        overlayDiv.appendChild(buyButton);
-        overlayDiv.appendChild(infoButton);
-        overlayDiv.appendChild(closeButton);
-
-        buyButton.addEventListener("click", () => {
-            window.open(`https://www.tcgplayer.com/product/${productId}`, "_blank");
-        });
-    
-        infoButton.addEventListener("click", () => {
-            toggleVisibility(cardInfoDiv, buyButton, infoButton, closeButton);
-        });
-    
-        closeButton.addEventListener("click", () => {
-            overlayDiv.style.visibility = "hidden";
-            cardInfoDiv.style.visibility = "hidden";
-        });
-
-        document.body.appendChild(overlayDiv);
+      overlayDiv = createOverlayDiv();
+      overlayDiv.innerHTML = "";
+      cardInfoDiv = createCardInfoDiv(cardInfo);
+      infoButton = createButton("infoButton", "i", "button");
+      closeButton = createButton("closeButton", "×", "button");
+      const buyLink = document.createElement('a');
+      buyLink.id = "buyButton";
+      buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
+      buyLink.target = "_blank";
+      buyLink.textContent = "buy";
+  
+      overlayDiv.appendChild(cardInfoDiv);
+      overlayDiv.appendChild(buyLink);
+      overlayDiv.appendChild(infoButton);
+      overlayDiv.appendChild(closeButton);
+  
+      closeButton.addEventListener("click", () => {
+        overlayDiv.style.visibility = "hidden";
+        cardInfoDiv.style.visibility = "hidden";
+      });
+  
+      document.body.appendChild(overlayDiv);
     }
-
-    overlayDiv.innerHTML = "";
-    overlayDiv.appendChild(cardInfoDiv);
-    overlayDiv.appendChild(buyButton);
-    overlayDiv.appendChild(infoButton);
-    overlayDiv.appendChild(closeButton);
+  
+    cardInfoDiv.innerHTML = cardInfo;
+  
+    const buyLink = overlayDiv.querySelector('#buyButton');
+    buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
+  
+    infoButton.removeEventListener('click', toggleVisibility);
+  
+    infoButton.addEventListener("click", () => toggleVisibility(cardInfoDiv, buyButton, infoButton, closeButton));
+  
     overlayDiv.style.visibility = "visible";
-
+    cardInfoDiv.style.visibility = "visible";
+  
     const img = new Image();
     img.src = imageSrc;
     img.onload = () => {
-        overlayDiv.style.backgroundImage = `url(${imageSrc})`;
+      overlayDiv.style.backgroundImage = `url(${imageSrc})`;
     };
     img.onerror = () => {
-        console.error(`Failed to load image: ${imageSrc}`);
+      console.error(`Failed to load image: ${imageSrc}`);
+      overlayDiv.style.backgroundImage = 'none';
+      overlayDiv.style.backgroundColor = '#41475d';
     };
-}
+  }
 
 function createOverlayDiv() {
     const div = document.createElement("div");
