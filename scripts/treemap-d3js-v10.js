@@ -218,19 +218,21 @@ class Treemap {
         const productId = node.data.ticker;
         const productRawData = this.rawData.find(item => item.productId === productId);
     
-        if (productRawData && productRawData.customAttributes) {
-            const customAttributes = { ...productRawData.customAttributes };
-            customAttributes.name = node.data.name;
-            customAttributes.marketPrice = node.value;
-            if (node.children && node.children.length) {
-                customAttributes.nodeChildrenLength = node.children.length;
-            }
+        const customAttributes = {
+          name: node.data.name,
+          marketPrice: node.value,
+        };
     
-            const cardInfo = formatCardInfo(customAttributes, details);
-            return cardInfo;
-        } else {
-            return "";
+        if (node.children && node.children.length) {
+          customAttributes.nodeChildrenLength = node.children.length;
         }
+    
+        if (productRawData && productRawData.customAttributes) {
+          Object.assign(customAttributes, productRawData.customAttributes);
+        }
+    
+        const cardInfo = formatCardInfo(customAttributes, details);
+        return cardInfo;
     }
 
     async renderFromNode(node) {
