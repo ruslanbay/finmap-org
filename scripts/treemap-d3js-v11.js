@@ -323,83 +323,71 @@ class Treemap {
     }
 
     async renderLeafNode(node, width, height) {
-        const defaultImageSrc = 'https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/default.webp';
-      
-        const loadImage = (src) => {
-          return new Promise((resolve, reject) => {
-            const image = new Image();
-            image.onload = () => resolve(image);
-            image.onerror = reject;
-            image.src = src;
-          });
-        };
-      
-        try {
-          // Draw default background image
-          const backgroundImage = await loadImage(defaultImageSrc);
-          this.ctx.drawImage(
-            backgroundImage,
-            0, 0, backgroundImage.width, backgroundImage.height,
-            node.x0, node.y0, width, height
-          );
-      
-          // Only proceed if there's enough space
-          if (width > 30 || height > 45) {
+        // Draw background color first (fallback)
+        this.ctx.fillStyle = '#41475d';
+        this.ctx.fillRect(node.x0, node.y0, width, height);
+        
+        // Only proceed if there's enough space
+        if (width > 30 || height > 45) {
             this.renderNodeText(node, width, height);
-      
-            let productId = node.data.ticker;
-            let roundedProductId = Math.floor(productId / 1000) * 1000;
-            let imageSrc = defaultImageSrc; // Initialize with default
-      
-            // Determine image source based on size
-            if (width > 60 || height > 90) {
-              imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/${roundedProductId}/${productId}.webp`;
-            }
-      
+
             try {
-              const image = await loadImage(imageSrc);
-              // Calculate scaling to maintain aspect ratio while filling width
-              const imageAspect = image.width / image.height;
-              const nodeAspect = width / height;
-      
-              let sx = 0, sy = 0, sWidth = image.width, sHeight = image.height;
-      
-              if (imageAspect > nodeAspect) {
-                // Image is wider than node - crop sides
-                sWidth = Math.floor(image.height * nodeAspect);
-                sx = Math.floor((image.width - sWidth) / 2);
-              } else {
-                // Image is taller than node - crop top/bottom
-                sHeight = Math.floor(image.width / nodeAspect);
-                sy = 0; // Math.floor((image.height - sHeight) / 2);
-              }
-      
-              this.ctx.drawImage(
-                image,
-                sx, sy, sWidth, sHeight,
-                node.x0, node.y0, width, height
-              );
-      
-              // Render text again on top of the image
-              this.renderNodeText(node, width, height);
+                // Create a Promise for image loading
+                const loadImage = (src) => {
+                    return new Promise((resolve, reject) => {
+                        const image = new Image();
+                        image.onload = () => resolve(image);
+                        image.onerror = reject;
+                        image.src = src;
+                    });
+                };
+    
+                let productId = node.data.ticker;
+                let roundedProductId = Math.floor(productId / 1000) * 1000;
+                let imageSrc = 'https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/default.webp';
+                const defaultImageSrc = imageSrc;
+
+                // Determine image source based on size
+                if (width > 60 || height > 90) { // (width > 100 || height > 150) {
+                    imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/${roundedProductId}/${productId}.webp`;
+                }
+
+                // Load image asynchronously
+                const image = await loadImage(imageSrc).catch(() => {
+                    // Fallback to default image if specific image fails to load
+                    return loadImage(`${defaultImageSrc}`);
+                });
+                
+                // Calculate scaling to maintain aspect ratio while filling width
+                const imageAspect = image.width / image.height;
+                const nodeAspect = width / height;
+                
+                let sx = 0, sy = 0, sWidth = image.width, sHeight = image.height;
+                
+                if (imageAspect > nodeAspect) {
+                    // Image is wider than node - crop sides
+                    sWidth = Math.floor(image.height * nodeAspect);
+                    sx = Math.floor((image.width - sWidth) / 2);
+                } else {
+                    // Image is taller than node - crop top/bottom
+                    sHeight = Math.floor(image.width / nodeAspect);
+                    sy = 0; // Math.floor((image.height - sHeight) / 2);
+                }
+                
+                // Draw the image
+                this.ctx.drawImage(
+                    image,
+                    sx, sy, sWidth, sHeight,  // Source rectangle
+                    node.x0, node.y0, width, height  // Destination rectangle
+                );
+            
+                // Render text again on top of the image
+                this.renderNodeText(node, width, height);
             } catch (error) {
-              console.error(`Failed to load specific image for node:`, error);
+                console.error(`Failed to load image for node:`, error);
             }
-          }
-        } catch (error) {
-          console.error(`Failed to load default background image:`, error);
-      
-          // Fallback bg color
-          this.ctx.fillStyle = '#41475d';
-          this.ctx.fillRect(node.x0, node.y0, width, height);
-      
-          // Only proceed if there's enough space
-          if (width > 30 || height > 45) {
-            this.renderNodeText(node, width, height);
-          }
         }
-      }
-      
+    }  
       
 
     renderNodeText(node, width, height) {
