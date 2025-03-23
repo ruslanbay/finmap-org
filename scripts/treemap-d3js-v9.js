@@ -407,7 +407,7 @@ class Treemap {
                     style="cursor: pointer; padding: 5px 10px;"
                     data-index="${index}"
                 >
-                    ${node.data.name}
+                    ${node.name}
                     ${index < this.path.length - 1 ? ' >' : ''}
                 </span>
             `)
@@ -416,23 +416,23 @@ class Treemap {
 
     async drillDown(node) {
         if (!node || this.currentRoot === node) return;
-    
+      
         // Build complete path from node to root
         const fullPath = [];
         let currentNode = node;
-    
+      
         // Traverse up the hierarchy to build the path
         while (currentNode) {
-            fullPath.unshift(currentNode.data.name);
-            currentNode = currentNode.data.parent;
+            fullPath.unshift(currentNode.name); // Use unshift to build the path from root to leaf
+            currentNode = currentNode.parent;
         }
-    
+      
         // Update path with the full hierarchy
         this.path = fullPath;
-    
+      
         // Update the pathbar
         this.updatePathbar();
-    
+      
         // Render the target node
         this.renderFromNode(node);
     }
@@ -440,11 +440,11 @@ class Treemap {
     async drillTo(index) {
         if (index >= 0 && index < this.path.length) {
             this.path = this.path.slice(0, index + 1);
-    
+      
             this.updatePathbar();
             this.renderFromNode(this.path[index]);
         }
-    }
+      }
 
     transformData(securitiesData) {
         if (!securitiesData?.securities?.columns || !securitiesData?.securities?.data) {
