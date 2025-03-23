@@ -214,7 +214,7 @@ class Treemap {
         });
     }
 
-    getCardInfo(node) {
+    getCardInfo(node, details = "verbose") {
         const productId = node.data.ticker;
         const productRawData = this.rawData.find(item => item.productId === productId);
     
@@ -222,20 +222,22 @@ class Treemap {
             const customAttributes = { ...productRawData.customAttributes };
             customAttributes.name = node.data.name;
             customAttributes.marketPrice = node.value;
+            customAttributes.nodeChildrenLength = node.children.length;
     
-            const cardInfo = formatCardInfo(customAttributes);
+            const cardInfo = formatCardInfo(customAttributes, details);
             return cardInfo;
         } else {
             return "";
         }
     }
-    
 
     async renderFromNode(node) {
         if (!node?.data) return;
 
         if (!node.data.children?.length) {
-            updateOverlayWidget(node);
+            const cardInfo = this.getCardInfo(node, "verbose");
+            const productId = node.data.ticker;
+            updateOverlayWidget(cardInfo, productId);
             return;
         }
         
@@ -566,24 +568,7 @@ class Treemap {
         const tooltip = d3.select(this.tooltip);
         const formatNumber = d3.format(',.2f');
 
-        const tooltipContent = getCardInfo(node);
-        
-        // const tooltipContent = `
-        //     <div style="font-weight: bold; margin-bottom: 5px;">
-        //         ${this.escapeHtml(node.data.name)}
-        //     </div>
-        //     <div style="margin-top: 5px;">
-        //         Market Price: $${formatNumber(node.value)}
-        //     </div>
-        //     <div>
-        //         Type: ${this.escapeHtml(node.data.type)}
-        //     </div>
-        //     <div style="margin-top: 5px; color: #8BE9FD;">
-        //         ${node.children?.length ? 
-        //             `Click to view ${node.children.length} items` : 
-        //             'Click to view details'}
-        //     </div>
-        // `;
+        const tooltipContent = this.getCardInfo(node, "short");
     
         tooltip
             .style('display', 'block')
@@ -653,12 +638,9 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 
-async function updateOverlayWidget(node) {
-    const cardInfo = getCardInfo(node);
-    const productId = node.data.ticker;
-
+async function updateOverlayWidget(cardInfo, productId) {
     let overlayDiv = document.getElementById("overlay");
-    let cardInfoDiv = document.getElementById('cardInfoDiv');
+    // let cardInfoDiv = document.getElementById('cardInfoDiv');
     let infoButton = document.getElementById("infoButton");
     let buyButton = document.getElementById("buyButton");
     let closeButton = document.getElementById("closeButton");
@@ -769,36 +751,50 @@ async function updateOverlayWidget(node) {
 }
 
 
-function formatCardInfo(cardInfo) {
+function formatCardInfo(cardInfo, details = "verbose") {
     const releaseDate = cardInfo.releaseDate ? cardInfo.releaseDate.split("T")[0] : "N/A";
     const formattedMarketPrice = cardInfo.marketPrice
     ? `$${cardInfo.marketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : "N/A";
 
-    const html = `
+    let html = `
         <p><b>${cardInfo.name || "Unknown"}</b></p>
         <p><b>MARKET PRICE</b> ${formattedMarketPrice || "N/A"}</p>
         <p><b>RELEASE DATE</b> ${releaseDate}</p>
         <p>${cardInfo.number} | ${cardInfo.rarityDbName || ""}</p>
-        <p>${cardInfo.description || ""}</p>
-        <p>${cardInfo.flavorText || ""}</p>
-        <p>
-          <b>HP</b> ${cardInfo.hp || "N/A"}<br>
-          <b>ENERGY TYPE</b> ${cardInfo.energyType || "N/A"}<br>
-          <b>STAGE</b> ${cardInfo.stage || "N/A"}
-        </p>
-        <p>
-          <b>RESISTANCE</b> ${cardInfo.resistance || "N/A"}<br>
-          <b>WEAKNESS</b> ${cardInfo.weakness || "N/A"}
-        </p>
-        <p><b>ATTACKS</b></p>
-        <ul>
-            ${cardInfo.attack1 ? `<li>${cardInfo.attack1}</li>` : ""}
-            ${cardInfo.attack2 ? `<li>${cardInfo.attack2}</li>` : ""}
-            ${cardInfo.attack3 ? `<li>${cardInfo.attack3}</li>` : ""}
-            ${cardInfo.attack4 ? `<li>${cardInfo.attack4}</li>` : ""}
-        </ul>
     `;
+
+    switch (details) {
+        case "short":
+            html = `${html}
+            <div style="margin-top: 5px; color: #8BE9FD;">
+                ${nodeChildrenLength ? 
+                    `Click to view ${nodeChildrenLength} items` : 
+                    'Click to view details'}
+            </div>`;
+            break;
+        case "verbose":
+        default:
+            html = `${html}
+            <p>${cardInfo.description || ""}</p>
+            <p>${cardInfo.flavorText || ""}</p>
+            <p>
+              <b>HP</b> ${cardInfo.hp || "N/A"}<br>
+              <b>ENERGY TYPE</b> ${cardInfo.energyType || "N/A"}<br>
+              <b>STAGE</b> ${cardInfo.stage || "N/A"}
+            </p>
+            <p>
+              <b>RESISTANCE</b> ${cardInfo.resistance || "N/A"}<br>
+              <b>WEAKNESS</b> ${cardInfo.weakness || "N/A"}
+            </p>
+            <p><b>ATTACKS</b></p>
+            <ul>
+                ${cardInfo.attack1 ? `<li>${cardInfo.attack1}</li>` : ""}
+                ${cardInfo.attack2 ? `<li>${cardInfo.attack2}</li>` : ""}
+                ${cardInfo.attack3 ? `<li>${cardInfo.attack3}</li>` : ""}
+                ${cardInfo.attack4 ? `<li>${cardInfo.attack4}</li>` : ""}
+            </ul>`;
+    }
 
     return html;
 }
