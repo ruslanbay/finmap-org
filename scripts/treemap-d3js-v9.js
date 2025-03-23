@@ -416,23 +416,28 @@ class Treemap {
 
     async drillDown(node) {
         if (!node || this.currentRoot === node) return;
-
+    
         // Build complete path from node to root
         const fullPath = [];
         let currentNode = node;
-
+    
         // Traverse up the hierarchy to build the path
         while (currentNode) {
             fullPath.unshift(currentNode);
             currentNode = currentNode.parent;
         }
-
+    
+        // Ensure the root node is included
+        if (fullPath[0] !== this.root) {
+            fullPath.unshift(this.root);
+        }
+    
         // Update path with the full hierarchy
         this.path = fullPath;
-
+    
         // Update the pathbar
         this.updatePathbar();
-
+    
         // Render the target node
         this.renderFromNode(node);
     }
@@ -440,6 +445,12 @@ class Treemap {
     async drillTo(index) {
         if (index >= 0 && index < this.path.length) {
             this.path = this.path.slice(0, index + 1);
+    
+            // Ensure the root node is included
+            if (this.path[0] !== this.root) {
+                this.path.unshift(this.root);
+            }
+    
             this.updatePathbar();
             this.renderFromNode(this.path[index]);
         }
@@ -518,12 +529,13 @@ class Treemap {
         data.forEach(row => {
             const ticker = row[this.columnIndex.ticker];
             const parentSector = row[this.columnIndex.sector];
-
+        
             if (ticker === rootRow[this.columnIndex.ticker]) return;
-
+        
             const node = this.nodesMap.get(ticker);
-            const parentNode = this.nodesMap.get(parentSector);
-
+            const parentNode = Array.from(this.nodesMap.values())
+                .find(n => n.ticker === parentSector);
+        
             if (parentNode) {
                 parentNode.children.push(node);
                 node.parent = parentNode;  // Set parent reference
@@ -627,7 +639,7 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
         infoButton.className = "button";
         infoButton.textContent = "i";
         infoButton.style.top = "15px";
-        infoButton.style.right = "68px";
+        infoButton.style.right = "70px";
         infoButton.style.fontStyle = "italic";
 
         closeButton = document.createElement("button");
@@ -635,7 +647,7 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
         closeButton.className = "button";
         closeButton.textContent = "×";
         closeButton.style.top = "15px";
-        closeButton.style.right = "10px";
+        closeButton.style.right = "15px";
 
         overlayDiv.appendChild(buyButton);
         overlayDiv.appendChild(infoButton);
