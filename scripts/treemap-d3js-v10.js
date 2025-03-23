@@ -214,7 +214,7 @@ class Treemap {
         });
     }
 
-    async renderLeafDetails(node) {
+    getCardInfo(node) {
         const productId = node.data.ticker;
         const productRawData = this.rawData.find(item => item.productId === productId);
     
@@ -223,8 +223,10 @@ class Treemap {
             customAttributes.name = node.data.name;
             customAttributes.marketPrice = node.value;
     
-            const cardInfoDiv = createCardInfoDiv(customAttributes);
-            await updateOverlayWidget("overlay", productId, cardInfoDiv);
+            const cardInfo = formatCardInfo(customAttributes);
+            return cardInfo;
+        } else {
+            return "";
         }
     }
     
@@ -233,7 +235,7 @@ class Treemap {
         if (!node?.data) return;
 
         if (!node.data.children?.length) {
-            this.renderLeafDetails(node);
+            updateOverlayWidget(node);
             return;
         }
         
@@ -563,26 +565,25 @@ class Treemap {
     
         const tooltip = d3.select(this.tooltip);
         const formatNumber = d3.format(',.2f');
+
+        const tooltipContent = getCardInfo(node);
         
-        const tooltipContent = `
-            <div style="font-weight: bold; margin-bottom: 5px;">
-                ${this.escapeHtml(node.data.name)}
-            </div>
-            <div style="font-size: 12px; color: #ddd;">
-                ${this.escapeHtml(node.data.ticker)}
-            </div>
-            <div style="margin-top: 5px;">
-                Market Price: $${formatNumber(node.value)}
-            </div>
-            <div>
-                Type: ${this.escapeHtml(node.data.type)}
-            </div>
-            <div style="margin-top: 5px; color: #8BE9FD;">
-                ${node.children?.length ? 
-                    `Click to view ${node.children.length} items` : 
-                    'Click to view details'}
-            </div>
-        `;
+        // const tooltipContent = `
+        //     <div style="font-weight: bold; margin-bottom: 5px;">
+        //         ${this.escapeHtml(node.data.name)}
+        //     </div>
+        //     <div style="margin-top: 5px;">
+        //         Market Price: $${formatNumber(node.value)}
+        //     </div>
+        //     <div>
+        //         Type: ${this.escapeHtml(node.data.type)}
+        //     </div>
+        //     <div style="margin-top: 5px; color: #8BE9FD;">
+        //         ${node.children?.length ? 
+        //             `Click to view ${node.children.length} items` : 
+        //             'Click to view details'}
+        //     </div>
+        // `;
     
         tooltip
             .style('display', 'block')
@@ -652,8 +653,12 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 
-async function updateOverlayWidget(divName, productId, cardInfoDiv) {
-    let overlayDiv = document.getElementById(divName);
+async function updateOverlayWidget(node) {
+    const cardInfo = getCardInfo(node);
+    const productId = node.data.ticker;
+
+    let overlayDiv = document.getElementById("overlay");
+    let cardInfoDiv = document.getElementById('cardInfoDiv');
     let infoButton = document.getElementById("infoButton");
     let buyButton = document.getElementById("buyButton");
     let closeButton = document.getElementById("closeButton");
@@ -663,7 +668,7 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
 
     if (!overlayDiv) {
         overlayDiv = document.createElement("div");
-        overlayDiv.id = divName;
+        overlayDiv.id = "overlay";
         overlayDiv.style.position = "fixed";
         overlayDiv.style.aspectRatio = "630 / 880";
         overlayDiv.style.height = "88%";
@@ -680,6 +685,16 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
         overlayDiv.style.backgroundPosition = "center";
         overlayDiv.style.backgroundRepeat = "no-repeat";
         overlayDiv.innerHTML = "";
+
+        cardInfoDiv = document.createElement('cardInfoDiv');
+        cardInfoDiv.id = "cardInfoDiv";
+        cardInfoDiv.style.width = '100%';
+        cardInfoDiv.style.aspectRatio = "630 / 880";
+        cardInfoDiv.style.background = "white";
+        cardInfoDiv.style.opacity = "0.9";
+        cardInfoDiv.style.overflowY = "auto";
+        cardInfoDiv.style.padding = "16px";
+        cardInfoDiv.innerHTML = cardInfo;
 
         buyButton = document.createElement("button");
         buyButton.id = "buyButton";
@@ -754,16 +769,7 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
 }
 
 
-function createCardInfoDiv(cardInfo) {
-    const div = document.createElement('div');
-    div.id = "cardInfoDiv";
-    div.style.width = '100%';
-    div.style.aspectRatio = "630 / 880";
-    div.style.background = "white";
-    div.style.opacity = "0.9";
-    div.style.overflowY = "auto";
-    div.style.padding = "16px";
-
+function formatCardInfo(cardInfo) {
     const releaseDate = cardInfo.releaseDate ? cardInfo.releaseDate.split("T")[0] : "N/A";
     const formattedMarketPrice = cardInfo.marketPrice
     ? `$${cardInfo.marketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -794,9 +800,7 @@ function createCardInfoDiv(cardInfo) {
         </ul>
     `;
 
-    div.innerHTML = html;
-
-    return div;
+    return html;
 }
 
 
