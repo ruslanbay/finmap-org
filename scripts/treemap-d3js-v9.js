@@ -170,7 +170,7 @@ class Treemap {
         // Pathbar navigation
         this.pathbar.addEventListener('click', (event) => {
             const index = parseInt(event.target.closest('span').dataset.index);
-            // if (!isNaN(index)) this.drillTo(index);
+            if (!isNaN(index)) this.drillTo(index);
         });
     }
 
@@ -439,10 +439,21 @@ class Treemap {
 
     async drillTo(index) {
         if (index >= 0 && index < this.path.length) {
-            this.path = this.path.slice(0, index + 1);
-    
+            const node = this.path[index];
+            const fullPath = [];
+            let currentNode = node;
+      
+            // Traverse up the hierarchy to build the path
+            while (currentNode) {
+              fullPath.unshift(currentNode);
+              currentNode = currentNode.parent;
+            }
+
+            // Update path with the full hierarchy
+            this.path = fullPath;
+            
             this.updatePathbar();
-            this.renderFromNode(this.path[index]);
+            this.renderFromNode(node);
         }
     }
 
