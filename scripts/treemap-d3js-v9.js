@@ -427,11 +427,6 @@ class Treemap {
             currentNode = currentNode.parent;
         }
     
-        // Ensure the root node is included
-        if (fullPath[0] !== this.root) {
-            fullPath.unshift(this.root);
-        }
-    
         // Update path with the full hierarchy
         this.path = fullPath;
     
@@ -445,11 +440,6 @@ class Treemap {
     async drillTo(index) {
         if (index >= 0 && index < this.path.length) {
             this.path = this.path.slice(0, index + 1);
-    
-            // Ensure the root node is included
-            if (this.path[0] !== this.root) {
-                this.path.unshift(this.root);
-            }
     
             this.updatePathbar();
             this.renderFromNode(this.path[index]);
@@ -575,7 +565,6 @@ document.head.insertAdjacentHTML('beforeend', `
             justify-content: center;
             align-items: center;
         }
-
         
         @font-face {
             font-family: 'PokemonHollow';
@@ -669,8 +658,14 @@ async function updateOverlayWidget(divName, productId, cardInfoDiv) {
     infoButton.addEventListener("click", function() {
         if (cardInfoDiv.style.visibility === "hidden") {
             cardInfoDiv.style.visibility = "visible";
+            buyButton.style.background = "#aaa1a1";
+            infoButton.style.background = "#aaa1a1";
+            closeButton.style.background = "#aaa1a1";
         } else {
             cardInfoDiv.style.visibility = "hidden";
+            buyButton.style.background = "white";
+            infoButton.style.background = "white";
+            closeButton.style.background = "white";
         }
     });
 
