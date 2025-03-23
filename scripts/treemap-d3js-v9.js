@@ -408,7 +408,7 @@ class Treemap {
         if (!node || this.currentRoot === node) return;
 
         let fullPath = "";
-        const currentNode = node;
+        let currentNode = node;
         
         // Traverse up the hierarchy to build the path
         while (currentNode) {
