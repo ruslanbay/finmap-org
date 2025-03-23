@@ -711,6 +711,19 @@ async function updateOverlayWidget(cardInfo, productId) {
         overlayDiv.appendChild(infoButton);
         overlayDiv.appendChild(closeButton);
 
+        buyButton.addEventListener("click", () => {
+            window.open(`https://www.tcgplayer.com/product/${productId}`, "_blank");
+        });
+    
+        infoButton.addEventListener("click", () => {
+            toggleVisibility(cardInfoDiv, buyButton, infoButton, closeButton);
+        });
+    
+        closeButton.addEventListener("click", () => {
+            overlayDiv.style.visibility = "hidden";
+            cardInfoDiv.style.visibility = "hidden";
+        }, { once: true });
+
         document.body.appendChild(overlayDiv);
     }
 
@@ -720,19 +733,6 @@ async function updateOverlayWidget(cardInfo, productId) {
     overlayDiv.appendChild(infoButton);
     overlayDiv.appendChild(closeButton);
     overlayDiv.style.visibility = "visible";
-
-    buyButton.addEventListener("click", () => {
-        window.open(`https://www.tcgplayer.com/product/${productId}`, "_blank");
-    });
-
-    infoButton.addEventListener("click", () => {
-        toggleVisibility(cardInfoDiv, buyButton, infoButton, closeButton);
-    });
-
-    closeButton.addEventListener("click", () => {
-        overlayDiv.style.visibility = "hidden";
-        cardInfoDiv.style.visibility = "hidden";
-    }, { once: true });
 
     const img = new Image();
     img.src = imageSrc;
