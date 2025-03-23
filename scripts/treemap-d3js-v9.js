@@ -407,7 +407,7 @@ class Treemap {
                     style="cursor: pointer; padding: 5px 10px;"
                     data-index="${index}"
                 >
-                    ${node.name}
+                    ${node.data.name}
                     ${index < this.path.length - 1 ? ' >' : ''}
                 </span>
             `)
@@ -422,13 +422,13 @@ class Treemap {
         let currentNode = node;
       
         // Traverse up the hierarchy to build the path
-        while (currentNode) {
-            fullPath.unshift(currentNode.name); // Use unshift to build the path from root to leaf
-            currentNode = currentNode.parent;
+        while (currentNode && currentNode.data) {
+            fullPath.push(currentNode.data.name);
+            currentNode = currentNode.data.parent;
         }
       
         // Update path with the full hierarchy
-        this.path = fullPath;
+        this.path = fullPath.reverse().join(' > ');
       
         // Update the pathbar
         this.updatePathbar();
