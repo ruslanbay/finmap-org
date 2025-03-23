@@ -164,6 +164,7 @@ class Treemap {
             const y = event.clientY - rect.top;
             
             const node = this.findNodeAtPoint(x, y);
+
             if (node) this.drillDown(node);
         });
 
@@ -171,6 +172,22 @@ class Treemap {
         this.pathbar.addEventListener('click', (event) => {
             const index = parseInt(event.target.closest('span').dataset.index);
             if (!isNaN(index)) this.drillTo(index);
+        });
+
+        this.canvas.addEventListener('mousemove', (event) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+    
+            const node = this.findNodeAtPoint(x, y);
+            
+            if (node) {
+                this.canvas.style.cursor = 'pointer';
+                this.showTooltip(node, event);
+            } else {
+                this.canvas.style.cursor = 'default';
+                this.hideTooltip();
+            }
         });
     }
 
@@ -535,6 +552,57 @@ class Treemap {
         });
 
         return { root, nodesMap: this.nodesMap };
+    }
+
+    // Tooltip methods
+    showTooltip(node, event) {
+        if (!node?.data || !event) {
+            return;
+        }
+    
+        const tooltip = d3.select(this.tooltip);
+        const formatNumber = d3.format(',.2f');
+        
+        const tooltipContent = `
+            <div style="font-weight: bold; margin-bottom: 5px;">
+                ${this.escapeHtml(node.data.name)}
+            </div>
+            <div style="font-size: 12px; color: #ddd;">
+                ${this.escapeHtml(node.data.ticker)}
+            </div>
+            <div style="margin-top: 5px;">
+                Market Price: $${formatNumber(node.value)}
+            </div>
+            <div>
+                Type: ${this.escapeHtml(node.data.type)}
+            </div>
+            <div style="margin-top: 5px; color: #8BE9FD;">
+                ${node.children?.length ? 
+                    `Click to view ${node.children.length} items` : 
+                    'Click to view details'}
+            </div>
+        `;
+    
+        tooltip
+            .style('display', 'block')
+            .style('left', `${event.pageX + 10}px`)
+            .style('top', `${event.pageY + 10}px`)
+            .html(tooltipContent);
+    }
+    
+    escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    hideTooltip() {
+        d3.select(this.tooltip).style('display', 'none');
     }
 }
 
