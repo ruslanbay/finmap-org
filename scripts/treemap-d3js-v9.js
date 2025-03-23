@@ -402,15 +402,19 @@ class Treemap {
 
     updatePathbar() {
         this.pathbar.innerHTML = this.path
-            .map((node, index) => `
-                <span
-                    style="cursor: pointer; padding: 5px 10px;"
-                    data-index="${index}"
-                >
-                    ${node.data.name}
-                    ${index < this.path.length - 1 ? ' >' : ''}
-                </span>
-            `)
+            .map((node, index) => {
+                const isLast = index === this.path.length - 1;
+                return `
+                    <span
+                        style="cursor: ${isLast ? 'default' : 'pointer'}; 
+                               padding: 5px 10px;"
+                        ${!isLast ? `data-index="${index}"` : ''}
+                    >
+                        ${node.data.name}
+                        ${!isLast ? ' >' : ''}
+                    </span>
+                `;
+            })
             .join('');
     }
     
@@ -418,31 +422,37 @@ class Treemap {
         if (!node || this.currentRoot === node) return;
     
         // Build complete path from node to root
-        const fullPath = [];
+        const newPath = [];
         let currentNode = node;
-    
+        
         // Traverse up the hierarchy to build the path
-        while (currentNode) {
-            fullPath.unshift(currentNode);
+        while (currentNode.parent) {
+            newPath.unshift(currentNode);
             currentNode = currentNode.parent;
         }
-    
-        // Update path with the full hierarchy
-        this.path = fullPath;
-    
-        // Update the pathbar
+        // Add the root node
+        newPath.unshift(currentNode);
+        
+        this.path = newPath;
         this.updatePathbar();
-    
-        // Render the target node
         this.renderFromNode(node);
     }
     
     async drillTo(index) {
         if (index >= 0 && index < this.path.length) {
-            this.path = this.path.slice(0, index + 1);
+            const targetNode = this.path[index];
+            const newPath = [];
+            let currentNode = targetNode;
     
+            while (currentNode.parent) {
+                newPath.unshift(currentNode);
+                currentNode = currentNode.parent;
+            }
+            newPath.unshift(currentNode);
+    
+            this.path = newPath;
             this.updatePathbar();
-            this.renderFromNode(this.path[index]);
+            this.renderFromNode(targetNode);
         }
     }
 
