@@ -609,6 +609,52 @@ document.head.insertAdjacentHTML('beforeend', `
             overflow: hidden;
         }
             
+        .overlayStyle {
+            position: fixed;
+            aspect-ratio: 630 / 880;
+            height: 88%;
+            max-height: 880px;
+            display: flex;
+            visibility: hidden;
+            opacity: 1.0;
+            background-color: #f0f0f0;
+            padding: 10px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .cardInfoDivStyle {
+            width: 100%;
+            aspect-ratio: 630 / 880;
+            background: white;
+            opacity: 0.9;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .buyButtonStyle {
+            top: 15px;
+            right: 128px;
+            width: 87px;
+            border-radius: 10px;
+            font-style: italic;
+        }
+
+        .infoButtonStyle {
+            top: 15px;
+            right: 70px;
+            font-style: italic;
+        }
+        
+        .closeButtonStyle {
+            top: 15px;
+            right: 15px;
+        }
+            
         .button {
             position: absolute;
             font-size: 48px;
@@ -734,53 +780,6 @@ function toggleVisibility(cardInfoDiv, buyButton, infoButton, closeButton) {
         closeButton.style.background = "white";
     }
 }
-
-// Add CSS styles to a <style> tag or an external CSS file
-const style = document.createElement('style');
-style.innerHTML = `
-    .overlayStyle {
-        position: fixed;
-        aspect-ratio: 630 / 880;
-        height: 88%;
-        max-height: 880px;
-        display: flex;
-        visibility: hidden;
-        opacity: 1.0;
-        background-color: #f0f0f0;
-        padding: 10px;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-    }
-    .cardInfoDivStyle {
-        width: 100%;
-        aspect-ratio: 630 / 880;
-        background: white;
-        opacity: 0.9;
-        overflow-y: auto;
-        padding: 16px;
-    }
-    .buyButtonStyle {
-        top: 15px;
-        right: 128px;
-        width: 87px;
-        border-radius: 10px;
-        font-style: italic;
-    }
-    .infoButtonStyle {
-        top: 15px;
-        right: 70px;
-        font-style: italic;
-    }
-    .closeButtonStyle {
-        top: 15px;
-        right: 15px;
-    }
-`;
-document.head.appendChild(style);
 
 
 function formatCardInfo(cardInfo, details = "verbose") {
