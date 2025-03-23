@@ -723,16 +723,16 @@ async function updateOverlayWidget(cardInfo, productId) {
 
     buyButton.addEventListener("click", () => {
         window.open(`https://www.tcgplayer.com/product/${productId}`, "_blank");
-    });
+    }, { once: true });
 
     infoButton.addEventListener("click", () => {
         toggleVisibility(cardInfoDiv, buyButton, infoButton, closeButton);
-    });
+    }, { once: true });
 
     closeButton.addEventListener("click", () => {
         overlayDiv.style.visibility = "hidden";
         cardInfoDiv.style.visibility = "hidden";
-    });
+    }, { once: true });
 
     const img = new Image();
     img.src = imageSrc;
