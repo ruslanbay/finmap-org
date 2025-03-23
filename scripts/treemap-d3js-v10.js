@@ -167,6 +167,7 @@ class Treemap {
             const node = this.findNodeAtPoint(x, y);
 
             if (node) this.drillDown(node);
+            this.hideTooltip();
         });
 
         // Pathbar navigation
