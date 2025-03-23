@@ -5,6 +5,7 @@ class Treemap {
         this.columnIndex = {};
         // Initialize container and canvas
         this.container = document.getElementById(containerId);
+        this.tooltip = document.getElementById('tooltip');
         this.setupCanvas();
         
         // Initialize data properties
