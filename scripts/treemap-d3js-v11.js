@@ -722,7 +722,7 @@ async function updateOverlayWidget(cardInfo, productId) {
         closeButton.addEventListener("click", () => {
             overlayDiv.style.visibility = "hidden";
             cardInfoDiv.style.visibility = "hidden";
-        }, { once: true });
+        });
 
         document.body.appendChild(overlayDiv);
     }
