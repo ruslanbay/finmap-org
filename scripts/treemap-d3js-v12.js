@@ -232,12 +232,17 @@ class Treemap {
     return cardInfo;
   }
 
-  renderFromNode(node) {
+  async renderFromNode(node) {
     if (!node?.data) return;
 
     if (!node.data.children?.length) {
       const cardInfo = this.getCardInfo(node, "verbose");
       const productId = node.data.ticker;
+      // Clear any existing overlay first
+      const existingOverlay = document.getElementById('overlay');
+      if (existingOverlay) {
+        existingOverlay.remove();
+      }
       updateOverlayWidget(cardInfo, productId);
       return;
     }
@@ -461,10 +466,25 @@ class Treemap {
     const fullPath = [];
     let currentNode = node;
 
-    // Traverse up the hierarchy to build the path
+    // Start with the clicked node and traverse up until we hit the root (node with null parent)
     while (currentNode) {
-      fullPath.unshift(currentNode);
+      if (currentNode.data.name) {
+        fullPath.unshift(currentNode);
+      }
       currentNode = currentNode.parent;
+    }
+
+    // If we're clicking a leaf node, ensure we have the root path
+    if (!node.children && fullPath[0]?.parent !== null) {
+      // Find the root node (the one with null parent)
+      let rootNode = node;
+      while (rootNode.parent) {
+        rootNode = rootNode.parent;
+      }
+      
+      if (!fullPath.find(n => n === rootNode)) {
+        fullPath.unshift(rootNode);
+      }
     }
 
     // Update path with the full hierarchy
@@ -618,6 +638,12 @@ class Treemap {
 
 class OverlayManager {
   constructor() {
+    // First, remove any existing overlay
+    const existingOverlay = document.getElementById('overlay');
+    if (existingOverlay) {
+      existingOverlay.remove();
+    }
+    
     this.overlayDiv = null;
     this.cardInfoDiv = null;
     this.infoButton = null;
