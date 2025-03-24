@@ -658,7 +658,7 @@ class OverlayManager {
     }
   
     attachEventListeners() {
-      this.closeButton.addEventListener("click", () => this.hideOverlay());
+      this.closeButton.addEventListener("click", () => this.destroyOverlay());
       this.infoButton.addEventListener("click", () => this.toggleInfoVisibility());
     }
   
@@ -688,11 +688,6 @@ class OverlayManager {
       this.cardInfoDiv.style.visibility = "visible";
     }
   
-    hideOverlay() {
-      this.overlayDiv.style.visibility = "hidden";
-      this.cardInfoDiv.style.visibility = "hidden";
-    }
-  
     toggleInfoVisibility() {
       this.isInfoVisible = !this.isInfoVisible;
       if (this.isInfoVisible) {
@@ -705,6 +700,19 @@ class OverlayManager {
         this.infoButton.classList.remove('active');
         this.closeButton.classList.remove('active');
         this.buyLink.classList.remove('active');
+      }
+    }
+
+    destroyOverlay() {
+      if (this.overlayDiv) {
+        this.closeButton.removeEventListener("click", () => this.destroyOverlay());
+        this.infoButton.removeEventListener("click", () => this.toggleInfoVisibility());
+        document.body.removeChild(this.overlayDiv);
+        this.overlayDiv = null;
+        this.cardInfoDiv = null;
+        this.infoButton = null;
+        this.buyLink = null;
+        this.closeButton = null;
       }
     }
   }
