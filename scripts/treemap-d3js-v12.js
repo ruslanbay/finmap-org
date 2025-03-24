@@ -459,24 +459,25 @@ class Treemap {
       .join("");
   }
 
-  async drillDown(node) {
-    if (!node || this.currentRoot === node) return;
-
-    // Build complete path from node to root
-    const fullPath = [];
+  buildPathFromNode(node) {
+    const pathNodes = [];
     let currentNode = node;
 
-    // Traverse up the tree to build the complete path
+    // Build path from current node up to root
     while (currentNode) {
-      // Only add nodes that have valid data
-      if (currentNode.data && currentNode.data.name) {
-        fullPath.unshift(currentNode);
-      }
+      // Add all valid nodes to the path (including root)
+      pathNodes.unshift(currentNode);
       currentNode = currentNode.parent;
     }
 
-    // Update path with the complete hierarchy
-    this.path = fullPath;
+    return pathNodes;
+  }
+
+  async drillDown(node) {
+    if (!node || this.currentRoot === node) return;
+
+    // Use the new helper method to build the path
+    this.path = this.buildPathFromNode(node);
     
     // Update the pathbar
     this.updatePathbar();
