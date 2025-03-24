@@ -148,35 +148,51 @@ class Treemap {
     letter-spacing: 0.1em;
   `;
 
-  // Create navigation dropdown
   this.navDropdown = document.createElement("select");
-  this.navDropdown.style.cssText = `
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    width: 130px;
-    height: 24px;
-    background: #444;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0 5px;
-    font-family: Arial;
-    cursor: pointer;
-  `;
+  this.navDropdown.className = "nav-dropdown";
 
   this.container.appendChild(this.pathbar);
   this.container.appendChild(this.navDropdown);
 
   // Handle dropdown selection
   this.navDropdown.addEventListener('change', (event) => {
-    const selectedNode = this.nodes.find(node => 
-      node.data.name === event.target.value
+    const selectedValue = event.target.value;
+    if (selectedValue === 'root') {
+      // Show root node
+      this.renderFromNode(this.rootNode);
+      return;
+    }
+
+    const selectedNode = this.rootNode.children.find(node => 
+      node.data.name === selectedValue
     );
     if (selectedNode) {
       this.drillDown(selectedNode);
     }
   });
+  }
+
+  initializeNavDropdown(rootNode) {
+    this.rootNode = rootNode;
+    this.navDropdown.innerHTML = '';
+    
+    // Add "SHOW ALL" option
+    const rootOption = document.createElement('option');
+    rootOption.text = 'SHOW ALL';
+    rootOption.value = 'root';
+    this.navDropdown.add(rootOption);
+
+    // Add children of root node as options
+    if (rootNode?.children) {
+      rootNode.children
+        .sort((a, b) => a.data.name.localeCompare(b.data.name))
+        .forEach(child => {
+          const option = document.createElement('option');
+          option.value = child.data.name;
+          option.text = child.data.name;
+          this.navDropdown.add(option);
+        });
+    }
   }
 
   bindEvents() {
@@ -303,10 +319,6 @@ class Treemap {
 
     treemap(this.cache.hierarchy);
     this.nodes = this.cache.hierarchy.descendants();
-
-    // Update dropdown with current node's children
-    this.updateNavDropdown();
-    
     this.updatePathbar();
     this.render();
   }
@@ -489,31 +501,6 @@ class Treemap {
             `
       )
       .join("");
-  }
-
-  updateNavDropdown() {
-    // Clear existing options
-    this.navDropdown.innerHTML = '';
-    
-    // Add default option
-    const defaultOption = document.createElement('option');
-    defaultOption.text = 'Quick Navigate';
-    defaultOption.value = '';
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    this.navDropdown.add(defaultOption);
-
-    // Add children as options
-    if (this.currentRoot?.children) {
-      this.currentRoot.children
-        .sort((a, b) => a.data.name.localeCompare(b.data.name))
-        .forEach(child => {
-          const option = document.createElement('option');
-          option.value = child.data.name;
-          option.text = child.data.name;
-          this.navDropdown.add(option);
-        });
-    }
   }
 
   buildPathFromNode(node) {
@@ -895,6 +882,7 @@ async function renderTreemap() {
       .sort((a, b) => b.value - a.value);
 
     treemap.path = [root];
+    treemap.initializeNavDropdown(root); // Initialize dropdown with root node
     treemap.renderFromNode(root);
   } catch (error) {
     console.error("Error loading or processing data:", error);
