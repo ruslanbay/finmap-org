@@ -611,7 +611,7 @@ class OverlayManager {
       this.infoButton = null;
       this.buyLink = null;
       this.closeButton = null;
-      this.isInfoVisible = false;
+      this.isInfoVisible = true;
     }
   
     initializeOverlay(cardInfo, productId) {
