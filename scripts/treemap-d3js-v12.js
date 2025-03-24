@@ -1,44 +1,64 @@
 class Treemap {
+  // Configuration constants
+  static CONFIG = {
+    HEADER_HEIGHT: 24,
+    PATHBAR_HEIGHT: 40,
+    DEFAULT_IMAGE: 'https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/default.webp'
+  };
+
   constructor(containerId, rawData) {
     this.rawData = rawData;
-    // Add column index mapping
-    this.columnIndex = {};
-    // Initialize container and canvas
     this.container = document.getElementById(containerId);
     this.tooltip = document.getElementById("tooltip");
+    this.columnIndex = {};
+    
+    // Initialize core properties
+    this.initializeProperties();
+    
+    // Set up UI components
     this.setupCanvas();
+    this.setupPathbar();
+    this.bindEvents();
+    
+    // Initialize dimensions and observers
+    this.updateDimensions();
+    this.initializeResizeObserver();
+  }
 
-    // Initialize data properties
+  initializeProperties() {
     this.nodes = [];
     this.currentRoot = null;
     this.path = [];
-
-    // Create minimal pathbar
-    this.setupPathbar();
-
-    // Bind events
-    this.bindEvents();
-
-    // Initial size calculation
-    this.updateDimensions();
-
-    // Add resize handler
-    this.resizeHandler = this.handleResize.bind(this);
-    window.addEventListener("resize", this.resizeHandler);
-
-    // Cache for computed values
+    this.nodesMap = new Map();
     this.cache = {
       hierarchy: null,
       lastWidth: 0,
-      lastHeight: 0,
+      lastHeight: 0
     };
+  }
 
-    // Resize observer instead of window.resize
-    this.resizeObserver = new ResizeObserver(this.handleResize.bind(this));
+  initializeResizeObserver() {
+    this.resizeObserver = new ResizeObserver(entries => {
+      if (!entries.length) return;
+      
+      requestAnimationFrame(() => {
+        const entry = entries[0];
+        const newWidth = entry.contentRect.width;
+        const newHeight = entry.contentRect.height - Treemap.CONFIG.PATHBAR_HEIGHT;
+
+        if (newWidth === this.cache.lastWidth && newHeight === this.cache.lastHeight) return;
+        
+        this.cache.lastWidth = newWidth;
+        this.cache.lastHeight = newHeight;
+        this.updateDimensions(newWidth, newHeight);
+
+        if (this.currentRoot) {
+          this.updateLayout();
+        }
+      });
+    });
+    
     this.resizeObserver.observe(this.container);
-
-    // Add parent references to make path building easier
-    this.nodesMap = new Map();
   }
 
   updateDimensions(width, height) {
@@ -53,36 +73,6 @@ class Treemap {
 
     this.ctx = this.canvas.getContext("2d");
     this.ctx.scale(dpr, dpr);
-  }
-
-  async handleResize(entries) {
-    if (!entries?.length) return;
-
-    // Use requestAnimationFrame for smooth resizing
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId);
-    }
-
-    this.rafId = requestAnimationFrame(() => {
-      const entry = entries[0];
-      const newWidth = entry.contentRect.width;
-      const newHeight = entry.contentRect.height - 40; // Subtract pathbar
-
-      // Only update if dimensions actually changed
-      if (
-        newWidth !== this.cache.lastWidth ||
-        newHeight !== this.cache.lastHeight
-      ) {
-        this.cache.lastWidth = newWidth;
-        this.cache.lastHeight = newHeight;
-
-        this.updateDimensions(newWidth, newHeight);
-
-        if (this.currentRoot) {
-          this.updateLayout();
-        }
-      }
-    });
   }
 
   async updateLayout() {
@@ -114,31 +104,31 @@ class Treemap {
   // Clean up when no longer needed
   destroy() {
     this.resizeObserver.disconnect();
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId);
-    }
   }
 
   setupCanvas() {
     this.width = this.container.clientWidth;
-    this.height = this.container.clientHeight - 40; // Subtract pathbar height
+    this.height = this.container.clientHeight - Treemap.CONFIG.PATHBAR_HEIGHT;
 
     this.canvas = document.createElement("canvas");
     this.canvas.style.position = "absolute";
-    this.canvas.style.top = "40px";
+    this.canvas.style.top = `${Treemap.CONFIG.PATHBAR_HEIGHT}px`;
     this.canvas.style.left = "0";
 
-    // Handle high DPI displays
+    // Set up high DPI canvas
+    this.updateCanvasResolution();
+    this.container.appendChild(this.canvas);
+  }
+
+  updateCanvasResolution() {
     const dpr = window.devicePixelRatio || 1;
     this.canvas.width = this.width * dpr;
     this.canvas.height = this.height * dpr;
-    this.canvas.style.width = this.width + "px";
-    this.canvas.style.height = this.height + "px";
-
+    this.canvas.style.width = `${this.width}px`;
+    this.canvas.style.height = `${this.height}px`;
+    
     this.ctx = this.canvas.getContext("2d");
     this.ctx.scale(dpr, dpr);
-
-    this.container.appendChild(this.canvas);
   }
 
   setupPathbar() {
@@ -175,7 +165,10 @@ class Treemap {
 
     // Pathbar navigation
     this.pathbar.addEventListener("click", (event) => {
-      const index = parseInt(event.target.closest("span").dataset.index);
+      const span = event.target.closest("span");
+      if (!span) return; // Guard against clicks outside spans
+      
+      const index = parseInt(span.dataset.index);
       if (!isNaN(index)) this.drillTo(index);
     });
 
@@ -198,7 +191,6 @@ class Treemap {
 
   // Update findNodeAtPoint to handle header areas
   findNodeAtPoint(x, y) {
-    const HEADER_HEIGHT = 24;
     return this.nodes.find((node) => {
       if (!node.parent) return false; // Skip root node
 
@@ -208,7 +200,7 @@ class Treemap {
           x >= node.x0 &&
           x <= node.x1 &&
           y >= node.y0 &&
-          y <= node.y0 + HEADER_HEIGHT
+          y <= node.y0 + Treemap.CONFIG.HEADER_HEIGHT
         );
       } else {
         // For leaf nodes, check entire area
@@ -240,7 +232,7 @@ class Treemap {
     return cardInfo;
   }
 
-  async renderFromNode(node) {
+  renderFromNode(node) {
     if (!node?.data) return;
 
     if (!node.data.children?.length) {
@@ -346,7 +338,7 @@ class Treemap {
         let productId = node.data.ticker;
         let roundedProductId = Math.floor(productId / 1000) * 1000;
         let imageSrc =
-          "https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/default.webp";
+          Treemap.CONFIG.DEFAULT_IMAGE;
         const defaultImageSrc = imageSrc;
 
         // Determine image source based on size
@@ -678,10 +670,12 @@ class OverlayManager {
   }
 
   attachEventListeners() {
-    this.closeButton.addEventListener("click", () => this.destroyOverlay());
-    this.infoButton.addEventListener("click", () =>
-      this.toggleInfoVisibility()
-    );
+    // Store bound methods to properly remove later
+    this.handleClose = () => this.destroyOverlay();
+    this.handleToggleInfo = () => this.toggleInfoVisibility();
+    
+    this.closeButton.addEventListener("click", this.handleClose);
+    this.infoButton.addEventListener("click", this.handleToggleInfo);
   }
 
   updateOverlayContent(cardInfo, productId) {
@@ -727,12 +721,10 @@ class OverlayManager {
 
   destroyOverlay() {
     if (this.overlayDiv) {
-      this.closeButton.removeEventListener("click", () =>
-        this.destroyOverlay()
-      );
-      this.infoButton.removeEventListener("click", () =>
-        this.toggleInfoVisibility()
-      );
+      // Remove listeners with proper references
+      this.closeButton.removeEventListener("click", this.handleClose);
+      this.infoButton.removeEventListener("click", this.handleToggleInfo);
+      
       document.body.removeChild(this.overlayDiv);
       this.overlayDiv = null;
       this.cardInfoDiv = null;
