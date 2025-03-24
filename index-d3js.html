@@ -132,6 +132,25 @@
         font-weight: normal;
         font-style: normal;
       }
+
+      select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 5px top 50%;
+      }
+
+      select:focus {
+        outline: none;
+        background-color: #555;
+      }
+
+      select option {
+        background-color: #444;
+        color: white;
+      }
     </style>
   </head>
 
@@ -143,6 +162,6 @@
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
-    <script src="scripts/treemap-d3js-v12.js"></script>
+    <script src="scripts/treemap-d3js-v13.js"></script>
   </body>
 </html>
