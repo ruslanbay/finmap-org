@@ -636,17 +636,17 @@ class OverlayManager {
 
       this.infoButton = document.createElement("button");
       this.infoButton.id = "infoButton";
-      this.infoButton.className = "button";
+      this.infoButton.className = "button active";
       this.infoButton.textContent = "i";
 
       this.closeButton = document.createElement("button");
       this.closeButton.id = "closeButton";
-      this.closeButton.className = "button";
+      this.closeButton.className = "button active";
       this.closeButton.textContent = "×";
 
       this.buyLink = document.createElement('a');
       this.buyLink.id = "buyButton";
-      this.buyLink.className = "button";
+      this.buyLink.className = "button active";
       this.buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
       this.buyLink.target = "_blank";
       this.buyLink.textContent = "buy";
