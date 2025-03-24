@@ -785,7 +785,6 @@ async function renderTreemap() {
         console.error('Error loading raw datafile:', error);
     }
 
-
     const treemap = new Treemap('container', rawDatafile.results[0].results);
 
     try {
