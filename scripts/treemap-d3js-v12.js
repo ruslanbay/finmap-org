@@ -466,30 +466,18 @@ class Treemap {
     const fullPath = [];
     let currentNode = node;
 
-    // Start with the clicked node and traverse up until we hit the root (node with null parent)
+    // Traverse up the tree to build the complete path
     while (currentNode) {
-      if (currentNode.data.name) {
+      // Only add nodes that have valid data
+      if (currentNode.data && currentNode.data.name) {
         fullPath.unshift(currentNode);
       }
       currentNode = currentNode.parent;
     }
 
-    // If we're clicking a leaf node, ensure we have the root path
-    if (!node.children && fullPath[0]?.parent !== null) {
-      // Find the root node (the one with null parent)
-      let rootNode = node;
-      while (rootNode.parent) {
-        rootNode = rootNode.parent;
-      }
-      
-      if (!fullPath.find(n => n === rootNode)) {
-        fullPath.unshift(rootNode);
-      }
-    }
-
-    // Update path with the full hierarchy
+    // Update path with the complete hierarchy
     this.path = fullPath;
-
+    
     // Update the pathbar
     this.updatePathbar();
 
