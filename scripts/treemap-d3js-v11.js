@@ -674,10 +674,20 @@ document.head.insertAdjacentHTML('beforeend', `
             display: flex;
             justify-content: center;
             align-items: center;
+            position: absolute;
         }
 
         .button.active {
             background-color: #aaa1a1;
+        }
+
+        a,
+        a:link,
+        a:visited,
+        a:hover,
+        a:active {
+            text-decoration: none;
+            color: inherit;
         }
         
         @font-face {
