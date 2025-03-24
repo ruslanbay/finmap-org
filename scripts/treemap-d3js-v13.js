@@ -133,19 +133,7 @@ class Treemap {
 
   setupPathbar() {
     this.pathbar = document.createElement("div");
-    this.pathbar.style.cssText = `
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 150px; // Make room for dropdown
-    height: 40px;
-    background: #333;
-    color: white;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    font-family: PokemonSolid;
-    letter-spacing: 0.1em;
+    this.pathbar.id = "pathbar";
   `;
 
   this.navDropdown = document.createElement("select");
