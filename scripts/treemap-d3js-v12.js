@@ -463,28 +463,11 @@ class Treemap {
     const pathNodes = [];
     let currentNode = node;
 
-    // First, build the path by traversing the d3 hierarchy
+    // Build path from current node up to root
     while (currentNode) {
-      // Add all valid nodes to the path
-      if (currentNode.data) {
-        pathNodes.unshift({
-          data: {
-            name: currentNode.data.name
-          }
-        });
-      }
+      // Add all valid nodes to the path (including root)
+      pathNodes.unshift(currentNode);
       currentNode = currentNode.parent;
-    }
-
-    // Now check if we need to add any parent names from the nested data structure
-    let currentData = node.data;
-    while (currentData.parent) {
-      pathNodes.unshift({
-        data: {
-          name: currentData.parent.name
-        }
-      });
-      currentData = currentData.parent;
     }
 
     return pathNodes;
