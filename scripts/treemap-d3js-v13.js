@@ -134,7 +134,7 @@ class Treemap {
   setupPathbar() {
     this.pathbar = document.createElement("div");
     this.pathbar.id = "pathbar";
-  `;
+  }
 
   this.navDropdown = document.createElement("select");
   this.navDropdown.className = "nav-dropdown";
@@ -143,9 +143,9 @@ class Treemap {
   this.container.appendChild(this.navDropdown);
 
   // Handle dropdown selection
-  this.navDropdown.addEventListener('change', (event) => {
+  this.navDropdown.addEventListener("change", (event) => {
     const selectedValue = event.target.value;
-    if (selectedValue === 'root') {
+    if (selectedValue === "root") {
       // Show root node
       this.renderFromNode(this.rootNode);
       return;
@@ -162,12 +162,12 @@ class Treemap {
 
   initializeNavDropdown(rootNode) {
     this.rootNode = rootNode;
-    this.navDropdown.innerHTML = '';
+    this.navDropdown.innerHTML = "";
     
     // Add "SHOW ALL" option
-    const rootOption = document.createElement('option');
-    rootOption.text = 'SHOW ALL';
-    rootOption.value = 'root';
+    const rootOption = document.createElement("option");
+    rootOption.text = "SHOW ALL";
+    rootOption.value = "root";
     this.navDropdown.add(rootOption);
 
     // Add children of root node as options
@@ -175,7 +175,7 @@ class Treemap {
       rootNode.children
         .sort((a, b) => a.data.name.localeCompare(b.data.name))
         .forEach(child => {
-          const option = document.createElement('option');
+          const option = document.createElement("option");
           option.value = child.data.name;
           option.text = child.data.name;
           this.navDropdown.add(option);
@@ -272,7 +272,7 @@ class Treemap {
       const cardInfo = this.getCardInfo(node, "verbose");
       const productId = node.data.ticker;
       // Clear any existing overlay first
-      const existingOverlay = document.getElementById('overlay');
+      const existingOverlay = document.getElementById("overlay");
       if (existingOverlay) {
         existingOverlay.remove();
       }
@@ -660,7 +660,7 @@ class Treemap {
 class OverlayManager {
   constructor() {
     // First, remove any existing overlay
-    const existingOverlay = document.getElementById('overlay');
+    const existingOverlay = document.getElementById("overlay");
     if (existingOverlay) {
       existingOverlay.remove();
     }
@@ -814,7 +814,7 @@ function formatCardInfo(cardInfo, details = "verbose") {
       } else {
         html = `${html}
           <div style="margin-top: 5px; color: #8BE9FD;">
-              'Click to view details'
+              Click to view details
           </div>`;
       }
       break;
@@ -875,7 +875,7 @@ async function renderTreemap() {
   } catch (error) {
     console.error("Error loading or processing data:", error);
   } finally {
-    // const loadingDiv = document.getElementById('loadingDiv');
+    // const loadingDiv = document.getElementById("loadingDiv");
     // treemap.container.removeChild(loadingDiv);
   }
 }
