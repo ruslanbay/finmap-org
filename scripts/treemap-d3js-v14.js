@@ -283,7 +283,7 @@ class Treemap {
       if (existingOverlay) {
         existingOverlay.remove();
       }
-      updateOverlayWidget(cardInfo, productId);
+      updateOverlayWidget(cardInfo, this.productLineName, productId);
       return;
     }
 
@@ -659,14 +659,14 @@ class OverlayManager {
     this.isInfoVisible = true;
   }
 
-  initializeOverlay(cardInfo, productId) {
+  initializeOverlay(cardInfo, productLineName, productId) {
     if (!this.overlayDiv) {
       this.createOverlayElements(cardInfo, productId);
       this.attachEventListeners();
       document.body.appendChild(this.overlayDiv);
     }
 
-    this.updateOverlayContent(cardInfo, this.productLineName, productId);
+    this.updateOverlayContent(cardInfo, productLineName, productId);
   }
 
   createOverlayElements(cardInfo, productId) {
@@ -768,9 +768,9 @@ class OverlayManager {
   }
 }
 
-async function updateOverlayWidget(cardInfo, productId) {
+async function updateOverlayWidget(cardInfo, productLineName, productId) {
   const overlayManager = new OverlayManager();
-  overlayManager.initializeOverlay(cardInfo, productId);
+  overlayManager.initializeOverlay(cardInfo, productLineName, productId);
 }
 
 function formatCardInfo(cardInfo, details = "verbose") {
