@@ -195,19 +195,22 @@ class Treemap {
 
       const node = this.findNodeAtPoint(x, y);
 
-      if (node) this.drillDown(node);
+      if (node) {
+        this.drillDown(node);
+        
+        // Update dropdown selection to match current node
+        if (node.parent === this.rootNode) {
+          // If clicked node is direct child of root, select it in dropdown
+          this.navDropdown.value = node.data.name;
+        } else if (node === this.rootNode) {
+          // If clicked node is root, select "SHOW ALL"
+          this.navDropdown.value = "root";
+        }
+      }
       this.hideTooltip();
     });
 
-    // Pathbar navigation
-    this.pathbar.addEventListener("click", (event) => {
-      const span = event.target.closest("span");
-      if (!span) return; // Guard against clicks outside spans
-      
-      const index = parseInt(span.dataset.index);
-      if (!isNaN(index)) this.drillTo(index);
-    });
-
+    // Mouse move for tooltips
     this.canvas.addEventListener("mousemove", (event) => {
       const rect = this.canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
@@ -484,19 +487,15 @@ class Treemap {
   }
 
   updatePathbar() {
-    this.pathbar.innerHTML = this.path
-      .map(
-        (node, index) => `
-                <span
-                    style="cursor: pointer; padding: 5px 10px;"
-                    data-index="${index}"
-                >
-                    ${node.data.name}
-                    ${index < this.path.length - 1 ? " >" : ""}
-                </span>
-            `
-      )
-      .join("");
+    // Show only current node name if it's not a leaf node
+    if (this.currentRoot && this.currentRoot.children) {
+      this.pathbar.innerHTML = `
+        <span style="padding: 5px 10px;">
+          ${this.currentRoot.data.name}
+        </span>`;
+    } else {
+      this.pathbar.innerHTML = ''; // Clear pathbar for leaf nodes
+    }
   }
 
   buildPathFromNode(node) {
@@ -516,13 +515,8 @@ class Treemap {
   async drillDown(node) {
     if (!node || this.currentRoot === node) return;
 
-    // Use the new helper method to build the path
-    this.path = this.buildPathFromNode(node);
-    
-    // Update the pathbar
-    this.updatePathbar();
-
-    // Render the target node
+    // Update current root and render
+    this.currentRoot = node;
     this.renderFromNode(node);
   }
 
