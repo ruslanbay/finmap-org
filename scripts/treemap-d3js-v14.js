@@ -138,7 +138,7 @@ class Treemap {
     this.pathbar.id = "pathbar";
 
     this.navDropdown = document.createElement("select");
-    this.navDropdown.className = "nav-dropdown";
+    this.navDropdown.className = "nav-dropdown setNameList";
       
     this.container.appendChild(this.pathbar);
     this.container.appendChild(this.navDropdown);
@@ -167,9 +167,9 @@ class Treemap {
     this.rootNode = rootNode;
     this.navDropdown.innerHTML = "";
     
-    // Add "SHOW ALL" option
+    // Add "All sets" option
     const rootOption = document.createElement("option");
-    rootOption.text = "SHOW ALL";
+    rootOption.text = "All sets";
     rootOption.value = "root";
     this.navDropdown.add(rootOption);
 
@@ -203,7 +203,7 @@ class Treemap {
           // If clicked node is direct child of root, select it in dropdown
           this.navDropdown.value = node.data.name;
         } else if (node.data.name === this.rootNode.data.name) {
-          // If clicked node is root, select "SHOW ALL"
+          // If clicked node is root, select "All sets"
           this.navDropdown.value = "root";
         }
       }

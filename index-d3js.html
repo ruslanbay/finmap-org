@@ -173,27 +173,27 @@
         -moz-appearance: none;
       }
       
-      select:focus {
+      select:focus,
+      .nav-dropdown:focus {
         outline: none;
-        background-color: #555;
+        background-color: #333;
       }
       
-      select option {
+      select option,
+      .nav-dropdown option {
         background-color: #444;
         color: white;
-        font-family: Arial;
       }
       
       .nav-dropdown {
         position: absolute;
         top: 0px;
-        left: 10px;
         width: auto;
         height: 40px;
         background: #333;
         color: white;
         border: none;
-        border-radius: 0px;
+        border-radius: 0;
         padding: 0 5px;
         font-family: PokemonSolid;
         font-size: 20px;
@@ -202,25 +202,27 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
-
+      
       .nav-dropdown::-webkit-scrollbar {
         display: none;
       }
-      
-      .nav-dropdown:focus {
-        outline: none;
-        background-color: #333;
+
+      .productList {
+        left: 10px;
       }
 
-      .nav-dropdown option {
-        background-color: #444;
-        color: white;
+      .setNameList {
+        left: 200px;
       }
     </style>
   </head>
 
   <body>
     <div id="container">
+      <select class="nav-dropdown productList">
+        <option value="pokemon">Pokemon</option>
+        <option value="pokemon-japan">Pokemon JP</option>
+      </select>
       <div id="tooltip"></div>
       <!-- <div id="loadingDiv"></div> -->
     </div>
