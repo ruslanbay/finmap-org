@@ -666,7 +666,7 @@ class OverlayManager {
       document.body.appendChild(this.overlayDiv);
     }
 
-    this.updateOverlayContent(cardInfo, productId);
+    this.updateOverlayContent(cardInfo, this.productLineName, productId);
   }
 
   createOverlayElements(cardInfo, productId) {
@@ -711,12 +711,12 @@ class OverlayManager {
     this.infoButton.addEventListener("click", this.handleToggleInfo);
   }
 
-  updateOverlayContent(cardInfo, productId) {
+  updateOverlayContent(cardInfo, productLineName, productId) {
     this.cardInfoDiv.innerHTML = cardInfo;
     this.buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
 
     const roundedProductId = Math.floor(productId / 1000) * 1000;
-    const imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/${this.productLineName}/${roundedProductId}/${productId}.jpg`;
+    const imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/${productLineName}/${roundedProductId}/${productId}.jpg`;
 
     const img = new Image();
     img.src = imageSrc;
