@@ -1,7 +1,7 @@
 class Treemap {
   // Configuration constants
   static CONFIG = {
-    MINIMAL_MARKET_PRICE: 1,
+    MINIMAL_MARKET_PRICE: 5,
     HEADER_HEIGHT: 24,
     PATHBAR_HEIGHT: 40,
     DEFAULT_IMAGE: 'https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/default.webp'
