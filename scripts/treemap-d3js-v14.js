@@ -199,10 +199,10 @@ class Treemap {
         this.drillDown(node);
         
         // Update dropdown selection to match current node
-        if (node.parent === this.rootNode) {
+        if (node.parent.data.name === this.rootNode.data.name) {
           // If clicked node is direct child of root, select it in dropdown
           this.navDropdown.value = node.data.name;
-        } else if (node === this.rootNode) {
+        } else if (node.data.name === this.rootNode.data.name) {
           // If clicked node is root, select "SHOW ALL"
           this.navDropdown.value = "root";
         }
