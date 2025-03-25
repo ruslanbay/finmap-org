@@ -36,6 +36,7 @@ class Treemap {
       lastWidth: 0,
       lastHeight: 0
     };
+    this.rootNode = null;
   }
 
   initializeResizeObserver() {
@@ -142,12 +143,14 @@ class Treemap {
     this.container.appendChild(this.pathbar);
     this.container.appendChild(this.navDropdown);
       
-    // Handle dropdown selection
+    // Update dropdown event handler
     this.navDropdown.addEventListener("change", (event) => {
       const selectedValue = event.target.value;
       if (selectedValue === "root") {
-        // Show root node
-        this.renderFromNode(this.rootNode);
+        // Show root node using stored reference
+        if (this.rootNode) {
+          this.drillDown(this.rootNode);
+        }
         return;
       }
       
@@ -267,6 +270,11 @@ class Treemap {
 
   async renderFromNode(node) {
     if (!node?.data) return;
+
+    // Store root node when it's first rendered
+    if (!this.rootNode && (!node.parent || node === this.cache.hierarchy)) {
+      this.rootNode = node;
+    }
 
     if (!node.data.children?.length) {
       const cardInfo = this.getCardInfo(node, "verbose");
