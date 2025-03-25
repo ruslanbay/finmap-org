@@ -3,11 +3,11 @@ class Treemap {
   static CONFIG = {
     MINIMAL_MARKET_PRICE: 5,
     HEADER_HEIGHT: 24,
-    PATHBAR_HEIGHT: 40,
-    DEFAULT_IMAGE: 'https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/default.webp'
+    PATHBAR_HEIGHT: 40
   };
 
-  constructor(containerId, rawData) {
+  constructor(containerId, productLineName, rawData) {
+    this.productLineName = productLineName;
     this.rawData = rawData;
     this.container = document.getElementById(containerId);
     this.tooltip = document.getElementById("tooltip");
@@ -18,8 +18,8 @@ class Treemap {
     
     // Set up UI components
     this.setupCanvas();
-    this.setupPathbar();
     this.bindEvents();
+    this.setupPathbar();
     
     // Initialize dimensions and observers
     this.updateDimensions();
@@ -134,20 +134,16 @@ class Treemap {
   }
 
   setupPathbar() {
-    this.pathbar = document.createElement("div");
-    this.pathbar.id = "pathbar";
-
+    // Initialize navDropdown only
     this.navDropdown = document.createElement("select");
-    this.navDropdown.className = "nav-dropdown setNameList";
-      
-    this.container.appendChild(this.pathbar);
+    this.navDropdown.id = "setNameList";
+    this.navDropdown.className = "nav-dropdown";
     this.container.appendChild(this.navDropdown);
       
-    // Update dropdown event handler
+    // Keep dropdown event handler
     this.navDropdown.addEventListener("change", (event) => {
       const selectedValue = event.target.value;
       if (selectedValue === "root") {
-        // Show root node using stored reference
         if (this.rootNode) {
           this.drillDown(this.rootNode);
         }
@@ -318,7 +314,6 @@ class Treemap {
 
     treemap(this.cache.hierarchy);
     this.nodes = this.cache.hierarchy.descendants();
-    this.updatePathbar();
     this.render();
   }
 
@@ -385,14 +380,13 @@ class Treemap {
 
         let productId = node.data.ticker;
         let roundedProductId = Math.floor(productId / 1000) * 1000;
-        let imageSrc =
-          Treemap.CONFIG.DEFAULT_IMAGE;
+        let imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/${this.productLineName}/default.webp`;
         const defaultImageSrc = imageSrc;
 
         // Determine image source based on size
         if (width > 60 || height > 90) {
           // (width > 100 || height > 150) {
-          imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/pokemon/${roundedProductId}/${productId}.webp`;
+          imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/previews/${this.productLineName}/${roundedProductId}/${productId}.webp`;
         }
 
         // Load image asynchronously
@@ -486,18 +480,6 @@ class Treemap {
     return truncated !== text ? truncated + "..." : truncated;
   }
 
-  updatePathbar() {
-    // Show only current node name if it's not a leaf node
-    if (this.currentRoot && this.currentRoot.children) {
-      this.pathbar.innerHTML = `
-        <span style="padding: 5px 10px;">
-          ${this.currentRoot.data.name}
-        </span>`;
-    } else {
-      this.pathbar.innerHTML = ''; // Clear pathbar for leaf nodes
-    }
-  }
-
   buildPathFromNode(node) {
     const pathNodes = [];
     let currentNode = node;
@@ -524,7 +506,6 @@ class Treemap {
     if (index >= 0 && index < this.path.length) {
       this.path = this.path.slice(0, index + 1);
 
-      this.updatePathbar();
       this.renderFromNode(this.path[index]);
     }
   }
@@ -735,7 +716,7 @@ class OverlayManager {
     this.buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
 
     const roundedProductId = Math.floor(productId / 1000) * 1000;
-    const imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/pokemon/${roundedProductId}/${productId}.jpg`;
+    const imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/${this.productLineName}/${roundedProductId}/${productId}.jpg`;
 
     const img = new Image();
     img.src = imageSrc;
@@ -850,21 +831,22 @@ function formatCardInfo(cardInfo, details = "verbose") {
 }
 
 async function renderTreemap() {
+  const productLineList = document.getElementById('productLineList');
+  const productLineName = productLineList.value;
+
   let rawDatafile;
   try {
-    const url =
-      "https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/marketdata/raw/pokemon.json";
+    const url = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/marketdata/raw/${productLineName}.json`;
     const response = await fetch(url);
     rawDatafile = await response.json();
   } catch (error) {
     console.error("Error loading raw datafile:", error);
   }
 
-  const treemap = new Treemap("container", rawDatafile.results[0].results);
+  const treemap = new Treemap("container", productLineName, rawDatafile.results[0].results);
 
   try {
-    const url =
-      "https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/marketdata/pokemon.json";
+    const url = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/marketdata/${productLineName}.json`;
     const response = await fetch(url);
     const data = await response.json();
 
@@ -875,7 +857,7 @@ async function renderTreemap() {
       .sort((a, b) => b.value - a.value);
 
     treemap.path = [root];
-    treemap.initializeNavDropdown(root); // Initialize dropdown with root node
+    treemap.initializeNavDropdown(root);
     treemap.renderFromNode(root);
   } catch (error) {
     console.error("Error loading or processing data:", error);
@@ -884,5 +866,10 @@ async function renderTreemap() {
     // treemap.container.removeChild(loadingDiv);
   }
 }
+
+// Add product list change handler
+document.getElementById('productLineList').addEventListener('change', () => {
+  renderTreemap();
+});
 
 renderTreemap();

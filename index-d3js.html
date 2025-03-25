@@ -35,22 +35,6 @@
         background-color: #333;
       }
 
-      #pathbar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 150px;
-        height: 40px;
-        background: #333;
-        color: white;
-        display: flex;
-        align-items: center;
-        padding: 0 10px;
-        font-family: PokemonSolid;
-        letter-spacing: 0.1em;
-        display: none;
-      }
-
       #container {
         width: 100vw;
         height: 100vh;
@@ -207,11 +191,11 @@
         display: none;
       }
 
-      .productList {
+      #productLineList {
         left: 10px;
       }
 
-      .setNameList {
+      #setNameList {
         left: 200px;
       }
     </style>
@@ -219,7 +203,7 @@
 
   <body>
     <div id="container">
-      <select class="nav-dropdown productList">
+      <select id="productLineList" class="nav-dropdown">
         <option value="pokemon">Pokemon</option>
         <option value="pokemon-japan">Pokemon JP</option>
         <!-- 
