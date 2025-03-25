@@ -537,8 +537,8 @@ class Treemap {
 
     const { columns, data } = securitiesData.securities;
 
-    // Display products where market price > 1 USD
-    const filteredData = data.filter(row => row[17] > Treemap.CONFIG.MINIMAL_MARKET_PRICE);
+    // Display products where market price >= 1 USD
+    const filteredData = data.filter(row => row[17] >= Treemap.CONFIG.MINIMAL_MARKET_PRICE);
 
     // Set up column indices
     this.setupColumnIndices(columns);
