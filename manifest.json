@@ -78,6 +78,18 @@
           "sizes": "192x192"
         }
       ]
+    },
+    {
+      "name": "Collectible Trading Cards: Pokemon, Yu-Gi-Oh, One Piece and More!",
+      "short_name": "Collectible Trading Cards",
+      "description": "Discover and explore the world of collectible cards, including Pokemon, Yu-Gi-Oh, One Piece, Disney Lorcana. Learn about their release date, market value and more!",
+      "url": "/tcg",
+      "icons": [
+        {
+          "src": "/images/icons/ios/192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "screenshots": [
@@ -192,6 +204,13 @@
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "MOEX News Feed"
+    },
+    {
+      "src": "images/screenshots/tcg.png",
+      "sizes": "1920x952",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Collectible Trading Cards"
     }
   ],
   "icons": [
