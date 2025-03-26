@@ -29,7 +29,6 @@ class Treemap {
   initializeProperties() {
     this.nodes = [];
     this.currentRoot = null;
-    this.path = [];
     this.nodesMap = new Map();
     this.cache = {
       hierarchy: null,
@@ -103,7 +102,6 @@ class Treemap {
     this.render();
   }
 
-  // Clean up when no longer needed
   destroy() {
     this.resizeObserver.disconnect();
   }
@@ -134,13 +132,12 @@ class Treemap {
   }
 
   setupPathbar() {
-    // Initialize navDropdown only
+    // Initialize navDropdown
     this.navDropdown = document.createElement("select");
     this.navDropdown.id = "setNameList";
     this.navDropdown.className = "nav-dropdown";
     this.container.appendChild(this.navDropdown);
       
-    // Keep dropdown event handler
     this.navDropdown.addEventListener("change", (event) => {
       const selectedValue = event.target.value;
       if (selectedValue === "root") {
@@ -480,34 +477,12 @@ class Treemap {
     return truncated !== text ? truncated + "..." : truncated;
   }
 
-  buildPathFromNode(node) {
-    const pathNodes = [];
-    let currentNode = node;
-
-    // Build path from current node up to root
-    while (currentNode) {
-      // Add all valid nodes to the path (including root)
-      pathNodes.unshift(currentNode);
-      currentNode = currentNode.parent;
-    }
-
-    return pathNodes;
-  }
-
   async drillDown(node) {
     if (!node || this.currentRoot === node) return;
 
     // Update current root and render
     this.currentRoot = node;
     this.renderFromNode(node);
-  }
-
-  async drillTo(index) {
-    if (index >= 0 && index < this.path.length) {
-      this.path = this.path.slice(0, index + 1);
-
-      this.renderFromNode(this.path[index]);
-    }
   }
 
   transformData(securitiesData) {
@@ -520,7 +495,7 @@ class Treemap {
 
     const { columns, data } = securitiesData.securities;
 
-    // Display products where market price >= 1 USD
+    // Display products where market price >= MINIMAL_MARKET_PRICE, USD
     const filteredData = data.filter(row => row[17] >= Treemap.CONFIG.MINIMAL_MARKET_PRICE);
 
     // Set up column indices
@@ -609,14 +584,12 @@ class Treemap {
     return { root, nodesMap: this.nodesMap };
   }
 
-  // Tooltip methods
   showTooltip(node, event) {
     if (!node?.data || !event) {
       return;
     }
 
     const tooltip = d3.select(this.tooltip);
-    const formatNumber = d3.format(",.2f");
 
     const tooltipContent = this.getCardInfo(node, "short");
 
@@ -625,17 +598,6 @@ class Treemap {
       .style("left", `${event.pageX + 10}px`)
       .style("top", `${event.pageY + 10}px`)
       .html(tooltipContent);
-  }
-
-  escapeHtml(unsafe) {
-    if (!unsafe) return "";
-    return unsafe
-      .toString()
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
   }
 
   hideTooltip() {
@@ -754,7 +716,7 @@ class OverlayManager {
 
   destroyOverlay() {
     if (this.overlayDiv) {
-      // Remove listeners with proper references
+      // Remove listeners
       this.closeButton.removeEventListener("click", this.handleClose);
       this.infoButton.removeEventListener("click", this.handleToggleInfo);
       
