@@ -478,7 +478,8 @@ class Treemap {
   }
 
   async drillDown(node) {
-    if (!node || this.currentRoot === node) return;
+    // if (!node || this.currentRoot === node) return;
+    if (!node) return;
 
     // Update current root and render
     this.currentRoot = node;
