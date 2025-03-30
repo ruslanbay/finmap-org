@@ -8,6 +8,7 @@ const FILES_TO_CACHE = [
   "/styles/style.css",
   "/styles/Material_Icons.woff2",
   "/index.html",
+  "/tcg/index.html",
   "/images/icons/favicon.png",
   "/images/icons/patreon.png",
   "/images/icons/boosty.png",
@@ -20,6 +21,7 @@ const FILES_TO_CACHE = [
   "/scripts/plotly-3.0.1.min.js",
   "/scripts/share.js",
   "/scripts/treemap.js",
+  "/scripts/treemap-d3js.js",
 ];
 
 self.addEventListener("install", async (evt) => {
