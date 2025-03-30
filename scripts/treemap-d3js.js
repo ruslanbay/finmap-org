@@ -660,7 +660,7 @@ class OverlayManager {
     this.buyLink.textContent = "buy";
 
     this.overlayDiv.appendChild(this.cardInfoDiv);
-    this.overlayDiv.appendChild(this.buyLink);
+    // this.overlayDiv.appendChild(this.buyLink);
     this.overlayDiv.appendChild(this.infoButton);
     this.overlayDiv.appendChild(this.closeButton);
   }
@@ -676,7 +676,7 @@ class OverlayManager {
 
   updateOverlayContent(cardInfo, productLineName, productId) {
     this.cardInfoDiv.innerHTML = cardInfo;
-    this.buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
+    // this.buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
 
     const roundedProductId = Math.floor(productId / 1000) * 1000;
     const imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/${productLineName}/${roundedProductId}/${productId}.jpg`;
@@ -706,12 +706,12 @@ class OverlayManager {
       this.cardInfoDiv.style.visibility = "visible";
       this.infoButton.classList.add("active");
       this.closeButton.classList.add("active");
-      this.buyLink.classList.add("active");
+      // this.buyLink.classList.add("active");
     } else {
       this.cardInfoDiv.style.visibility = "hidden";
       this.infoButton.classList.remove("active");
       this.closeButton.classList.remove("active");
-      this.buyLink.classList.remove("active");
+      // this.buyLink.classList.remove("active");
     }
   }
 
@@ -725,7 +725,7 @@ class OverlayManager {
       this.overlayDiv = null;
       this.cardInfoDiv = null;
       this.infoButton = null;
-      this.buyLink = null;
+      // this.buyLink = null;
       this.closeButton = null;
     }
   }

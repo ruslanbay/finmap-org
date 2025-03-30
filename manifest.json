@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#414554",
   "theme_color": "#414554",
-  "description": "Global stock market visualisation and your personal RSS/news feed reader. Free and Open Source",
+  "description": "Global stock market visualisation tool and your personal news feed reader. London Stock Exchange, NASDAQ, NYSE, American Exchange, Moscow Exchange, Borsa Istanbul. Market Capitalization, Listings, Value",
   "shortcuts": [
     {
       "name": "NASDAQ",
@@ -59,7 +59,7 @@
       "name": "Turkish Stock Market",
       "short_name": "BIST",
       "description": "Borsa Istanbul, Turkish Stock Market",
-      "url": "/?exchange=bist",
+      "url": "/?exchange=bist&chartType=treemap&dataType=marketcap&date=2025-02-28",
       "icons": [
         {
           "src": "/images/icons/ios/192.png",
