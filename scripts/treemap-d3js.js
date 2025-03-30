@@ -655,7 +655,7 @@ class OverlayManager {
     this.buyLink = document.createElement("a");
     this.buyLink.id = "buyButton";
     this.buyLink.className = "button active";
-    this.buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
+    this.buyLink.href = ``;
     this.buyLink.target = "_blank";
     this.buyLink.textContent = "buy";
 
@@ -676,7 +676,7 @@ class OverlayManager {
 
   updateOverlayContent(cardInfo, productLineName, productId) {
     this.cardInfoDiv.innerHTML = cardInfo;
-    // this.buyLink.href = `https://www.tcgplayer.com/product/${productId}`;
+    // this.buyLink.href = ``;
 
     const roundedProductId = Math.floor(productId / 1000) * 1000;
     const imageSrc = `https://raw.githubusercontent.com/finmap-org/data-tcg/refs/heads/main/images/${productLineName}/${roundedProductId}/${productId}.jpg`;
