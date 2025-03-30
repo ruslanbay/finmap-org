@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#414554",
   "theme_color": "#414554",
-  "description": "Global stock market visualisation and your personal RSS/news feed reader. Free and Open Source",
+  "description": "Global stock market visualisation tool and your personal news feed reader. London Stock Exchange, NASDAQ, NYSE, American Exchange, Moscow Exchange, Borsa Istanbul. Market Capitalization, Listings, Value",
   "shortcuts": [
     {
       "name": "NASDAQ",
@@ -59,7 +59,7 @@
       "name": "Turkish Stock Market",
       "short_name": "BIST",
       "description": "Borsa Istanbul, Turkish Stock Market",
-      "url": "/?exchange=bist",
+      "url": "/?exchange=bist&chartType=treemap&dataType=marketcap&date=2025-02-28",
       "icons": [
         {
           "src": "/images/icons/ios/192.png",
@@ -72,6 +72,18 @@
       "short_name": "MOEX",
       "description": "Moscow Exchange, Russian Stock Market",
       "url": "/?exchange=moex",
+      "icons": [
+        {
+          "src": "/images/icons/ios/192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Collectible Cards: Pokemon, Yu-Gi-Oh, One Piece and More!",
+      "short_name": "Collectible Cards",
+      "description": "Discover and explore the world of collectible cards, including Pokemon, Yu-Gi-Oh, One Piece, Disney Lorcana. Learn about their release date, market value and more!",
+      "url": "/tcg",
       "icons": [
         {
           "src": "/images/icons/ios/192.png",
@@ -192,6 +204,13 @@
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "MOEX News Feed"
+    },
+    {
+      "src": "images/screenshots/tcg.png",
+      "sizes": "1920x952",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Collectible Trading Cards"
     }
   ],
   "icons": [
