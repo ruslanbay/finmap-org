@@ -46,10 +46,9 @@ a,
 a:link,
 a:visited,
 a:hover,
-a:focus,
 a:active,
 a:-webkit-any-link {
-  color: inherit;
+  color: #ffffff;
   text-decoration: none;
 }
 
@@ -156,7 +155,7 @@ footer {
 
 .menuItem {
   display: inline-block;
-  margin: 0.5rem 0.5rem;
+  margin: 0.4rem 0.5rem;
   font-size: 1.2rem;
   color: white;
   text-decoration: none;
