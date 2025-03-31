@@ -1,7 +1,7 @@
 class Treemap {
   // Configuration constants
   static CONFIG = {
-    MINIMAL_MARKET_PRICE: 5,
+    MINIMAL_MARKET_PRICE: 5.0,
     HEADER_HEIGHT: 24,
     PATHBAR_HEIGHT: 40
   };

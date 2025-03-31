@@ -43,8 +43,12 @@ header::-webkit-scrollbar {
 }
 
 a,
+a:link,
+a:visited,
 a:hover,
-a:focus {
+a:focus,
+a:active,
+a:-webkit-any-link {
   color: #ffffff;
   text-decoration: none;
 }
@@ -152,7 +156,7 @@ footer {
 
 .menuItem {
   display: inline-block;
-  margin: 0.5rem 0.7rem;
+  margin: 0.3rem 0.5rem;
   font-size: 1.2rem;
   color: white;
   text-decoration: none;
@@ -195,7 +199,8 @@ footer {
   color: white;
   list-style: none;
   padding: 1.8rem;
-  text-align: right
+  padding-top: 0.4rem;
+  text-align: right;
 }
 
 .showMenu {
