@@ -174,7 +174,7 @@ switch (exchange) {
     break;
   case "bist":
     inputDate.min = new Date(`2015-11-30T13:00:00`).toISOString().split("T")[0];
-    inputDate.value = inputDate.max = '2025-02-28';
+    inputDate.value = inputDate.max = '2025-03-28';
     break;
   case "nasdaq":
   case "nyse":
