@@ -53,7 +53,7 @@ self.addEventListener("activate", (evt) => {
 });
 
 self.addEventListener("fetch", (evt) => {
-  if (evt.request.url.includes("raw.githubusercontent.com") || evt.request.url.includes("wikipedia.org") || evt.request.url.includes("d3sk7vmzjz3uox.cloudfront.net")) {
+  if (evt.request.url.includes("raw.githubusercontent.com") || evt.request.url.includes("wikipedia.org") || evt.request.url.includes("news.cloudflare-cpr0d.workers.dev")) {
     evt.respondWith(
       caches.open(DATA_CACHE_NAME).then(async (cache) => {
         try {
