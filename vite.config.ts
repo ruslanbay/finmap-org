@@ -1,7 +1,10 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ command, mode }) => ({
+  // Base URL for GitHub Pages (only in production)
+  base: mode === 'production' ? '/finmap-org/' : '/',
+  
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
@@ -37,4 +40,4 @@ export default defineConfig({
   preview: {
     port: 4173,
   },
-});
+}));

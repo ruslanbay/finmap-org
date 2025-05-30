@@ -19,32 +19,46 @@ class FinmapApp {
   private isLoading = false;
 
   // DOM elements
-  private chartContainer: HTMLElement;
-  private exchangeSelector: HTMLSelectElement;
-  private dataTypeSelector: HTMLSelectElement;
-  private chartTypeSelector: HTMLSelectElement;
-  private searchBox: HTMLInputElement;
-  private refreshBtn: HTMLButtonElement;
-  private loadingSpinner: HTMLElement;
-  private marketStats: HTMLElement;
+  private chartContainer!: HTMLElement;
+  private exchangeSelector!: HTMLSelectElement;
+  private dataTypeSelector!: HTMLSelectElement;
+  private chartTypeSelector!: HTMLSelectElement;
+  private searchBox!: HTMLInputElement;
+  private refreshBtn!: HTMLButtonElement;
+  private loadingSpinner!: HTMLElement;
+  private marketStats!: HTMLElement;
 
   constructor() {
+    // eslint-disable-next-line no-console
     console.log('🚀 Initializing FinmapApp...');
     this.initializeDOM();
     this.setupEventListeners();
-    this.initialize();
+    void this.initialize();
   }
 
   private initializeDOM(): void {
     // Get DOM elements
-    this.chartContainer = document.getElementById('chartContainer')!;
-    this.exchangeSelector = document.getElementById('exchangeSelector') as HTMLSelectElement;
-    this.dataTypeSelector = document.getElementById('dataType') as HTMLSelectElement;
-    this.chartTypeSelector = document.getElementById('chartType') as HTMLSelectElement;
-    this.searchBox = document.getElementById('searchBox') as HTMLInputElement;
-    this.refreshBtn = document.getElementById('refreshBtn') as HTMLButtonElement;
-    this.loadingSpinner = document.getElementById('loadingSpinner')!;
-    this.marketStats = document.getElementById('marketStats')!;
+    const chartContainer = document.getElementById('chartContainer');
+    const exchangeSelector = document.getElementById('exchangeSelector') as HTMLSelectElement;
+    const dataTypeSelector = document.getElementById('dataType') as HTMLSelectElement;
+    const chartTypeSelector = document.getElementById('chartType') as HTMLSelectElement;
+    const searchBox = document.getElementById('searchBox') as HTMLInputElement;
+    const refreshBtn = document.getElementById('refreshBtn') as HTMLButtonElement;
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const marketStats = document.getElementById('marketStats');
+
+    if (!chartContainer || !loadingSpinner || !marketStats) {
+      throw new Error('Required DOM elements not found');
+    }
+
+    this.chartContainer = chartContainer;
+    this.exchangeSelector = exchangeSelector;
+    this.dataTypeSelector = dataTypeSelector;
+    this.chartTypeSelector = chartTypeSelector;
+    this.searchBox = searchBox;
+    this.refreshBtn = refreshBtn;
+    this.loadingSpinner = loadingSpinner;
+    this.marketStats = marketStats;;
 
     // Set initial values
     this.exchangeSelector.value = this.currentExchange;
@@ -56,21 +70,21 @@ class FinmapApp {
     this.exchangeSelector.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
       this.currentExchange = target.value as Exchange;
-      this.loadData();
+      void this.loadData();
     });
 
     // Data type selector
     this.dataTypeSelector.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
       this.currentDataType = target.value as DataType;
-      this.renderCurrentData();
+      void this.renderCurrentData();
     });
 
     // Chart type selector
     this.chartTypeSelector.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
       this.currentChartType = target.value as 'treemap' | 'histogram';
-      this.renderCurrentData();
+      void this.renderCurrentData();
     });
 
     // Search box
@@ -95,12 +109,13 @@ class FinmapApp {
 
     // Refresh button
     this.refreshBtn.addEventListener('click', () => {
-      this.loadData(true);
+      void this.loadData(true);
     });
 
     // Security click handler
-    this.chartContainer.addEventListener('securityClick', (e: any) => {
-      const { security } = e.detail;
+    this.chartContainer.addEventListener('securityClick', (e: Event) => {
+      const customEvent = e as CustomEvent<{ security: MarketSecurity }>;
+      const { security } = customEvent.detail;
       this.showSecurityDetails(security);
     });
 
@@ -118,7 +133,7 @@ class FinmapApp {
     await this.loadData();
   }
 
-  private async loadData(forceRefresh = false): Promise<void> {
+  private async loadData(_forceRefresh = false): Promise<void> {
     if (this.isLoading) return;
 
     console.log(`📊 Loading data for ${this.currentExchange.toUpperCase()} exchange...`);
@@ -133,7 +148,7 @@ class FinmapApp {
         securities,
         this.currentDataType,
         this.currentExchange,
-        new Date().toISOString().split('T')[0]
+        new Date().toISOString().split('T')[0] || '2024-01-01'
       );
 
       this.updateMarketStats(this.currentData);

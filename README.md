@@ -52,6 +52,45 @@ npm run dev
 npm run build
 ```
 
+## 🌐 Deployment
+
+### GitHub Pages Deployment
+
+This project is configured for automatic deployment to GitHub Pages:
+
+**Live Demo**: https://ruslanbay.github.io/finmap-org/
+
+#### Setup Instructions:
+
+1. **Repository Settings**:
+   - Go to your repository → Settings → Pages
+   - Set Source to: "Deploy from a branch"
+   - Set Branch to: `main` (or `master`)
+   - Set Folder to: `/docs`
+
+2. **Build and Deploy**:
+   ```bash
+   # Build for production with correct base URL
+   npm run build:docs
+   
+   # Commit and push the docs folder
+   git add docs
+   git commit -m "Deploy to GitHub Pages"
+   git push origin main
+   ```
+
+3. **Auto-deployment**: Your site will be available at `https://yourusername.github.io/finmap-org/`
+
+#### Build Scripts:
+- `npm run build:docs` - Build for GitHub Pages with correct base URL
+- `npm run build` - Build for production (generic)
+- `npm run preview` - Preview production build locally
+
+### Configuration:
+- Base URL is automatically set to `/finmap-org/` in production mode
+- Development uses `/` for local testing
+- All assets are properly configured with the base URL
+
 ### Development Commands
 
 ```bash

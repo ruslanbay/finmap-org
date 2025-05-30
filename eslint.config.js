@@ -7,6 +7,9 @@ export default [
   ...tseslint.configs.strictTypeChecked,
   prettier,
   {
+    ignores: ['docs/**', 'dist/**', 'node_modules/**', 'backup/**'],
+  },
+  {
     languageOptions: {
       parserOptions: {
         projectService: true,

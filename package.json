@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:docs": "tsc && vite build --mode production --outDir docs",
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -14,7 +15,7 @@
     "type-check": "tsc --noEmit",
     "validate": "npm run type-check && npm run lint && npm run format:check",
     "test": "echo \"Integration tests run automatically in dev mode\"",
-    "clean": "rm -rf dist node_modules/.vite",
+    "clean": "rm -rf dist docs node_modules/.vite",
     "serve": "npm run build && npm run preview"
   },
   "devDependencies": {
