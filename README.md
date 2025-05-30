@@ -72,7 +72,7 @@ This project is configured for automatic deployment to GitHub Pages:
    ```bash
    # Build for production with correct base URL
    npm run build:docs
-   
+
    # Commit and push the docs folder
    git add docs
    git commit -m "Deploy to GitHub Pages"

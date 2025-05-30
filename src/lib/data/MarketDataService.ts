@@ -64,12 +64,20 @@ export namespace MarketDataService {
 
   async function fetchRealData(exchange: Exchange, targetDate: string): Promise<MarketSecurity[]> {
     const exchangeConfig = EXCHANGE_CONFIGS[exchange];
-    const url = buildDataUrl(exchangeConfig.dataRepo, targetDate);
+    const url = buildDataUrl(exchangeConfig.dataRepo, targetDate, exchange);
 
     const response = await fetchWithRetry(url);
     const rawData = (await response.json()) as unknown;
 
-    return validateMarketData(rawData as MarketSecurity[]);
+    // The original API returns data in format: { securities: { data: [...] } }
+    const apiResponse = rawData as { securities?: { data?: MarketSecurity[] } };
+    const securities = apiResponse.securities?.data;
+
+    if (!securities || !Array.isArray(securities)) {
+      throw new Error('Invalid API response format');
+    }
+
+    return validateMarketData(securities);
   }
 
   async function fetchMockDataFallback(
@@ -145,8 +153,17 @@ export namespace MarketDataService {
       .slice(0, 50); // Limit results for performance
   }
 
-  function buildDataUrl(repo: string, date: string): string {
-    return `${APP_CONFIG.github.baseUrl}/${repo}/main/${date}.json`;
+  function buildDataUrl(repo: string, date: string, exchange: Exchange): string {
+    // Format: https://raw.githubusercontent.com/finmap-org/data-us/refs/heads/main/marketdata/2024/05/30/nasdaq.json
+    const formattedDate = date.replace(/-/g, '/');
+    let url = `${APP_CONFIG.github.baseUrl}/${repo}/refs/heads/main/marketdata/${formattedDate}/${exchange}.json`;
+    
+    // Add cache buster for current date (matches original logic)
+    if (date === new Date().toISOString().split('T')[0]) {
+      url = url + `?_=${new Date().toISOString().split(':')[0]}`;
+    }
+    
+    return url;
   }
 
   async function fetchWithRetry(

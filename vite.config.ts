@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig(({ command, mode }) => ({
   // Base URL for GitHub Pages (only in production)
   base: mode === 'production' ? '/finmap-org/' : '/',
-  
+
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
