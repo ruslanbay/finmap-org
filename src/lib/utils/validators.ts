@@ -1,6 +1,6 @@
 // Validation utilities for financial data
 
-import type { Exchange, DataType, MarketSecurity } from '../../types/index.ts';
+import type { DataType, Exchange, MarketSecurity } from '../../types/index.ts';
 
 export const isValidExchange = (exchange: string): exchange is Exchange => {
   return ['nasdaq', 'nyse', 'amex', 'lse', 'moex', 'bist'].includes(exchange);
@@ -29,7 +29,11 @@ export const validateMarketSecurity = (security: unknown): security is MarketSec
 
   const s = security as Record<string, unknown>;
 
-  return validateSecurityBasicFields(s) && validateSecurityNumericFields(s) && validateSecurityBusinessRules(s);
+  return (
+    validateSecurityBasicFields(s) &&
+    validateSecurityNumericFields(s) &&
+    validateSecurityBusinessRules(s)
+  );
 };
 
 const validateSecurityBasicFields = (s: Record<string, unknown>): boolean => {
@@ -76,9 +80,7 @@ export const validateMarketData = (data: unknown[]): MarketSecurity[] => {
 
   if (validSecurities.length !== data.length) {
     // eslint-disable-next-line no-console
-    console.warn(
-      `Filtered out ${String(data.length - validSecurities.length)} invalid securities`
-    );
+    console.warn(`Filtered out ${String(data.length - validSecurities.length)} invalid securities`);
   }
 
   return validSecurities;
@@ -111,6 +113,6 @@ export const getLatestBusinessDay = (exchange: Exchange): string => {
   if (!formattedDate) {
     throw new Error('Failed to format date');
   }
-  
+
   return formattedDate;
 };

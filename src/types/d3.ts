@@ -1,8 +1,8 @@
 // D3.js type definitions for chart renderers
 
 import * as d3 from 'd3';
-import type { MarketSecurity } from './market.ts';
 import type { TreemapNode } from './chart.ts';
+import type { MarketSecurity } from './market.ts';
 
 // D3 hierarchy node with our data
 export interface D3HierarchyNode extends d3.HierarchyRectangularNode<TreemapNode> {
@@ -29,7 +29,12 @@ export type D3Selection = d3.Selection<SVGSVGElement, unknown, null, undefined>;
 export type D3GroupSelection = d3.Selection<SVGGElement, unknown, null, undefined>;
 export type D3RectSelection = d3.Selection<SVGRectElement, D3HierarchyNode, SVGGElement, unknown>;
 export type D3TextSelection = d3.Selection<SVGTextElement, D3HierarchyNode, SVGGElement, unknown>;
-export type D3HistogramBarSelection = d3.Selection<SVGRectElement, MarketSecurity, SVGGElement, unknown>;
+export type D3HistogramBarSelection = d3.Selection<
+  SVGRectElement,
+  MarketSecurity,
+  SVGGElement,
+  unknown
+>;
 
 // D3 Tooltip type
 export interface D3Tooltip {

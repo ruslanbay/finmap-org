@@ -1,18 +1,11 @@
 // Modern D3.js treemap renderer for financial data
 
 import * as d3 from 'd3';
-import type { 
-  ChartData, 
-  TreemapNode, 
-  ChartDimensions
-} from '../../types/chart.ts';
+import type { ChartData, ChartDimensions, TreemapNode } from '../../types/chart.ts';
+import type { D3Selection, D3Tooltip } from '../../types/d3.ts';
 import type { MarketSecurity } from '../../types/market.ts';
-import type { 
-  D3Selection,
-  D3Tooltip
-} from '../../types/d3.ts';
-import { formatCurrency, formatPercentage, formatMarketCap } from '../utils/index.ts';
 import { CHART_CONFIG, HIGHLIGHT_LIST } from '../utils/constants.ts';
+import { formatCurrency, formatMarketCap, formatPercentage } from '../utils/index.ts';
 
 export class TreemapRenderer {
   private readonly container: HTMLElement;
@@ -34,26 +27,29 @@ export class TreemapRenderer {
   public render(data: ChartData): void {
     this.currentData = data;
     this.dimensions = this.calculateDimensions();
-    
+
     // Clear existing chart
     this.clear();
-    
+
     // Create SVG
-    this.svg = d3.select(this.container)
+    this.svg = d3
+      .select(this.container)
       .append('svg')
       .attr('width', this.dimensions.width)
       .attr('height', this.dimensions.height)
       .style('font-family', 'Arial, sans-serif');
 
     // Create treemap layout
-    const treemap = d3.treemap<TreemapNode>()
+    const treemap = d3
+      .treemap<TreemapNode>()
       .size([this.dimensions.width, this.dimensions.height])
       .padding(CHART_CONFIG.treemap.padding)
       .round(true);
 
     // Build hierarchy from data
     const hierarchy = this.buildHierarchy(data);
-    const root = d3.hierarchy(hierarchy)
+    const root = d3
+      .hierarchy(hierarchy)
       .sum(d => d.value)
       .sort((a, b) => (b.value || 0) - (a.value || 0));
 
@@ -76,7 +72,7 @@ export class TreemapRenderer {
     }
 
     this.currentData = data;
-    
+
     // Update existing nodes instead of full re-render
     // This is much faster for data updates
     this.updateNodes(data);
@@ -88,12 +84,13 @@ export class TreemapRenderer {
   public highlightSecurities(tickers: string[]): void {
     if (!this.svg) return;
 
-    this.svg.selectAll('.treemap-leaf')
+    this.svg
+      .selectAll('.treemap-leaf')
       .style('stroke-width', (d: unknown) => {
         const node = d as d3.HierarchyRectangularNode<TreemapNode>;
         const security = node.data.security as MarketSecurity;
-        return tickers.includes(security.ticker) 
-          ? CHART_CONFIG.treemap.borderWidth.highlighted 
+        return tickers.includes(security.ticker)
+          ? CHART_CONFIG.treemap.borderWidth.highlighted
           : CHART_CONFIG.treemap.borderWidth.default;
       })
       .style('stroke', (d: unknown) => {
@@ -111,9 +108,10 @@ export class TreemapRenderer {
   public searchAndHighlight(query: string): boolean {
     if (!this.svg || !this.currentData) return false;
 
-    const security = this.currentData.securities.find(s => 
-      s.ticker.toLowerCase() === query.toLowerCase() ||
-      s.nameEng.toLowerCase().includes(query.toLowerCase())
+    const security = this.currentData.securities.find(
+      s =>
+        s.ticker.toLowerCase() === query.toLowerCase() ||
+        s.nameEng.toLowerCase().includes(query.toLowerCase())
     );
 
     if (security) {
@@ -127,7 +125,7 @@ export class TreemapRenderer {
   private buildHierarchy(data: ChartData): TreemapNode {
     // Group by sector like the original implementation
     const sectors = new Map<string, MarketSecurity[]>();
-    
+
     data.securities.forEach(security => {
       const sector = security.sector || 'Other';
       if (!sectors.has(sector)) {
@@ -162,7 +160,8 @@ export class TreemapRenderer {
   private renderNodes(leaves: d3.HierarchyRectangularNode<TreemapNode>[]): void {
     if (!this.svg) return;
 
-    const leaf = this.svg.selectAll('.treemap-leaf')
+    const leaf = this.svg
+      .selectAll('.treemap-leaf')
       .data(leaves)
       .enter()
       .append('g')
@@ -170,7 +169,8 @@ export class TreemapRenderer {
       .attr('transform', d => `translate(${String(d.x0)},${String(d.y0)})`);
 
     // Add rectangles
-    leaf.append('rect')
+    leaf
+      .append('rect')
       .attr('width', d => d.x1 - d.x0)
       .attr('height', d => d.y1 - d.y0)
       .attr('fill', d => d.data.color)
@@ -182,10 +182,18 @@ export class TreemapRenderer {
           : CHART_CONFIG.treemap.borderWidth.default;
       })
       .style('cursor', 'pointer')
-      .on('mouseover', (event: MouseEvent, d: d3.HierarchyRectangularNode<TreemapNode>) => { this.showTooltip(event, d); })
-      .on('mousemove', (event: MouseEvent) => { this.moveTooltip(event); })
-      .on('mouseout', () => { this.hideTooltip(); })
-      .on('click', (event: MouseEvent, d: d3.HierarchyRectangularNode<TreemapNode>) => { this.handleClick(event, d); });
+      .on('mouseover', (event: MouseEvent, d: d3.HierarchyRectangularNode<TreemapNode>) => {
+        this.showTooltip(event, d);
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        this.moveTooltip(event);
+      })
+      .on('mouseout', () => {
+        this.hideTooltip();
+      })
+      .on('click', (event: MouseEvent, d: d3.HierarchyRectangularNode<TreemapNode>) => {
+        this.handleClick(event, d);
+      });
   }
 
   private renderLabels(): void {
@@ -194,20 +202,21 @@ export class TreemapRenderer {
     const leaf = this.svg.selectAll('.treemap-leaf');
 
     // Add text labels
-    leaf.append('text')
+    leaf
+      .append('text')
       .attr('x', 4)
       .attr('y', 16)
       .text((d: unknown) => {
         const node = d as d3.HierarchyRectangularNode<TreemapNode>;
         const width = node.x1 - node.x0;
         const height = node.y1 - node.y0;
-        
+
         // Only show text if rectangle is large enough
         if (width < 50 || height < 20) return '';
-        
+
         const security = node.data.security;
         if (!security) return node.data.name;
-        
+
         return security.ticker;
       })
       .attr('font-size', '12px')
@@ -216,19 +225,20 @@ export class TreemapRenderer {
       .style('pointer-events', 'none');
 
     // Add secondary labels for larger rectangles
-    leaf.append('text')
+    leaf
+      .append('text')
       .attr('x', 4)
       .attr('y', 30)
       .text((d: unknown) => {
         const node = d as d3.HierarchyRectangularNode<TreemapNode>;
         const width = node.x1 - node.x0;
         const height = node.y1 - node.y0;
-        
+
         if (width < 100 || height < 40) return '';
-        
+
         const security = node.data.security;
         if (!security) return '';
-        
+
         return formatPercentage(security.priceChangePct);
       })
       .attr('font-size', '10px')
@@ -257,9 +267,7 @@ export class TreemapRenderer {
       </div>
     `;
 
-    this.tooltip
-      .style('opacity', 1)
-      .html(tooltipContent);
+    this.tooltip.style('opacity', 1).html(tooltipContent);
 
     this.moveTooltip(event);
   }
@@ -282,9 +290,11 @@ export class TreemapRenderer {
     if (!security) return;
 
     // Emit custom event for external handling
-    this.container.dispatchEvent(new CustomEvent('securityClick', {
-      detail: { security, event }
-    }));
+    this.container.dispatchEvent(
+      new CustomEvent('securityClick', {
+        detail: { security, event },
+      })
+    );
   }
 
   private updateNodes(data: ChartData): void {
@@ -295,19 +305,24 @@ export class TreemapRenderer {
 
   private getSecurityValue(security: MarketSecurity, dataType: string): number {
     switch (dataType) {
-      case 'marketcap': return security.marketCap;
-      case 'value': return security.value;
-      case 'trades': return security.numTrades;
-      case 'nestedItems': return security.nestedItemsCount;
-      default: return security.marketCap;
+      case 'marketcap':
+        return security.marketCap;
+      case 'value':
+        return security.value;
+      case 'trades':
+        return security.numTrades;
+      case 'nestedItems':
+        return security.nestedItemsCount;
+      default:
+        return security.marketCap;
     }
   }
 
   private getColorFromPriceChange(priceChangePct: number): string {
     const normalizedChange = Math.max(-3, Math.min(3, priceChangePct));
-    
+
     if (normalizedChange < -1) return CHART_CONFIG.treemap.colorScale.colors[0]; // Red
-    if (normalizedChange > 1) return CHART_CONFIG.treemap.colorScale.colors[2];  // Green
+    if (normalizedChange > 1) return CHART_CONFIG.treemap.colorScale.colors[2]; // Green
     return CHART_CONFIG.treemap.colorScale.colors[1]; // Gray
   }
 
@@ -321,7 +336,8 @@ export class TreemapRenderer {
   }
 
   private setupTooltip(): void {
-    this.tooltip = d3.select('body')
+    this.tooltip = d3
+      .select('body')
       .append('div')
       .attr('class', 'treemap-tooltip')
       .style('position', 'absolute')

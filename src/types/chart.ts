@@ -1,6 +1,6 @@
 // Chart and visualization types
 
-import type { MarketSecurity, DataType, Exchange } from './market.ts';
+import type { DataType, Exchange, MarketSecurity } from './market.ts';
 
 export interface TreemapNode {
   readonly id: string;

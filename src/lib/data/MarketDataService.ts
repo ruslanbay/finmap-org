@@ -1,9 +1,15 @@
 // Market data service for fetching and processing financial data
 
-import type { MarketSecurity, Exchange, ChartData, DataType, TreemapNode } from '../../types/index.ts';
-import { validateMarketData, isValidDate, getLatestBusinessDay } from '../utils/index.ts';
-import { APP_CONFIG } from '../utils/constants.ts';
+import type {
+  ChartData,
+  DataType,
+  Exchange,
+  MarketSecurity,
+  TreemapNode,
+} from '../../types/index.ts';
 import { EXCHANGE_CONFIGS } from '../../types/market.ts';
+import { APP_CONFIG } from '../utils/constants.ts';
+import { getLatestBusinessDay, isValidDate, validateMarketData } from '../utils/index.ts';
 import { MockDataService } from './MockDataService.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -18,13 +24,13 @@ export namespace MarketDataService {
     date?: string
   ): Promise<MarketSecurity[]> {
     const targetDate = date || getLatestBusinessDay(exchange);
-    
+
     if (!isValidDate(targetDate)) {
       throw new Error(`Invalid date format: ${targetDate}`);
     }
 
     const cacheKey = `${exchange}-${targetDate}`;
-    
+
     // Check cache first
     if (cache.has(cacheKey)) {
       const cachedData = cache.get(cacheKey);
@@ -37,8 +43,8 @@ export namespace MarketDataService {
   }
 
   async function fetchAndCacheData(
-    exchange: Exchange, 
-    targetDate: string, 
+    exchange: Exchange,
+    targetDate: string,
     cacheKey: string
   ): Promise<MarketSecurity[]> {
     try {
@@ -51,7 +57,7 @@ export namespace MarketDataService {
       console.warn(`Failed to fetch real market data for ${exchange} on ${targetDate}:`, error);
       // eslint-disable-next-line no-console
       console.log('Falling back to mock data for development...');
-      
+
       return fetchMockDataFallback(exchange, cacheKey);
     }
   }
@@ -59,26 +65,31 @@ export namespace MarketDataService {
   async function fetchRealData(exchange: Exchange, targetDate: string): Promise<MarketSecurity[]> {
     const exchangeConfig = EXCHANGE_CONFIGS[exchange];
     const url = buildDataUrl(exchangeConfig.dataRepo, targetDate);
-    
+
     const response = await fetchWithRetry(url);
-    const rawData = await response.json() as unknown;
-    
+    const rawData = (await response.json()) as unknown;
+
     return validateMarketData(rawData as MarketSecurity[]);
   }
 
-  async function fetchMockDataFallback(exchange: Exchange, cacheKey: string): Promise<MarketSecurity[]> {
+  async function fetchMockDataFallback(
+    exchange: Exchange,
+    cacheKey: string
+  ): Promise<MarketSecurity[]> {
     try {
       const mockData = await MockDataService.getMockData(exchange);
       const validatedData = validateMarketData(mockData);
-      
+
       // Cache the mock data (but don't clean cache to avoid overriding real data)
       cache.set(cacheKey, validatedData);
-      
+
       return validatedData;
     } catch (mockError) {
       // eslint-disable-next-line no-console
       console.error(`Mock data fallback failed:`, mockError);
-      throw new Error(`Unable to load market data for ${exchange} (both real and mock data failed)`);
+      throw new Error(
+        `Unable to load market data for ${exchange} (both real and mock data failed)`
+      );
     }
   }
 
@@ -119,19 +130,19 @@ export namespace MarketDataService {
   /**
    * Search securities by ticker or name
    */
-  export function searchSecurities(
-    securities: MarketSecurity[],
-    query: string
-  ): MarketSecurity[] {
+  export function searchSecurities(securities: MarketSecurity[], query: string): MarketSecurity[] {
     if (!query.trim()) return [];
 
     const searchTerm = query.toLowerCase().trim();
-    
-    return securities.filter(security => 
-      security.ticker.toLowerCase().includes(searchTerm) ||
-      security.nameEng.toLowerCase().includes(searchTerm) ||
-      security.nameEngShort.toLowerCase().includes(searchTerm)
-    ).slice(0, 50); // Limit results for performance
+
+    return securities
+      .filter(
+        security =>
+          security.ticker.toLowerCase().includes(searchTerm) ||
+          security.nameEng.toLowerCase().includes(searchTerm) ||
+          security.nameEngShort.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 50); // Limit results for performance
   }
 
   function buildDataUrl(repo: string, date: string): string {
@@ -145,44 +156,41 @@ export namespace MarketDataService {
     for (let i = 0; i <= retries; i++) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => { controller.abort(); }, APP_CONFIG.api.timeout);
-        
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, APP_CONFIG.api.timeout);
+
         const response = await fetch(url, {
           signal: controller.signal,
           headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
           },
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
           throw new Error(`HTTP ${String(response.status)}: ${response.statusText}`);
         }
-        
+
         return response;
       } catch (error) {
         if (i === retries) {
           throw error;
         }
-        
+
         // Wait before retrying
-        await new Promise(resolve => 
-          setTimeout(resolve, APP_CONFIG.api.retryDelay * (i + 1))
-        );
+        await new Promise(resolve => setTimeout(resolve, APP_CONFIG.api.retryDelay * (i + 1)));
       }
     }
-    
+
     throw new Error('Max retries exceeded');
   }
 
-  function buildHierarchicalData(
-    securities: MarketSecurity[],
-    dataType: DataType
-  ): TreemapNode[] {
+  function buildHierarchicalData(securities: MarketSecurity[], dataType: DataType): TreemapNode[] {
     // Group securities by sector
     const sectorGroups = new Map<string, MarketSecurity[]>();
-    
+
     securities.forEach(security => {
       const sector = security.sector || 'Other';
       if (!sectorGroups.has(sector)) {
@@ -208,9 +216,7 @@ export namespace MarketDataService {
   }
 
   function getSectorValue(securities: MarketSecurity[], dataType: DataType): number {
-    return securities.reduce((sum, security) => 
-      sum + getSecurityValue(security, dataType), 0
-    );
+    return securities.reduce((sum, security) => sum + getSecurityValue(security, dataType), 0);
   }
 
   function getSecurityValue(security: MarketSecurity, dataType: DataType): number {
@@ -231,16 +237,14 @@ export namespace MarketDataService {
   function getColorFromPriceChange(priceChangePct: number): string {
     // Normalize to -3 to +3 scale like the original
     const normalizedChange = Math.max(-3, Math.min(3, priceChangePct));
-    
+
     if (normalizedChange < -1) return '#ec3033'; // Red for losses
-    if (normalizedChange > 1) return '#2aca55';  // Green for gains
+    if (normalizedChange > 1) return '#2aca55'; // Green for gains
     return '#40445a'; // Gray for neutral
   }
 
   function calculateTotalValue(securities: MarketSecurity[], dataType: DataType): number {
-    return securities.reduce((sum, security) => 
-      sum + getSecurityValue(security, dataType), 0
-    );
+    return securities.reduce((sum, security) => sum + getSecurityValue(security, dataType), 0);
   }
 
   function cleanCache(): void {

@@ -1,6 +1,6 @@
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import tseslint from 'typescript-eslint';
 
 export default [
   js.configs.recommended,
@@ -19,15 +19,15 @@ export default [
       '@typescript-eslint/no-unused-vars': 'error',
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/prefer-readonly': 'error',
-      
+
       // Performance critical for large datasets
       'no-console': 'warn',
       'prefer-const': 'error',
-      
+
       // Code quality
       'complexity': ['error', 10],
       'max-lines-per-function': ['error', 50],
-      
+
       // Allow console in development
       'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
     },

@@ -1,6 +1,6 @@
 // Mock data service for development and testing
 
-import type { MarketSecurity, Exchange } from '../../types/index.ts';
+import type { Exchange, MarketSecurity } from '../../types/index.ts';
 
 // Sample securities data for testing
 const MOCK_SECURITIES: Record<Exchange, MarketSecurity[]> = {
@@ -17,7 +17,7 @@ const MOCK_SECURITIES: Record<Exchange, MarketSecurity[]> = {
       nameEngShort: 'Apple',
       nameRus: 'Эппл Инк.',
       nameRusShort: 'Эппл',
-      priceOpen: 175.50,
+      priceOpen: 175.5,
       priceLastSale: 178.25,
       priceChangePct: 1.57,
       volume: 45000000,
@@ -42,7 +42,7 @@ const MOCK_SECURITIES: Record<Exchange, MarketSecurity[]> = {
       nameEngShort: 'Microsoft',
       nameRus: 'Майкрософт Корпорейшн',
       nameRusShort: 'Майкрософт',
-      priceOpen: 385.20,
+      priceOpen: 385.2,
       priceLastSale: 392.75,
       priceChangePct: 1.96,
       volume: 22000000,
@@ -67,9 +67,9 @@ const MOCK_SECURITIES: Record<Exchange, MarketSecurity[]> = {
       nameEngShort: 'Amazon',
       nameRus: 'Амазон.ком Инк.',
       nameRusShort: 'Амазон',
-      priceOpen: 145.80,
-      priceLastSale: 142.30,
-      priceChangePct: -2.40,
+      priceOpen: 145.8,
+      priceLastSale: 142.3,
+      priceChangePct: -2.4,
       volume: 35000000,
       value: 4980500000,
       numTrades: 95000,
@@ -92,7 +92,7 @@ const MOCK_SECURITIES: Record<Exchange, MarketSecurity[]> = {
       nameEngShort: 'Meta',
       nameRus: 'Мета Платформс Инк.',
       nameRusShort: 'Мета',
-      priceOpen: 485.30,
+      priceOpen: 485.3,
       priceLastSale: 492.85,
       priceChangePct: 1.56,
       volume: 18000000,
@@ -117,7 +117,7 @@ const MOCK_SECURITIES: Record<Exchange, MarketSecurity[]> = {
       nameEngShort: 'Tesla',
       nameRus: 'Тесла Инк.',
       nameRusShort: 'Тесла',
-      priceOpen: 235.60,
+      priceOpen: 235.6,
       priceLastSale: 228.95,
       priceChangePct: -2.82,
       volume: 42000000,
@@ -143,7 +143,7 @@ const MOCK_SECURITIES: Record<Exchange, MarketSecurity[]> = {
       nameRus: 'Алфабет Инк.',
       nameRusShort: 'Алфабет',
       priceOpen: 162.25,
-      priceLastSale: 165.80,
+      priceLastSale: 165.8,
       priceChangePct: 2.19,
       volume: 28000000,
       value: 4642400000,
@@ -170,7 +170,7 @@ const MOCK_SECURITIES: Record<Exchange, MarketSecurity[]> = {
       nameRus: 'Джи Пи Морган Чейз энд Ко',
       nameRusShort: 'Джи Пи Морган',
       priceOpen: 195.25,
-      priceLastSale: 198.50,
+      priceLastSale: 198.5,
       priceChangePct: 1.66,
       volume: 15000000,
       value: 2977500000,

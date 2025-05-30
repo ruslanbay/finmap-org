@@ -1,12 +1,12 @@
 // Modern D3.js histogram renderer for financial data
 
 import * as d3 from 'd3';
-import type { 
-  ChartData, 
-  ChartDimensions, 
-  MarketSecurity,
+import type {
+  ChartData,
+  ChartDimensions,
   D3Selection,
-  D3Tooltip
+  D3Tooltip,
+  MarketSecurity,
 } from '../../types/index.ts';
 import { formatCurrency, formatPercentage } from '../utils/index.ts';
 
@@ -30,19 +30,20 @@ export class HistogramRenderer {
   public render(data: ChartData): void {
     this.currentData = data;
     this.dimensions = this.calculateDimensions();
-    
+
     // Clear existing chart
     this.clear();
-    
+
     // Create SVG
     this.svg = this.createSvg();
-    
+
     // Setup chart components
     this.renderChart(data);
   }
 
   private createSvg(): D3Selection {
-    return d3.select(this.container)
+    return d3
+      .select(this.container)
       .append('svg')
       .attr('width', this.dimensions.width)
       .attr('height', this.dimensions.height)
@@ -57,7 +58,8 @@ export class HistogramRenderer {
     const width = this.dimensions.width - margin.left - margin.right;
     const height = this.dimensions.height - margin.top - margin.bottom;
 
-    const g = this.svg.append('g')
+    const g = this.svg
+      .append('g')
       .attr('transform', `translate(${String(margin.left)},${String(margin.top)})`);
 
     // Prepare data and scales
@@ -72,15 +74,25 @@ export class HistogramRenderer {
 
   private prepareSortedData(data: ChartData): MarketSecurity[] {
     return [...data.securities]
-      .sort((a, b) => this.getSecurityValue(b, data.dataType) - this.getSecurityValue(a, data.dataType))
+      .sort(
+        (a, b) => this.getSecurityValue(b, data.dataType) - this.getSecurityValue(a, data.dataType)
+      )
       .slice(0, 50); // Show top 50 for performance
   }
 
-  private createScales(sortedSecurities: MarketSecurity[], data: ChartData, width: number, height: number): { xScale: d3.ScaleBand<string>, yScale: d3.ScaleLinear<number, number> } {
-    const xScale = d3.scaleBand()
+  private createScales(
+    sortedSecurities: MarketSecurity[],
+    data: ChartData,
+    width: number,
+    height: number
+  ): { xScale: d3.ScaleBand<string>; yScale: d3.ScaleLinear<number, number> } {
+    const xScale = d3
+      .scaleBand()
       .domain(sortedSecurities.map(s => s.ticker))
       .range([0, width])
-      .padding(0.1);    const yScale = d3.scaleLinear()
+      .padding(0.1);
+    const yScale = d3
+      .scaleLinear()
       .domain([0, d3.max(sortedSecurities, d => this.getSecurityValue(d, data.dataType)) || 0])
       .range([height, 0]);
 
@@ -97,18 +109,32 @@ export class HistogramRenderer {
   ): void {
     g.selectAll('.bar')
       .data(sortedSecurities)
-      .enter().append('rect')
+      .enter()
+      .append('rect')
       .attr('class', 'bar')
       .attr('x', (d: unknown) => xScale((d as MarketSecurity).ticker) || 0)
       .attr('width', xScale.bandwidth())
       .attr('y', (d: unknown) => yScale(this.getSecurityValue(d as MarketSecurity, data.dataType)))
-      .attr('height', (d: unknown) => height - yScale(this.getSecurityValue(d as MarketSecurity, data.dataType)))
-      .attr('fill', (d: unknown) => this.getColorFromPriceChange((d as MarketSecurity).priceChangePct))
+      .attr(
+        'height',
+        (d: unknown) => height - yScale(this.getSecurityValue(d as MarketSecurity, data.dataType))
+      )
+      .attr('fill', (d: unknown) =>
+        this.getColorFromPriceChange((d as MarketSecurity).priceChangePct)
+      )
       .style('cursor', 'pointer')
-      .on('mouseover', (event: MouseEvent, d: MarketSecurity) => { this.showTooltip(event, d); })
-      .on('mousemove', (event: MouseEvent) => { this.moveTooltip(event); })
-      .on('mouseout', () => { this.hideTooltip(); })
-      .on('click', (event: MouseEvent, d: MarketSecurity) => { this.handleClick(event, d); });
+      .on('mouseover', (event: MouseEvent, d: MarketSecurity) => {
+        this.showTooltip(event, d);
+      })
+      .on('mousemove', (event: MouseEvent) => {
+        this.moveTooltip(event);
+      })
+      .on('mouseout', () => {
+        this.hideTooltip();
+      })
+      .on('click', (event: MouseEvent, d: MarketSecurity) => {
+        this.handleClick(event, d);
+      });
   }
 
   private renderAxes(
@@ -138,22 +164,24 @@ export class HistogramRenderer {
       .style('fill', '#fff');
 
     // Add axis lines
-    g.selectAll('.domain, .tick line')
-      .style('stroke', '#666');
+    g.selectAll('.domain, .tick line').style('stroke', '#666');
   }
 
   private renderTitle(data: ChartData): void {
     if (!this.svg) return;
 
     // Add chart title
-    this.svg.append('text')
+    this.svg
+      .append('text')
       .attr('x', this.dimensions.width / 2)
       .attr('y', 20)
       .attr('text-anchor', 'middle')
       .style('font-size', '16px')
       .style('font-weight', 'bold')
       .style('fill', '#fff')
-      .text(`Top 50 ${data.exchange.toUpperCase()} Securities by ${this.getDataTypeLabel(data.dataType)}`);
+      .text(
+        `Top 50 ${data.exchange.toUpperCase()} Securities by ${this.getDataTypeLabel(data.dataType)}`
+      );
   }
 
   /**
@@ -169,7 +197,8 @@ export class HistogramRenderer {
   public highlightSecurities(tickers: string[]): void {
     if (!this.svg) return;
 
-    this.svg.selectAll('.bar')
+    this.svg
+      .selectAll('.bar')
       .style('stroke-width', (d: unknown) => {
         const security = d as MarketSecurity;
         return tickers.includes(security.ticker) ? '2px' : '0px';
@@ -183,9 +212,10 @@ export class HistogramRenderer {
   public searchAndHighlight(query: string): boolean {
     if (!this.svg || !this.currentData) return false;
 
-    const security = this.currentData.securities.find(s => 
-      s.ticker.toLowerCase() === query.toLowerCase() ||
-      s.nameEng.toLowerCase().includes(query.toLowerCase())
+    const security = this.currentData.securities.find(
+      s =>
+        s.ticker.toLowerCase() === query.toLowerCase() ||
+        s.nameEng.toLowerCase().includes(query.toLowerCase())
     );
 
     if (security) {
@@ -213,9 +243,7 @@ export class HistogramRenderer {
       </div>
     `;
 
-    this.tooltip
-      .style('opacity', 1)
-      .html(tooltipContent);
+    this.tooltip.style('opacity', 1).html(tooltipContent);
 
     this.moveTooltip(event);
   }
@@ -235,36 +263,48 @@ export class HistogramRenderer {
 
   private handleClick(event: MouseEvent, security: MarketSecurity): void {
     // Emit custom event for external handling
-    this.container.dispatchEvent(new CustomEvent('securityClick', {
-      detail: { security, event }
-    }));
+    this.container.dispatchEvent(
+      new CustomEvent('securityClick', {
+        detail: { security, event },
+      })
+    );
   }
 
   private getSecurityValue(security: MarketSecurity, dataType: string): number {
     switch (dataType) {
-      case 'marketcap': return security.marketCap;
-      case 'value': return security.value;
-      case 'trades': return security.numTrades;
-      case 'nestedItems': return security.nestedItemsCount;
-      default: return security.marketCap;
+      case 'marketcap':
+        return security.marketCap;
+      case 'value':
+        return security.value;
+      case 'trades':
+        return security.numTrades;
+      case 'nestedItems':
+        return security.nestedItemsCount;
+      default:
+        return security.marketCap;
     }
   }
 
   private getColorFromPriceChange(priceChangePct: number): string {
     const normalizedChange = Math.max(-3, Math.min(3, priceChangePct));
-    
+
     if (normalizedChange < -1) return '#ec3033'; // Red for losses
-    if (normalizedChange > 1) return '#2aca55';  // Green for gains
+    if (normalizedChange > 1) return '#2aca55'; // Green for gains
     return '#40445a'; // Gray for neutral
   }
 
   private getDataTypeLabel(dataType: string): string {
     switch (dataType) {
-      case 'marketcap': return 'Market Cap';
-      case 'value': return 'Trading Value';
-      case 'trades': return 'Number of Trades';
-      case 'nestedItems': return 'Nested Items';
-      default: return 'Market Cap';
+      case 'marketcap':
+        return 'Market Cap';
+      case 'value':
+        return 'Trading Value';
+      case 'trades':
+        return 'Number of Trades';
+      case 'nestedItems':
+        return 'Nested Items';
+      default:
+        return 'Market Cap';
     }
   }
 
@@ -272,9 +312,11 @@ export class HistogramRenderer {
     switch (dataType) {
       case 'marketcap':
       case 'value':
-        return value > 1e9 ? `$${(value / 1e9).toFixed(1)}B` : 
-               value > 1e6 ? `$${(value / 1e6).toFixed(1)}M` : 
-               `$${value.toLocaleString()}`;
+        return value > 1e9
+          ? `$${(value / 1e9).toFixed(1)}B`
+          : value > 1e6
+            ? `$${(value / 1e6).toFixed(1)}M`
+            : `$${value.toLocaleString()}`;
       case 'trades':
       case 'nestedItems':
         return value.toLocaleString();
@@ -287,14 +329,18 @@ export class HistogramRenderer {
     switch (dataType) {
       case 'marketcap':
       case 'value':
-        return value > 1e9 ? `${(value / 1e9).toFixed(0)}B` : 
-               value > 1e6 ? `${(value / 1e6).toFixed(0)}M` : 
-               `${(value / 1e3).toFixed(0)}K`;
+        return value > 1e9
+          ? `${(value / 1e9).toFixed(0)}B`
+          : value > 1e6
+            ? `${(value / 1e6).toFixed(0)}M`
+            : `${(value / 1e3).toFixed(0)}K`;
       case 'trades':
       case 'nestedItems':
-        return value > 1e6 ? `${(value / 1e6).toFixed(0)}M` : 
-               value > 1e3 ? `${(value / 1e3).toFixed(0)}K` : 
-               value.toString();
+        return value > 1e6
+          ? `${(value / 1e6).toFixed(0)}M`
+          : value > 1e3
+            ? `${(value / 1e3).toFixed(0)}K`
+            : value.toString();
       default:
         return value.toString();
     }
@@ -310,7 +356,8 @@ export class HistogramRenderer {
   }
 
   private setupTooltip(): void {
-    this.tooltip = d3.select('body')
+    this.tooltip = d3
+      .select('body')
       .append('div')
       .attr('class', 'histogram-tooltip')
       .style('position', 'absolute')

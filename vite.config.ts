@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   resolve: {
@@ -10,7 +10,7 @@ export default defineConfig({
       '@/components': resolve(__dirname, './src/components'),
     },
   },
-  
+
   build: {
     target: 'ES2022',
     sourcemap: true,
@@ -22,18 +22,18 @@ export default defineConfig({
       },
     },
   },
-  
+
   server: {
     port: 3000,
     open: true,
     cors: true, // For GitHub data API
   },
-  
+
   // Optimized for your data-heavy app
   optimizeDeps: {
     include: ['d3'],
   },
-  
+
   preview: {
     port: 4173,
   },
