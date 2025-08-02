@@ -33,25 +33,40 @@
           style="height: 31px; margin-top: 5px"
         />
       </label>
-      <a id="linkEraseFilter" onclick="localStorage.removeItem('filterCsv'); refreshChart();" hidden>
+      <a id="linkEraseFilter" data-action="erase-filter" hidden>
         <img
           src="images/icons/erasefilter.png"
           title="Erase filter"
           style="height: 31px; margin-top: 5px"
         />
       </a>
+      <select id="exchange">
+        <option value="nasdaq" selected="selected">NASDAQ</option>
+        <option value="nyse">NYSE</option>
+        <option value="amex">AMEX</option>
+        <option value="us-all">US All</option>
+        <option value="moex">MOEX</option>
+        <option value="lse">LSE</option>
+        <option value="bist">BIST</option>
+      </select>
+
+      <select id="chartType">
+        <option value="treemap" selected="selected">Treemap</option>
+        <option value="histogram">Histogram</option>
+      </select>
+
       <form id="inputForm" onsubmit="return false;">
         <div class="autocomplete">
           <input
             type="text"
-            id="inputSearch"
+            id="search"
             placeholder="🔎 AAPL"
             maxlength="40"
           />
         </div>
       </form>
 
-      <select id="inputDataType">
+      <select id="dataType">
         <option value="marketcap" selected="selected">marketcap</option>
         <option value="value">value</option>
         <option value="trades">trades</option>
@@ -59,7 +74,7 @@
       </select>
       <input
         type="date"
-        id="inputDate"
+        id="date"
         name="date"
         pattern="\d{4}-\d{2}-\d{2}"
         value="2025-08-01"
@@ -91,32 +106,23 @@
         </a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="chartType = 'treemap'; refreshChart(); return false;">TREEMAP</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="chartType = 'histogram'; refreshChart(); return false;">HISTOGRAM</a>
+        <a class="menuItem" data-chart-type="treemap" href="#" rel="noopener">TREEMAP</a>|
+        <a class="menuItem" data-chart-type="histogram" href="#" rel="noopener">HISTOGRAM</a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('nasdaq');">NASDAQ</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('nyse');">NYSE</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('amex');">AMEX</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('us-all');">US ALL</a>
+        <a class="menuItem" data-exchange="nasdaq" href="#" rel="noopener">NASDAQ</a>|
+        <a class="menuItem" data-exchange="nyse" href="#" rel="noopener">NYSE</a>|
+        <a class="menuItem" data-exchange="amex" href="#" rel="noopener">AMEX</a>|
+        <a class="menuItem" data-exchange="us-all" href="#" rel="noopener">US ALL</a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('lse');">LONDON STOCK EXCHANGE</a>
+        <a class="menuItem" data-exchange="lse" href="#" rel="noopener">LONDON STOCK EXCHANGE</a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('bist');">TURKISH STOCK MARKET</a>
+        <a class="menuItem" data-exchange="bist" href="#" rel="noopener">TURKISH STOCK MARKET</a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('moex');">MOSCOW EXCHANGE</a>
+        <a class="menuItem" data-exchange="moex" href="#" rel="noopener">MOSCOW EXCHANGE</a>
       </li>
       <li>
         <a class="menuItem" target="_self" rel="noopener"
@@ -139,7 +145,7 @@
       <a id="share">
         <img src="images/icons/share.png" height="14px" /> Share</a>
       <a id="install" hidden>✓ Install</a>
-      <a id="currencyToggle" onclick="currencyToggle(); if (nativeCurrency !== 'USD') refreshChart(); return false;">USD</a>
+      <a id="currencyToggle" data-action="currency-toggle">USD</a>
       <a id="langToggle">ENG</a>
     </footer>
 

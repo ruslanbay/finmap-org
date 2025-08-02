@@ -63,6 +63,49 @@ function setupEventListeners() {
             }
         }
     }, 100));
+    // Event delegation for menu items with data attributes
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        // Handle chart type selection
+        if (target.dataset.chartType) {
+            event.preventDefault();
+            updateConfig({ chartType: target.dataset.chartType });
+            saveConfigToURL();
+            renderChart();
+            return;
+        }
+        // Handle exchange selection
+        if (target.dataset.exchange) {
+            event.preventDefault();
+            updateConfig({ exchange: target.dataset.exchange });
+            saveConfigToURL();
+            renderChart();
+            return;
+        }
+        // Handle currency toggle
+        if (target.dataset.action === 'currency-toggle') {
+            event.preventDefault();
+            const config = getConfig();
+            const currencies = ['USD', 'RUB', 'GBP', 'TRY'];
+            const currentIndex = currencies.indexOf(config.currency);
+            const nextCurrency = currencies[(currentIndex + 1) % currencies.length];
+            updateConfig({ currency: nextCurrency });
+            target.textContent = nextCurrency;
+            saveConfigToURL();
+            // Only refresh chart if not USD (as per original logic)
+            if (nextCurrency !== 'USD') {
+                renderChart();
+            }
+            return;
+        }
+        // Handle erase filter
+        if (target.dataset.action === 'erase-filter') {
+            event.preventDefault();
+            localStorage.removeItem('filterCsv');
+            renderChart();
+            return;
+        }
+    });
 }
 function setupMobileMenu() {
     const menuButton = document.getElementById('mobile-menu-button');
