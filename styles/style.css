@@ -190,6 +190,14 @@ footer {
   display: none;
 }
 
+.hamburger.active .menuIcon {
+  display: none;
+}
+
+.hamburger.active .closeIcon {
+  display: block;
+}
+
 .menu {
   position: fixed;
   transform: translateY(-100%);

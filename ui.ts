@@ -50,7 +50,7 @@ function setupEventListeners(): void {
   
   window.addEventListener('resize', debounce(() => {
     if (currentRenderer && currentData.length > 0) {
-      const container = document.getElementById('chart-container');
+      const container = document.getElementById('chart');
       if (container) {
         currentRenderer.render(currentData, container);
       }
@@ -106,12 +106,12 @@ function setupMobileMenu(): void {
   
   if (menuButton && mobileMenu) {
     menuButton.addEventListener('click', () => {
-      const isOpen = mobileMenu.classList.contains('open');
+      const isOpen = mobileMenu.classList.contains('showMenu');
       if (isOpen) {
-        mobileMenu.classList.remove('open');
+        mobileMenu.classList.remove('showMenu');
         menuButton.classList.remove('active');
       } else {
-        mobileMenu.classList.add('open');
+        mobileMenu.classList.add('showMenu');
         menuButton.classList.add('active');
       }
     });
@@ -119,7 +119,7 @@ function setupMobileMenu(): void {
     // Close menu when clicking outside
     document.addEventListener('click', (e) => {
       if (!menuButton.contains(e.target as Node) && !mobileMenu.contains(e.target as Node)) {
-        mobileMenu.classList.remove('open');
+        mobileMenu.classList.remove('showMenu');
         menuButton.classList.remove('active');
       }
     });
@@ -166,7 +166,7 @@ function updateFilterDisplay(): void {
 
 export async function renderChart(): Promise<void> {
   try {
-    const container = document.getElementById('chart-container');
+    const container = document.getElementById('chart');
     if (!container) return;
     
     showLoadingState(container);
@@ -243,7 +243,7 @@ function hideLoadingState(container: HTMLElement): void {
 }
 
 function showErrorState(error: Error): void {
-  const container = document.getElementById('chart-container');
+  const container = document.getElementById('chart');
   if (container) {
     container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
   }
