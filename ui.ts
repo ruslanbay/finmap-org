@@ -14,27 +14,9 @@ export function initializeUI(): void {
 }
 
 function setupEventListeners(): void {
-  const exchangeSelect = document.getElementById('exchange') as HTMLSelectElement;
-  const chartTypeSelect = document.getElementById('chartType') as HTMLSelectElement;
   const dataTypeSelect = document.getElementById('dataType') as HTMLSelectElement;
   const dateInput = document.getElementById('date') as HTMLInputElement;
   const searchInput = document.getElementById('search') as HTMLInputElement;
-  
-  if (exchangeSelect) {
-    exchangeSelect.addEventListener('change', () => {
-      updateConfig({ exchange: exchangeSelect.value as any });
-      saveConfigToURL();
-      renderChart();
-    });
-  }
-  
-  if (chartTypeSelect) {
-    chartTypeSelect.addEventListener('change', () => {
-      updateConfig({ chartType: chartTypeSelect.value as any });
-      saveConfigToURL();
-      renderChart();
-    });
-  }
   
   if (dataTypeSelect) {
     dataTypeSelect.addEventListener('change', () => {
@@ -75,11 +57,9 @@ function setupEventListeners(): void {
     }
   }, 100));
 
-  // Event delegation for menu items with data attributes
   document.addEventListener('click', (event) => {
     const target = event.target as HTMLElement;
     
-    // Handle chart type selection
     if (target.dataset.chartType) {
       event.preventDefault();
       updateConfig({ chartType: target.dataset.chartType as any });
@@ -88,7 +68,6 @@ function setupEventListeners(): void {
       return;
     }
     
-    // Handle exchange selection
     if (target.dataset.exchange) {
       event.preventDefault();
       updateConfig({ exchange: target.dataset.exchange as any });
@@ -97,7 +76,6 @@ function setupEventListeners(): void {
       return;
     }
     
-    // Handle currency toggle
     if (target.dataset.action === 'currency-toggle') {
       event.preventDefault();
       const config = getConfig();
@@ -107,14 +85,12 @@ function setupEventListeners(): void {
       updateConfig({ currency: nextCurrency });
       target.textContent = nextCurrency;
       saveConfigToURL();
-      // Only refresh chart if not USD (as per original logic)
       if (nextCurrency !== 'USD') {
         renderChart();
       }
       return;
     }
     
-    // Handle erase filter
     if (target.dataset.action === 'erase-filter') {
       event.preventDefault();
       localStorage.removeItem('filterCsv');
@@ -125,22 +101,26 @@ function setupEventListeners(): void {
 }
 
 function setupMobileMenu(): void {
-  const menuButton = document.getElementById('mobile-menu-button');
-  const mobileMenu = document.getElementById('mobile-menu');
+  const menuButton = document.querySelector('.hamburger') as HTMLElement;
+  const mobileMenu = document.querySelector('.menu') as HTMLElement;
   
   if (menuButton && mobileMenu) {
     menuButton.addEventListener('click', () => {
       const isOpen = mobileMenu.classList.contains('open');
       if (isOpen) {
         mobileMenu.classList.remove('open');
+        menuButton.classList.remove('active');
       } else {
         mobileMenu.classList.add('open');
+        menuButton.classList.add('active');
       }
     });
     
+    // Close menu when clicking outside
     document.addEventListener('click', (e) => {
       if (!menuButton.contains(e.target as Node) && !mobileMenu.contains(e.target as Node)) {
         mobileMenu.classList.remove('open');
+        menuButton.classList.remove('active');
       }
     });
   }

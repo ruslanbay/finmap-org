@@ -10,25 +10,9 @@ export function initializeUI() {
     renderChart();
 }
 function setupEventListeners() {
-    const exchangeSelect = document.getElementById('exchange');
-    const chartTypeSelect = document.getElementById('chartType');
     const dataTypeSelect = document.getElementById('dataType');
     const dateInput = document.getElementById('date');
     const searchInput = document.getElementById('search');
-    if (exchangeSelect) {
-        exchangeSelect.addEventListener('change', () => {
-            updateConfig({ exchange: exchangeSelect.value });
-            saveConfigToURL();
-            renderChart();
-        });
-    }
-    if (chartTypeSelect) {
-        chartTypeSelect.addEventListener('change', () => {
-            updateConfig({ chartType: chartTypeSelect.value });
-            saveConfigToURL();
-            renderChart();
-        });
-    }
     if (dataTypeSelect) {
         dataTypeSelect.addEventListener('change', () => {
             updateConfig({ dataType: dataTypeSelect.value });
@@ -63,10 +47,8 @@ function setupEventListeners() {
             }
         }
     }, 100));
-    // Event delegation for menu items with data attributes
     document.addEventListener('click', (event) => {
         const target = event.target;
-        // Handle chart type selection
         if (target.dataset.chartType) {
             event.preventDefault();
             updateConfig({ chartType: target.dataset.chartType });
@@ -74,7 +56,6 @@ function setupEventListeners() {
             renderChart();
             return;
         }
-        // Handle exchange selection
         if (target.dataset.exchange) {
             event.preventDefault();
             updateConfig({ exchange: target.dataset.exchange });
@@ -82,7 +63,6 @@ function setupEventListeners() {
             renderChart();
             return;
         }
-        // Handle currency toggle
         if (target.dataset.action === 'currency-toggle') {
             event.preventDefault();
             const config = getConfig();
@@ -92,13 +72,11 @@ function setupEventListeners() {
             updateConfig({ currency: nextCurrency });
             target.textContent = nextCurrency;
             saveConfigToURL();
-            // Only refresh chart if not USD (as per original logic)
             if (nextCurrency !== 'USD') {
                 renderChart();
             }
             return;
         }
-        // Handle erase filter
         if (target.dataset.action === 'erase-filter') {
             event.preventDefault();
             localStorage.removeItem('filterCsv');
@@ -108,21 +86,25 @@ function setupEventListeners() {
     });
 }
 function setupMobileMenu() {
-    const menuButton = document.getElementById('mobile-menu-button');
-    const mobileMenu = document.getElementById('mobile-menu');
+    const menuButton = document.querySelector('.hamburger');
+    const mobileMenu = document.querySelector('.menu');
     if (menuButton && mobileMenu) {
         menuButton.addEventListener('click', () => {
             const isOpen = mobileMenu.classList.contains('open');
             if (isOpen) {
                 mobileMenu.classList.remove('open');
+                menuButton.classList.remove('active');
             }
             else {
                 mobileMenu.classList.add('open');
+                menuButton.classList.add('active');
             }
         });
+        // Close menu when clicking outside
         document.addEventListener('click', (e) => {
             if (!menuButton.contains(e.target) && !mobileMenu.contains(e.target)) {
                 mobileMenu.classList.remove('open');
+                menuButton.classList.remove('active');
             }
         });
     }
