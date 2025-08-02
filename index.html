@@ -1,626 +1,148 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinMap - Interactive Financial Market Visualization</title>
-  <meta name="description" content="Global stock market visualization tool with interactive treemap and histogram charts. Real-time data from NASDAQ, NYSE, AMEX, LSE, MOEX, and BIST exchanges.">
-  <meta name="theme-color" content="#414554">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="FinMap">
-
-  <base href="https://ruslanbay.github.io/finmap-org/" />
-  
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="images/icons/favicon.png">
-  <link rel="apple-touch-icon" href="images/icons/ios/180.png">
-  
-  <style>
-    :root {
-      --bg-color: rgb(65, 69, 84);
-      --text-color: white;
-      --header-height: 45px;
-      --footer-height: 25px;
-      --border-color: #555;
-      --control-bg: #333;
-      --control-border: #555;
-      --button-bg: #444;
-      --button-hover: #555;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    .header {
-      height: var(--header-height);
-      background-color: var(--bg-color);
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      padding: 0 10px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      white-space: nowrap;
-      gap: 15px;
-    }
-
-    .header::-webkit-scrollbar {
-      height: 4px;
-    }
-
-    .header::-webkit-scrollbar-track {
-      background: #333;
-    }
-
-    .header::-webkit-scrollbar-thumb {
-      background: #666;
-      border-radius: 2px;
-    }
-
-    .logo {
-      height: 30px;
-      margin-right: 10px;
-    }
-
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      min-width: max-content;
-    }
-
-    .control-group {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .control-group label {
-      font-size: 12px;
-      color: #ccc;
-      white-space: nowrap;
-    }
-
-    .control-group select,
-    .control-group input {
-      background: var(--control-bg);
-      color: white;
-      border: 1px solid var(--control-border);
-      border-radius: 3px;
-      padding: 4px 8px;
-      font-size: 12px;
-      min-width: 80px;
-    }
-
-    .control-group select:focus,
-    .control-group input:focus {
-      outline: none;
-      border-color: #777;
-    }
-
-    #search-input {
-      width: 200px;
-      background: var(--control-bg);
-      color: white;
-      border: 1px solid var(--control-border);
-      border-radius: 3px;
-      padding: 4px 8px;
-      font-size: 12px;
-    }
-
-    #search-input::placeholder {
-      color: #888;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 10px;
-      margin-left: auto;
-    }
-
-    .btn {
-      background: var(--button-bg);
-      color: white;
-      border: 1px solid #666;
-      border-radius: 3px;
-      padding: 4px 12px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: background 0.2s;
-      text-decoration: none;
-    }
-
-    .btn:hover {
-      background: var(--button-hover);
-    }
-
-    .btn:active {
-      background: #333;
-    }
-
-    .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-      padding: 8px;
-    }
-
-    .chart-container {
-      height: calc(100vh - var(--header-height) - var(--footer-height));
-      width: 100%;
-      position: relative;
-      overflow: hidden;
-      background: var(--bg-color);
-    }
-
-    .footer {
-      height: var(--footer-height);
-      background-color: var(--bg-color);
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      font-size: 11px;
-      color: #ccc;
-    }
-
-    .data-info {
-      display: flex;
-      gap: 20px;
-    }
-
-    .info-item {
-      display: flex;
-      gap: 5px;
-      align-items: center;
-    }
-
-    .info-label {
-      color: #aaa;
-    }
-
-    .info-value {
-      font-weight: bold;
-      color: white;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-    }
-
-    .footer-links a {
-      color: #ccc;
-      text-decoration: none;
-      font-size: 11px;
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .footer-links a:hover {
-      color: white;
-    }
-
-    .footer-links img {
-      height: 12px;
-    }
-
-    .mobile-menu {
-      display: none;
-      position: fixed;
-      top: var(--header-height);
-      left: 0;
-      right: 0;
-      background: var(--bg-color);
-      border-bottom: 1px solid var(--border-color);
-      padding: 20px;
-      z-index: 1000;
-      transform: translateY(-100%);
-      transition: transform 0.3s ease;
-      max-height: calc(100vh - var(--header-height));
-      overflow-y: auto;
-    }
-
-    .mobile-menu.active {
-      transform: translateY(0);
-    }
-
-    .mobile-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .mobile-control-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .mobile-control-group label {
-      font-size: 12px;
-      color: #ccc;
-    }
-
-    .mobile-control-group select,
-    .mobile-control-group input {
-      background: var(--control-bg);
-      color: white;
-      border: 1px solid var(--control-border);
-      border-radius: 3px;
-      padding: 8px;
-      font-size: 14px;
-    }
-
-    .menu-section {
-      margin-bottom: 20px;
-    }
-
-    .menu-section h3 {
-      font-size: 14px;
-      margin-bottom: 10px;
-      color: #ccc;
-    }
-
-    .menu-items {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .menu-item {
-      background: var(--button-bg);
-      color: white;
-      border: 1px solid #666;
-      border-radius: 3px;
-      padding: 8px 12px;
-      font-size: 12px;
-      text-decoration: none;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .menu-item:hover {
-      background: var(--button-hover);
-    }
-
-    .social-links {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      padding: 15px 0;
-    }
-
-    .social-links a {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      background: var(--button-bg);
-      border: 1px solid #666;
-      border-radius: 50%;
-      transition: background 0.2s;
-    }
-
-    .social-links a:hover {
-      background: var(--button-hover);
-    }
-
-    .social-links img {
-      height: 20px;
-      width: 20px;
-    }
-
-    .loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #ccc;
-      font-size: 14px;
-    }
-
-    .error {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #ff6b6b;
-      font-size: 14px;
-      text-align: center;
-      background: rgba(255, 107, 107, 0.1);
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #ff6b6b;
-    }
-
-    #install-button {
-      display: none;
-    }
-
-    .filter-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 10px;
-    }
-
-    .filter-tag {
-      background: #2a5a8a;
-      color: white;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .filter-tag button {
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      font-size: 14px;
-      padding: 0;
-      margin: 0;
-      line-height: 1;
-    }
-
-    @media (max-width: 768px) {
-      .controls {
-        display: none;
-      }
-
-      .menu-toggle {
-        display: block;
-      }
-
-      .mobile-menu {
-        display: block;
-      }
-
-      .action-buttons {
-        margin-left: 0;
-      }
-
-      .data-info {
-        flex-direction: column;
-        gap: 5px;
-      }
-
-      .footer {
-        font-size: 10px;
-        padding: 0 5px;
-      }
-
-      .footer-links {
-        gap: 10px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .mobile-controls {
-        grid-template-columns: 1fr;
-      }
-
-      .action-buttons {
-        flex-direction: column;
-        gap: 5px;
-      }
-
-      .btn {
-        padding: 6px 12px;
-        font-size: 11px;
-      }
-
-      .footer-links {
-        flex-direction: column;
-        gap: 5px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <header class="header">
-    <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">☰</button>
-    
-    <div class="controls">
-      <div class="control-group">
-        <label for="exchange-select">Exchange:</label>
-        <select id="exchange-select" aria-label="Select exchange">
-          <option value="nasdaq">NASDAQ</option>
-          <option value="nyse">NYSE</option>
-          <option value="amex">AMEX</option>
-          <option value="us-all">US All</option>
-          <option value="moex">MOEX</option>
-          <option value="lse">LSE</option>
-          <option value="bist">BIST</option>
-        </select>
-      </div>
-
-      <div class="control-group">
-        <label for="chart-type-select">Chart:</label>
-        <select id="chart-type-select" aria-label="Select chart type">
-          <option value="treemap">Treemap</option>
-          <option value="histogram">Histogram</option>
-        </select>
-      </div>
-
-      <div class="control-group">
-        <label for="data-type-select">Data:</label>
-        <select id="data-type-select" aria-label="Select data type">
-          <option value="marketcap">Market Cap</option>
-          <option value="value">Value</option>
-          <option value="trades">Trades</option>
-          <option value="nestedItems">Items</option>
-        </select>
-      </div>
-
-      <div class="control-group">
-        <label for="date-input">Date:</label>
-        <input type="date" id="date-input" value="2025-08-01" min="2011-12-19" max="2025-08-01" aria-label="Select date">
-      </div>
-
-      <div class="control-group">
-        <input type="text" id="search-input" placeholder="🔍 Search..." maxlength="40" aria-label="Search securities">
-      </div>
-    </div>
-
-    <div class="action-buttons">
-      <button class="btn" id="install-button" aria-label="Install app">Install</button>
-      <button class="btn" id="share-button" aria-label="Share">Share</button>
-    </div>
-  </header>
-
-  <nav class="mobile-menu" id="mobile-menu">
-    <div class="mobile-controls">
-      <div class="mobile-control-group">
-        <label for="mobile-exchange-select">Exchange:</label>
-        <select id="mobile-exchange-select" aria-label="Select exchange">
-          <option value="nasdaq">NASDAQ</option>
-          <option value="nyse">NYSE</option>
-          <option value="amex">AMEX</option>
-          <option value="us-all">US All</option>
-          <option value="moex">MOEX</option>
-          <option value="lse">LSE</option>
-          <option value="bist">BIST</option>
-        </select>
-      </div>
-
-      <div class="mobile-control-group">
-        <label for="mobile-chart-type-select">Chart:</label>
-        <select id="mobile-chart-type-select" aria-label="Select chart type">
-          <option value="treemap">Treemap</option>
-          <option value="histogram">Histogram</option>
-        </select>
-      </div>
-
-      <div class="mobile-control-group">
-        <label for="mobile-data-type-select">Data:</label>
-        <select id="mobile-data-type-select" aria-label="Select data type">
-          <option value="marketcap">Market Cap</option>
-          <option value="value">Value</option>
-          <option value="trades">Trades</option>
-          <option value="nestedItems">Items</option>
-        </select>
-      </div>
-
-      <div class="mobile-control-group">
-        <label for="mobile-date-input">Date:</label>
-        <input type="date" id="mobile-date-input" value="2025-08-01" min="2011-12-19" max="2025-08-01" aria-label="Select date">
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <h3>Chart Types</h3>
-      <div class="menu-items">
-        <a href="#" class="menu-item" data-chart="treemap">Treemap</a>
-        <a href="#" class="menu-item" data-chart="histogram">Histogram</a>
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <h3>US Markets</h3>
-      <div class="menu-items">
-        <a href="#" class="menu-item" data-exchange="nasdaq">NASDAQ</a>
-        <a href="#" class="menu-item" data-exchange="nyse">NYSE</a>
-        <a href="#" class="menu-item" data-exchange="amex">AMEX</a>
-        <a href="#" class="menu-item" data-exchange="us-all">US All</a>
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <h3>Global Markets</h3>
-      <div class="menu-items">
-        <a href="#" class="menu-item" data-exchange="lse">London Stock Exchange</a>
-        <a href="#" class="menu-item" data-exchange="bist">Turkish Stock Market</a>
-        <a href="#" class="menu-item" data-exchange="moex">Moscow Exchange</a>
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <h3>Other</h3>
-      <div class="menu-items">
-        <a href="/tcg" class="menu-item">Collectible Cards</a>
-        <a href="https://github.com/finmap-org/finmap-org/wiki" class="menu-item" target="_blank" rel="noopener">F.A.Q.</a>
-        <a href="https://github.com/finmap-org/finmap-org/issues" class="menu-item" target="_blank" rel="noopener">Support</a>
-        <a href="mailto:contact@finmap.org" class="menu-item">Contact</a>
-      </div>
-    </div>
-
-    <div class="social-links">
-      <a href="https://x.com/finmaporg" target="_blank" rel="noopener" aria-label="Follow on X">
-        <img src="images/icons/x.png" alt="X" />
+  <head>
+    <title>finmap.org</title>
+    <base href="https://ruslanbay.github.io/finmap-org/" />
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="Global stock market visualisation tool and your personal news feed reader. London Stock Exchange, NASDAQ, NYSE, American Exchange, Moscow Exchange, Borsa Istanbul. Market Capitalization, Listings, Value. Treemap and Histogram"
+    />
+    <meta name="theme-color" content="#414554" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="finmap.org" />
+
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" type="text/css" href="styles/style.css" />
+    <link rel="icon" href="images/icons/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="images/icons/ios/152.png" />
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+  </head>
+
+  <body>
+    <header>
+      <img id="logo" src="" height="30px" />
+      <input type="file" id="inputFile" accept=".csv,.txt" hidden />
+      <label for="inputFile" id="inputFileLabel">
+        <img
+          src="images/icons/filter.png"
+          title="Apply filter"
+          style="height: 31px; margin-top: 5px"
+        />
+      </label>
+      <a id="linkEraseFilter" onclick="localStorage.removeItem('filterCsv'); refreshChart();" hidden>
+        <img
+          src="images/icons/erasefilter.png"
+          title="Erase filter"
+          style="height: 31px; margin-top: 5px"
+        />
       </a>
-      <a href="https://www.youtube.com/@finmaporg" target="_blank" rel="noopener" aria-label="Subscribe on YouTube">
-        <img src="images/icons/youtube.png" alt="YouTube" />
-      </a>
-      <a href="https://github.com/finmap-org/finmap-org" target="_blank" rel="noopener" aria-label="View on GitHub">
-        <img src="images/icons/github.png" alt="GitHub" />
-      </a>
-      <a href="https://boosty.to/finmap/donate" target="_blank" rel="noopener" aria-label="Support on Boosty">
-        <img src="images/icons/boosty.png" alt="Boosty" />
-      </a>
-      <a href="https://www.patreon.com/finmap" target="_blank" rel="noopener" aria-label="Support on Patreon">
-        <img src="images/icons/patreon.png" alt="Patreon" />
-      </a>
-    </div>
+      <form id="inputForm" onsubmit="return false;">
+        <div class="autocomplete">
+          <input
+            type="text"
+            id="inputSearch"
+            placeholder="🔎 AAPL"
+            maxlength="40"
+          />
+        </div>
+      </form>
 
-    <div id="active-filters" class="filter-tags" aria-label="Active filters"></div>
-  </nav>
-
-  <main class="chart-container" id="chart-container" role="main" aria-label="Financial data visualization">
-  </main>
-
-  <footer class="footer">
-    <div class="data-info" id="data-info" aria-live="polite">
-      <div class="info-item">
-        <span class="info-label">Items:</span>
-        <span class="info-value" id="items-count">-</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">Total Cap:</span>
-        <span class="info-value" id="total-cap">-</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">Last Update:</span>
-        <span class="info-value" id="last-update">-</span>
-      </div>
-    </div>
-    
-    <div class="footer-links">
+      <select id="inputDataType">
+        <option value="marketcap" selected="selected">marketcap</option>
+        <option value="value">value</option>
+        <option value="trades">trades</option>
+        <option value="nestedItems">listed items</option>
+      </select>
+      <input
+        type="date"
+        id="inputDate"
+        name="date"
+        pattern="\d{4}-\d{2}-\d{2}"
+        value="2025-08-01"
+        min="2011-12-19"
+        max="2025-08-01"
+      />
+    </header>
+    <div id="chart"></div>
+    <div id="loading">rendering, please wait...</div>
+    <ul class="menu">
+      <li>
+        <a class="menuItem" target="_blank" rel="noopener" href="https://x.com/finmaporg">
+          <img src="images/icons/x.png"  />
+        </a>
+        <a class="menuItem" target="_blank" rel="noopener" href="https://www.youtube.com/@finmaporg">
+          <img src="images/icons/youtube.png"  />
+        </a>
+        <a class="menuItem" target="_blank" rel="noopener" href="https://github.com/finmap-org/finmap-org">
+          <img src="images/icons/github.png"  />
+        </a>
+        <a class="menuItem" target="_blank" rel="noopener" href="#">
+          <img src="images/icons/discord.png"  />
+        </a>
+        <a class="menuItem" target="_blank" rel="noopener" href="https://boosty.to/finmap/donate">
+          <img src="images/icons/boosty.png"  />
+        </a>
+        <a class="menuItem" target="_blank" rel="noopener" href="https://www.patreon.com/finmap">
+          <img src="images/icons/patreon.png"  />
+        </a>
+      </li>
+      <li>
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="chartType = 'treemap'; refreshChart(); return false;">TREEMAP</a>|
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="chartType = 'histogram'; refreshChart(); return false;">HISTOGRAM</a>
+      </li>
+      <li>
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="exchangeSwitcher('nasdaq');">NASDAQ</a>|
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="exchangeSwitcher('nyse');">NYSE</a>|
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="exchangeSwitcher('amex');">AMEX</a>|
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="exchangeSwitcher('us-all');">US ALL</a>
+      </li>
+      <li>
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="exchangeSwitcher('lse');">LONDON STOCK EXCHANGE</a>
+      </li>
+      <li>
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="exchangeSwitcher('bist');">TURKISH STOCK MARKET</a>
+      </li>
+      <li>
+        <a class="menuItem" target="_self" rel="noopener"
+          onclick="exchangeSwitcher('moex');">MOSCOW EXCHANGE</a>
+      </li>
+      <li>
+        <a class="menuItem" target="_self" rel="noopener"
+          href="/tcg">COLLECTIBLE CARDS</a>
+      </li>
+      <li>
+        <a class="menuItem" target="_blank" rel="noopener" href="https://github.com/finmap-org/finmap-org/wiki">F.A.Q.</a>|
+        <a class="menuItem" target="_blank" rel="noopener" href="https://github.com/finmap-org/finmap-org/issues">SUPPORT</a>|
+        <a class="menuItem" target="_blank" rel="noopener" href="mailto:contact@finmap.org">MAIL</a>
+      </li>
+    </ul>
+    <button class="hamburger">
+      <i class="menuIcon material-icons">menu</i>
+      <i class="closeIcon material-icons">close</i>
+    </button>
+    <footer>
       <a href="https://www.patreon.com/finmap" target="_blank" rel="noopener">
-        <img src="images/icons/patreon.png" alt="" /> Patreon
+        <img src="images/icons/patreon.png" height="14px" /> Patreon
       </a>
-      <button class="btn" id="currency-toggle">USD</button>
-      <button class="btn" id="lang-toggle">ENG</button>
-      <span>FinMap.org</span>
-    </div>
-  </footer>
+      <a id="share">
+        <img src="images/icons/share.png" height="14px" /> Share</a>
+      <a id="install" hidden>✓ Install</a>
+      <a id="currencyToggle" onclick="currencyToggle(); if (nativeCurrency !== 'USD') refreshChart(); return false;">USD</a>
+      <a id="langToggle">ENG</a>
+    </footer>
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script type="module" src="main.js"></script>
-</body>
+    <script type="module" src="main.js"></script>
+  </body>
 </html>
