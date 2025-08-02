@@ -1,156 +1,410 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>finmap.org</title>
-    <base href="https://finmap.org/" />
-    <meta charset="UTF-8" />
-    <meta
-      name="description"
-      content="Global stock market visualisation tool and your personal news feed reader. London Stock Exchange, NASDAQ, NYSE, American Exchange, Moscow Exchange, Borsa Istanbul. Market Capitalization, Listings, Value. Treemap and Histogram"
-    />
-    <meta name="theme-color" content="#414554" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <meta name="apple-mobile-web-app-title" content="finmap.org" />
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinMap - Interactive Financial Market Visualization</title>
+  <meta name="description" content="Interactive treemap and histogram visualization of financial markets with real-time data">
+  <meta name="theme-color" content="#414554">
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="images/icons/favicon.png">
+  <link rel="apple-touch-icon" href="images/icons/ios/180.png">
+  
+  <style>
+    :root {
+      --bg-color: rgb(65, 69, 84);
+      --text-color: white;
+      --header-height: 45px;
+      --footer-height: 25px;
+      --positive-color: #00ff00;
+      --negative-color: #ff0000;
+      --neutral-color: #888888;
+    }
 
-    <link rel="manifest" href="manifest.json" />
-    <link rel="stylesheet" type="text/css" href="styles/style.css" />
-    <link rel="icon" href="images/icons/favicon.png" type="image/png" />
-    <link rel="apple-touch-icon" href="images/icons/ios/152.png" />
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    <script src="scripts/plotly-3.0.1.min.js"></script>
-    <script src="scripts/currency.js"></script>
-    <script src="scripts/histogram.js"></script>
-    <script src="scripts/overlay.js"></script>
-    <script src="scripts/treemap.js"></script>
-  </head>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      height: 100vh;
+      overflow: hidden;
+    }
 
-  <body>
-    <header>
-      <img id="logo" src="" height="30px" />
-      <input type="file" id="inputFile" accept=".csv,.txt" hidden />
-      <label for="inputFile" id="inputFileLabel">
-        <img
-          src="images/icons/filter.png"
-          title="Apply filter"
-          style="height: 31px; margin-top: 5px"
-        />
-      </label>
-      <a id="linkEraseFilter" onclick="localStorage.removeItem('filterCsv'); refreshChart();" hidden>
-        <img
-          src="images/icons/erasefilter.png"
-          title="Erase filter"
-          style="height: 31px; margin-top: 5px"
-        />
-      </a>
-      <form id="inputForm" onsubmit="return false;">
-        <div class="autocomplete">
-          <input
-            type="text"
-            id="inputSearch"
-            placeholder="🔎 AAPL"
-            maxlength="40"
-          />
-        </div>
-      </form>
+    .header {
+      height: var(--header-height);
+      background-color: var(--bg-color);
+      border-bottom: 1px solid #555;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+    }
 
-      <select id="inputDataType">
-        <option value="marketcap" selected="selected">marketcap</option>
-        <option value="value">value</option>
-        <option value="trades">trades</option>
-        <option value="nestedItems">listed items</option>
-      </select>
-      <input
-        type="date"
-        id="inputDate"
-        name="date"
-        pattern="\d{4}-\d{2}-\d{2}"
-        value="2023-12-08"
-        min="2011-12-19"
-        max="2024-03-04"
-      />
-    </header>
-    <div id="chart"></div>
-    <div id="loading">rendering, please wait...</div>
-    <ul class="menu">
-      <li>
-        <a class="menuItem" target="_blank" rel="noopener" href="https://x.com/finmaporg">
-          <img src="images/icons/x.png"  />
-        </a>
-        <a class="menuItem" target="_blank" rel="noopener" href="https://www.youtube.com/@finmaporg">
-          <img src="images/icons/youtube.png"  />
-        </a>
-        <a class="menuItem" target="_blank" rel="noopener" href="https://github.com/finmap-org/finmap-org">
-          <img src="images/icons/github.png"  />
-        </a>
-        <a class="menuItem" target="_blank" rel="noopener" href="#">
-          <img src="images/icons/discord.png"  />
-        </a>
-        <a class="menuItem" target="_blank" rel="noopener" href="https://boosty.to/finmap/donate">
-          <img src="images/icons/boosty.png"  />
-        </a>
-        <a class="menuItem" target="_blank" rel="noopener" href="https://www.patreon.com/finmap">
-          <img src="images/icons/patreon.png"  />
-        </a>
-      </li>
-      </li>
-      <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="chartType = 'treemap'; refreshChart(); return false;">TREEMAP</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="chartType = 'histogram'; refreshChart(); return false;">HISTOGRAM</a>
-      </li>
-      <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('nasdaq');">NASDAQ</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('nyse');">NYSE</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('amex');">AMEX</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('us-all');">US ALL</a>
-      </li>
-      <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('lse');">LONDON STOCK EXCHANGE</a>
-      </li>
-      <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('bist');">TURKISH STOCK MARKET</a>
-      </li>
-      <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('moex');">MOSCOW EXCHANGE</a>
-      </li>
-      <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          href="/tcg">COLLECTIBLE CARDS</a>
-      </li>
-      <li>
-        <a class="menuItem" target="_blank" rel="noopener" href="https://github.com/finmap-org/finmap-org/wiki">F.A.Q.</a>|
-        <a class="menuItem" target="_blank" rel="noopener" href="https://github.com/finmap-org/finmap-org/issues">SUPPORT</a>|
-        <a class="menuItem" target="_blank" rel="noopener" href="mailto:contact@finmap.org">MAIL</a>
-      </li>
-    </ul>
-    <button class="hamburger">
-      <i class="menuIcon material-icons">menu</i>
-      <i class="closeIcon material-icons">close</i>
-    </button>
-    <footer>
-      <a href="https://www.patreon.com/finmap" target="_blank" rel="noopener">
-        <img src="images/icons/patreon.png" height="14px" /> Patreon
-      </a>
-      <a id="share">
-        <img src="images/icons/share.png" height="14px" /> Share</a>
-      <a id="install" hidden>✓ Install</a>
-      <a id="currencyToggle" onclick="currencyToggle(); if (nativeCurrency !== 'USD') refreshChart(); return false;">USD</a>
-      <a id="langToggle">ENG</a>
-    </footer>
+    .header::-webkit-scrollbar {
+      height: 4px;
+    }
 
-    <script src="scripts/main.js"></script>
-    <script src="scripts/menu.js"></script>
-    <script src="scripts/install.js"></script>
-    <script src="scripts/share.js"></script>
-  </body>
+    .header::-webkit-scrollbar-track {
+      background: #333;
+    }
+
+    .header::-webkit-scrollbar-thumb {
+      background: #666;
+      border-radius: 2px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      min-width: max-content;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .control-group label {
+      font-size: 12px;
+      color: #ccc;
+    }
+
+    .control-group select,
+    .control-group input {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .control-group select:focus,
+    .control-group input:focus {
+      outline: none;
+      border-color: #777;
+    }
+
+    .search-container {
+      position: relative;
+    }
+
+    #search-input {
+      width: 200px;
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .btn {
+      background: #444;
+      color: white;
+      border: 1px solid #666;
+      border-radius: 3px;
+      padding: 4px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: #555;
+    }
+
+    .btn:active {
+      background: #333;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .chart-container {
+      height: calc(100vh - var(--header-height) - var(--footer-height));
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .footer {
+      height: var(--footer-height);
+      background-color: var(--bg-color);
+      border-top: 1px solid #555;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-size: 11px;
+      color: #ccc;
+    }
+
+    .data-info {
+      display: flex;
+      gap: 20px;
+    }
+
+    .info-grid {
+      display: flex;
+      gap: 20px;
+    }
+
+    .info-item {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .info-label {
+      color: #aaa;
+    }
+
+    .info-value {
+      font-weight: bold;
+    }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: var(--header-height);
+      left: 0;
+      right: 0;
+      background: var(--bg-color);
+      border-bottom: 1px solid #555;
+      padding: 20px;
+      z-index: 1000;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+    }
+
+    .mobile-menu.active {
+      display: block;
+      transform: translateY(0);
+    }
+
+    .mobile-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .mobile-control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .mobile-control-group label {
+      font-size: 12px;
+      color: #ccc;
+    }
+
+    .mobile-control-group select,
+    .mobile-control-group input {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 3px;
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    .error-container {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 0, 0, 0.9);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      z-index: 2000;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    #install-button {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        display: none;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .mobile-menu {
+        display: block;
+      }
+
+      .action-buttons {
+        margin-left: 0;
+      }
+
+      .data-info,
+      .info-grid {
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .footer {
+        font-size: 10px;
+        padding: 0 5px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .mobile-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .btn {
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+    
+    <div class="controls">
+      <div class="control-group">
+        <label for="exchange-select">Exchange:</label>
+        <select id="exchange-select" aria-label="Select exchange">
+          <option value="nasdaq">NASDAQ</option>
+          <option value="nyse">NYSE</option>
+          <option value="amex">AMEX</option>
+          <option value="us-all">US All</option>
+          <option value="moex">MOEX</option>
+          <option value="lse">LSE</option>
+          <option value="bist">BIST</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="chart-type-select">Chart:</label>
+        <select id="chart-type-select" aria-label="Select chart type">
+          <option value="treemap">Treemap</option>
+          <option value="histogram">Histogram</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="data-type-select">Data:</label>
+        <select id="data-type-select" aria-label="Select data type">
+          <option value="marketcap">Market Cap</option>
+          <option value="value">Value</option>
+          <option value="trades">Trades</option>
+          <option value="nestedItems">Items</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="date-input">Date:</label>
+        <input type="date" id="date-input" aria-label="Select date">
+      </div>
+
+      <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search..." aria-label="Search securities">
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn" id="install-button" aria-label="Install app">Install</button>
+      <button class="btn" id="share-button" aria-label="Share">Share</button>
+    </div>
+  </header>
+
+  <nav class="mobile-menu">
+    <div class="mobile-controls">
+      <div class="mobile-control-group">
+        <label for="mobile-exchange-select">Exchange:</label>
+        <select id="mobile-exchange-select" aria-label="Select exchange">
+          <option value="nasdaq">NASDAQ</option>
+          <option value="nyse">NYSE</option>
+          <option value="amex">AMEX</option>
+          <option value="us-all">US All</option>
+          <option value="moex">MOEX</option>
+          <option value="lse">LSE</option>
+          <option value="bist">BIST</option>
+        </select>
+      </div>
+
+      <div class="mobile-control-group">
+        <label for="mobile-chart-type-select">Chart:</label>
+        <select id="mobile-chart-type-select" aria-label="Select chart type">
+          <option value="treemap">Treemap</option>
+          <option value="histogram">Histogram</option>
+        </select>
+      </div>
+
+      <div class="mobile-control-group">
+        <label for="mobile-data-type-select">Data:</label>
+        <select id="mobile-data-type-select" aria-label="Select data type">
+          <option value="marketcap">Market Cap</option>
+          <option value="value">Value</option>
+          <option value="trades">Trades</option>
+          <option value="nestedItems">Items</option>
+        </select>
+      </div>
+
+      <div class="mobile-control-group">
+        <label for="mobile-date-input">Date:</label>
+        <input type="date" id="mobile-date-input" aria-label="Select date">
+      </div>
+    </div>
+  </nav>
+
+  <main class="chart-container" id="chart-container" role="main" aria-label="Financial data visualization">
+  </main>
+
+  <footer class="footer">
+    <div class="data-info" id="data-info" aria-live="polite">
+    </div>
+    <div>
+      <span>FinMap.org</span>
+    </div>
+  </footer>
+
+  <div class="error-container" id="error-container" role="alert" aria-live="assertive">
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script type="module" src="main.ts"></script>
+</body>
 </html>
