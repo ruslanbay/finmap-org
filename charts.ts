@@ -26,7 +26,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     this.container.innerHTML = '';
     this.canvas = document.createElement('canvas');
     this.canvas.style.width = '100%';
-    this.canvas.style.height = '100%';
+    this.canvas.style.height = 'calc(100vh - 70px)';
     this.canvas.style.display = 'block';
     
     const rect = this.container.getBoundingClientRect();
@@ -104,32 +104,29 @@ export class D3TreemapRenderer implements ChartRenderer {
   }
 
   private filterData(): MarketData[] {
-    const config = getConfig();
-    return this.currentData.filter(item => {
-      if (config.chartType === 'treemap') {
-        return item.type === 'stock' || item.type === 'etf';
-      }
-      return true;
-    });
+    return this.currentData;
   }
 
   private prepareHierarchyData(data: MarketData[]): TreemapNode {
-    const sectors = d3.group(data, (d: MarketData) => d.sector || 'Other');
+    const securities = data.filter(item => item.type === 'stock' || item.type === 'etf');
+    
+    const sectors = d3.group(securities, (d: MarketData) => d.sector || 'Other');
     
     const children: TreemapNode[] = [];
-    sectors.forEach((securities: MarketData[], sector: string) => {
-      const sectorChildren = securities.map((security: MarketData) => ({
+    sectors.forEach((sectorSecurities: MarketData[], sectorName: string) => {
+      const sectorChildren = sectorSecurities.map((security: MarketData) => ({
         ticker: security.ticker,
         name: security.nameEng,
         value: this.getValueForDataType(security),
         change: security.priceChangePct || 0,
         color: getColorForChange(security.priceChangePct || 0),
+        data: security,
       }));
       
       children.push({
-        ticker: sector,
-        name: sector,
-        value: d3.sum(sectorChildren, (d: TreemapNode) => d.value),
+        ticker: sectorName,
+        name: sectorName,
+        value: 0,
         change: d3.mean(sectorChildren, (d: TreemapNode) => d.change) || 0,
         color: '#666',
         children: sectorChildren,
@@ -139,7 +136,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     return {
       ticker: 'root',
       name: 'Market',
-      value: d3.sum(children, (d: TreemapNode) => d.value),
+      value: 0,
       change: 0,
       color: '#666',
       children,
@@ -193,7 +190,6 @@ export class D3TreemapRenderer implements ChartRenderer {
   }
 
   private handleClick(event: MouseEvent): void {
-    // Implement drill-down functionality
   }
 
   private hideTooltip(): void {

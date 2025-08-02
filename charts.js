@@ -20,7 +20,7 @@ export class D3TreemapRenderer {
         this.container.innerHTML = '';
         this.canvas = document.createElement('canvas');
         this.canvas.style.width = '100%';
-        this.canvas.style.height = '100%';
+        this.canvas.style.height = 'calc(100vh - 70px)';
         this.canvas.style.display = 'block';
         const rect = this.container.getBoundingClientRect();
         this.canvas.width = rect.width * window.devicePixelRatio;
@@ -83,29 +83,25 @@ export class D3TreemapRenderer {
         });
     }
     filterData() {
-        const config = getConfig();
-        return this.currentData.filter(item => {
-            if (config.chartType === 'treemap') {
-                return item.type === 'stock' || item.type === 'etf';
-            }
-            return true;
-        });
+        return this.currentData;
     }
     prepareHierarchyData(data) {
-        const sectors = d3.group(data, (d) => d.sector || 'Other');
+        const securities = data.filter(item => item.type === 'stock' || item.type === 'etf');
+        const sectors = d3.group(securities, (d) => d.sector || 'Other');
         const children = [];
-        sectors.forEach((securities, sector) => {
-            const sectorChildren = securities.map((security) => ({
+        sectors.forEach((sectorSecurities, sectorName) => {
+            const sectorChildren = sectorSecurities.map((security) => ({
                 ticker: security.ticker,
                 name: security.nameEng,
                 value: this.getValueForDataType(security),
                 change: security.priceChangePct || 0,
                 color: getColorForChange(security.priceChangePct || 0),
+                data: security,
             }));
             children.push({
-                ticker: sector,
-                name: sector,
-                value: d3.sum(sectorChildren, (d) => d.value),
+                ticker: sectorName,
+                name: sectorName,
+                value: 0,
                 change: d3.mean(sectorChildren, (d) => d.change) || 0,
                 color: '#666',
                 children: sectorChildren,
@@ -114,7 +110,7 @@ export class D3TreemapRenderer {
         return {
             ticker: 'root',
             name: 'Market',
-            value: d3.sum(children, (d) => d.value),
+            value: 0,
             change: 0,
             color: '#666',
             children,
@@ -161,7 +157,6 @@ export class D3TreemapRenderer {
     `;
     }
     handleClick(event) {
-        // Implement drill-down functionality
     }
     hideTooltip() {
         if (this.tooltip) {
