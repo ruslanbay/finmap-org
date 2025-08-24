@@ -32,7 +32,7 @@ async function getNews(clickedTreemapItem, date) {
   }
   const clickedLabel = clickedTreemapItem[6];
   const newsQuery = companyName.split(" ").slice(0, 2).join(" ");
-  const url = `https://news.cloudflare-cpr0d.workers.dev/${currentLanguage}:${clickedLabel}.xml?q=${newsQuery}+before:${date}&${newsLang}&_=${new Date().toISOString().split(":")[0]}`;
+  const url = `https://news.finmap.org/${currentLanguage}:${clickedLabel}.xml?q=${newsQuery}+before:${date}&${newsLang}&_=${new Date().toISOString().split(":")[0]}`;
   let html = "";
   try {
     const response = await fetch(url);
