@@ -129,7 +129,7 @@ export class D3TreemapRenderer {
                 .sort((a, b) => (b.value || 0) - (a.value || 0));
         const treemap = d3.treemap()
             .size([width, height])
-            .paddingTop((d) => d.children ? 32 : 2)
+            .paddingTop((d) => d.children ? 30 : 2)
             .paddingInner(1)
             .paddingOuter(2)
             .paddingRight(2)
@@ -138,6 +138,8 @@ export class D3TreemapRenderer {
             .round(true);
         treemap(currentHierarchy);
         this.nodes = currentHierarchy.descendants();
+        // Adjust child node positions to make room for sector headers
+        this.adjustNodesForSectorHeaders();
         this.context.clearRect(0, 0, width, height);
         this.updatePathbar();
         this.nodes.forEach((node) => {
@@ -148,6 +150,26 @@ export class D3TreemapRenderer {
             if (nodeWidth < 2 || nodeHeight < 2)
                 return;
             this.renderNode(node, nodeWidth, nodeHeight);
+        });
+    }
+    adjustNodesForSectorHeaders() {
+        const sectorHeaderHeight = 30;
+        this.nodes.forEach((node) => {
+            if (node.children && node.children.length > 0) {
+                // This is a sector node - adjust all its children
+                const sectorTop = node.y0;
+                const sectorHeight = node.y1 - node.y0;
+                const availableHeight = sectorHeight - sectorHeaderHeight;
+                if (availableHeight > 0) {
+                    node.children.forEach((child) => {
+                        // Move child down by header height
+                        const childHeight = child.y1 - child.y0;
+                        const newChildHeight = (childHeight / sectorHeight) * availableHeight;
+                        child.y0 = sectorTop + sectorHeaderHeight + ((child.y0 - sectorTop) / sectorHeight) * availableHeight;
+                        child.y1 = child.y0 + newChildHeight;
+                    });
+                }
+            }
         });
     }
     renderNode(node, width, height) {
@@ -402,7 +424,13 @@ export class D3TreemapRenderer {
             if (node && node.data) {
                 const isLeaf = !node.children || node.children.length === 0;
                 if (isLeaf && node.data.data) {
+                    // Show tooltip for leaf nodes (individual stocks)
                     this.showStockTooltip(node.data.data, event);
+                    this.canvas.style.cursor = 'pointer';
+                }
+                else if (node.children && node.children.length > 0) {
+                    // Show tooltip for sector nodes
+                    this.showSectorTooltip(node, event);
                     this.canvas.style.cursor = 'pointer';
                 }
                 else {
@@ -472,6 +500,35 @@ export class D3TreemapRenderer {
     `;
         this.positionTooltip(event);
         this.tooltip.style.opacity = '1';
+    }
+    showSectorTooltip(node, event) {
+        if (!this.tooltip)
+            return;
+        const sectorName = node.data.name || 'Unknown Sector';
+        const sectorChange = this.calculateSectorChange(node);
+        const stockCount = this.countLeafNodes(node);
+        const totalValue = node.value || 0;
+        const config = getConfig();
+        const currencySign = this.getCurrencySign(config.currency);
+        this.tooltip.innerHTML = `
+      <div><strong>${sectorName}</strong></div>
+      <div>Sector Change: ${formatPercent(sectorChange)}</div>
+      <div>Companies: ${stockCount}</div>
+      <div>Total Value: ${currencySign}${formatNumber(totalValue)}M</div>
+      <div><em>Click to drill down</em></div>
+    `;
+        this.positionTooltip(event);
+        this.tooltip.style.opacity = '1';
+    }
+    countLeafNodes(node) {
+        if (!node.children || node.children.length === 0) {
+            return 1;
+        }
+        let count = 0;
+        node.children.forEach((child) => {
+            count += this.countLeafNodes(child);
+        });
+        return count;
     }
     positionTooltip(event) {
         if (!this.tooltip)

@@ -148,7 +148,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     const treemap = d3.treemap()
       .size([width, height])
-      .paddingTop((d: any) => d.children ? 32 : 2)
+      .paddingTop((d: any) => d.children ? 30 : 2)
       .paddingInner(1)
       .paddingOuter(2)
       .paddingRight(2)
@@ -158,6 +158,9 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     treemap(currentHierarchy);
     this.nodes = currentHierarchy.descendants();
+    
+    // Adjust child node positions to make room for sector headers
+    this.adjustNodesForSectorHeaders();
     
     this.context.clearRect(0, 0, width, height);
     this.updatePathbar();
@@ -171,6 +174,30 @@ export class D3TreemapRenderer implements ChartRenderer {
       if (nodeWidth < 2 || nodeHeight < 2) return;
       
       this.renderNode(node, nodeWidth, nodeHeight);
+    });
+  }
+
+  private adjustNodesForSectorHeaders(): void {
+    const sectorHeaderHeight = 30;
+    
+    this.nodes.forEach((node: any) => {
+      if (node.children && node.children.length > 0) {
+        // This is a sector node - adjust all its children
+        const sectorTop = node.y0;
+        const sectorHeight = node.y1 - node.y0;
+        const availableHeight = sectorHeight - sectorHeaderHeight;
+        
+        if (availableHeight > 0) {
+          node.children.forEach((child: any) => {
+            // Move child down by header height
+            const childHeight = child.y1 - child.y0;
+            const newChildHeight = (childHeight / sectorHeight) * availableHeight;
+            
+            child.y0 = sectorTop + sectorHeaderHeight + ((child.y0 - sectorTop) / sectorHeight) * availableHeight;
+            child.y1 = child.y0 + newChildHeight;
+          });
+        }
+      }
     });
   }
 
@@ -459,7 +486,12 @@ export class D3TreemapRenderer implements ChartRenderer {
       if (node && node.data) {
         const isLeaf = !node.children || node.children.length === 0;
         if (isLeaf && node.data.data) {
+          // Show tooltip for leaf nodes (individual stocks)
           this.showStockTooltip(node.data.data as MarketData, event);
+          this.canvas!.style.cursor = 'pointer';
+        } else if (node.children && node.children.length > 0) {
+          // Show tooltip for sector nodes
+          this.showSectorTooltip(node, event);
           this.canvas!.style.cursor = 'pointer';
         } else {
           this.canvas!.style.cursor = 'pointer';
@@ -535,6 +567,41 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     this.positionTooltip(event);
     this.tooltip.style.opacity = '1';
+  }
+
+  private showSectorTooltip(node: any, event: MouseEvent): void {
+    if (!this.tooltip) return;
+    
+    const sectorName = node.data.name || 'Unknown Sector';
+    const sectorChange = this.calculateSectorChange(node);
+    const stockCount = this.countLeafNodes(node);
+    const totalValue = node.value || 0;
+    
+    const config = getConfig();
+    const currencySign = this.getCurrencySign(config.currency);
+    
+    this.tooltip.innerHTML = `
+      <div><strong>${sectorName}</strong></div>
+      <div>Sector Change: ${formatPercent(sectorChange)}</div>
+      <div>Companies: ${stockCount}</div>
+      <div>Total Value: ${currencySign}${formatNumber(totalValue)}M</div>
+      <div><em>Click to drill down</em></div>
+    `;
+    
+    this.positionTooltip(event);
+    this.tooltip.style.opacity = '1';
+  }
+
+  private countLeafNodes(node: any): number {
+    if (!node.children || node.children.length === 0) {
+      return 1;
+    }
+    
+    let count = 0;
+    node.children.forEach((child: any) => {
+      count += this.countLeafNodes(child);
+    });
+    return count;
   }
 
   private positionTooltip(event: MouseEvent): void {
