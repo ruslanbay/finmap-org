@@ -152,7 +152,10 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     const rect = this.container.getBoundingClientRect();
     const width = rect.width;
-    const height = rect.height - 24;
+    // Account for both pathbar height (24px) and footer height (25px)
+    const pathbarHeight = 24;
+    const footerHeight = 25;
+    const height = rect.height - pathbarHeight - footerHeight;
     
     const currentHierarchy = this.currentRoot === this.rootNode 
       ? this.hierarchy 
@@ -297,7 +300,7 @@ export class D3TreemapRenderer implements ChartRenderer {
       // Market cap (same size)
       if (height > baseFontSize * 9) {
         this.context.font = `${baseFontSize}px "Open Sans", verdana, arial, sans-serif`;
-        const capText = `Cap: ${this.formatCurrency(marketCap)}`;
+        const capText = `Cap: ${this.formatCurrency(marketCap)}M`;
         this.drawWrappedText(capText, textX, currentY, maxWidth, lineHeight, 1);
       }
     } else {
@@ -579,6 +582,16 @@ export class D3TreemapRenderer implements ChartRenderer {
     const currencySign = this.getCurrencySign(config.currency);
     const isPortfolio = localStorage.getItem('finmap-portfolio-mode') === 'true';
     
+    // Get the node to access its properties
+    const node = this.getNodeAtPosition(event);
+    const change = data?.priceChangePct || 0;
+    const nodeColor = getColorForChange(change);
+    
+    // Calculate percentages
+    const percentParent = node && node.parent ? (node.value || 0) / (node.parent.value || 1) * 100 : 100;
+    const percentRoot = node && this.rootNode ? (node.value || 0) / (this.rootNode.value || 1) * 100 : 100;
+    const sectorItemCount = node && node.parent ? this.countLeafNodes(node.parent) : 1;
+    
     let portfolioInfo = '';
     if (isPortfolio) {
       const storedFilters = localStorage.getItem('finmap-filters');
@@ -593,17 +606,24 @@ export class D3TreemapRenderer implements ChartRenderer {
       }
     }
     
+    // Set tooltip background to match tile color
+    this.tooltip!.style.background = nodeColor;
+    this.tooltip!.style.color = '#ffffff';
+    this.tooltip!.style.border = `1px solid ${nodeColor}`;
+    
     this.tooltip.innerHTML = `
       <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
       <div style="margin-bottom: 2px;">${data.nameEng}</div>
-      <div style="margin-bottom: 2px;">Price: ${currencySign}${data.priceLastSale.toFixed(2)}</div>
-      <div style="margin-bottom: 2px;">Change: ${formatPercent(data.priceChangePct || 0)}</div>
-      <div style="margin-bottom: 2px;">Market Cap: ${currencySign}${formatNumber(data.marketCap)}M</div>
+      <div style="margin-bottom: 2px;">${currencySign}${data.priceLastSale.toFixed(2)} (${formatPercent(data.priceChangePct || 0)})</div>
+      <div style="margin-bottom: 2px;">MarketCap: ${currencySign}${formatNumber(data.marketCap)}M</div>
       <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume)}</div>
       <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value)}M</div>
       <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades)}</div>
       <div style="margin-bottom: 2px;">Exchange: ${data.exchange}</div>
       <div style="margin-bottom: 2px;">Industry: ${data.industry}</div>
+      <div style="margin-bottom: 2px;">% of Sector: ${percentParent.toFixed(2)}%</div>
+      <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
+      <div style="margin-bottom: 2px;">Items per Sector: ${sectorItemCount}</div>
       ${portfolioInfo}
     `;
     
@@ -622,11 +642,25 @@ export class D3TreemapRenderer implements ChartRenderer {
     const config = getConfig();
     const currencySign = this.getCurrencySign(config.currency);
     
+    // Calculate percentages
+    const percentParent = node && node.parent ? (node.value || 0) / (node.parent.value || 1) * 100 : 100;
+    const percentRoot = node && this.rootNode ? (node.value || 0) / (this.rootNode.value || 1) * 100 : 100;
+    
+    // Get sector color
+    const sectorColor = getColorForChange(sectorChange);
+    
+    // Set tooltip background to match tile color
+    this.tooltip!.style.background = sectorColor;
+    this.tooltip!.style.color = '#ffffff';
+    this.tooltip!.style.border = `1px solid ${sectorColor}`;
+    
     this.tooltip.innerHTML = `
       <div style="margin-bottom: 4px;"><b>${sectorName}</b></div>
       <div style="margin-bottom: 2px;">Sector Change: ${formatPercent(sectorChange)}</div>
       <div style="margin-bottom: 2px;">Companies: ${stockCount}</div>
       <div style="margin-bottom: 2px;">Total Value: ${currencySign}${formatNumber(totalValue)}M</div>
+      <div style="margin-bottom: 2px;">% of Parent: ${percentParent.toFixed(2)}%</div>
+      <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
       <div style="margin-bottom: 2px; font-style: italic; opacity: 0.8;">Click to drill down</div>
     `;
     
@@ -668,6 +702,10 @@ export class D3TreemapRenderer implements ChartRenderer {
   private hideTooltip(): void {
     if (this.tooltip) {
       this.tooltip.style.opacity = '0';
+      // Reset tooltip styling to defaults
+      this.tooltip.style.background = 'white';
+      this.tooltip.style.color = 'rgb(68, 68, 68)';
+      this.tooltip.style.border = '1px solid rgb(214, 214, 214)';
     }
   }
 
