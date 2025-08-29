@@ -156,17 +156,21 @@ export class D3TreemapRenderer {
         const sectorHeaderHeight = 30;
         this.nodes.forEach((node) => {
             if (node.children && node.children.length > 0) {
-                // This is a sector node - adjust all its children
+                // This is a sector node - adjust only its leaf children (not sector children)
                 const sectorTop = node.y0;
                 const sectorHeight = node.y1 - node.y0;
                 const availableHeight = sectorHeight - sectorHeaderHeight;
                 if (availableHeight > 0) {
                     node.children.forEach((child) => {
-                        // Move child down by header height
-                        const childHeight = child.y1 - child.y0;
-                        const newChildHeight = (childHeight / sectorHeight) * availableHeight;
-                        child.y0 = sectorTop + sectorHeaderHeight + ((child.y0 - sectorTop) / sectorHeight) * availableHeight;
-                        child.y1 = child.y0 + newChildHeight;
+                        // Only adjust leaf nodes (individual stocks), not sector nodes
+                        const isLeafChild = !child.children || child.children.length === 0;
+                        if (isLeafChild) {
+                            // Move leaf child down by header height
+                            const childHeight = child.y1 - child.y0;
+                            const newChildHeight = (childHeight / sectorHeight) * availableHeight;
+                            child.y0 = sectorTop + sectorHeaderHeight + ((child.y0 - sectorTop) / sectorHeight) * availableHeight;
+                            child.y1 = child.y0 + newChildHeight;
+                        }
                     });
                 }
             }
@@ -456,11 +460,29 @@ export class D3TreemapRenderer {
         const scaleY = this.canvas.height / rect.height;
         const x = (event.clientX - rect.left) * scaleX / window.devicePixelRatio;
         const y = (event.clientY - rect.top) * scaleY / window.devicePixelRatio;
-        return this.nodes.find(node => {
+        // Find the deepest node at this position
+        let deepestNode = null;
+        let maxDepth = -1;
+        // Check all nodes, not just visible ones
+        const checkNode = (node, depth) => {
             if (!node.parent)
-                return false;
-            return node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1;
-        });
+                return;
+            if (node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1) {
+                if (depth > maxDepth) {
+                    maxDepth = depth;
+                    deepestNode = node;
+                }
+            }
+            // Recursively check children
+            if (node.children) {
+                node.children.forEach((child) => checkNode(child, depth + 1));
+            }
+        };
+        // Start from the current root and check all descendants
+        if (this.currentRoot && this.currentRoot.children) {
+            this.currentRoot.children.forEach((child) => checkNode(child, 0));
+        }
+        return deepestNode;
     }
     drillTo(node) {
         this.currentRoot = node;
