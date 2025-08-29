@@ -148,7 +148,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     const treemap = d3.treemap()
       .size([width, height])
-      .paddingTop((d: any) => d.children ? 30 : 2)
+      .paddingTop((d: any) => d.children ? 15 : 2)
       .paddingInner(1)
       .paddingOuter(2)
       .paddingRight(2)
@@ -178,7 +178,7 @@ export class D3TreemapRenderer implements ChartRenderer {
   }
 
   private adjustNodesForSectorHeaders(): void {
-    const sectorHeaderHeight = 30;
+    const sectorHeaderHeight = 15;
     
     this.nodes.forEach((node: any) => {
       if (node.children && node.children.length > 0) {
@@ -228,7 +228,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     if (!this.context) return;
     
     // Skip text if too small
-    if (width < 80 || height < 60) {
+    if (width < 40 || height < 20) {
       return;
     }
 
@@ -245,6 +245,12 @@ export class D3TreemapRenderer implements ChartRenderer {
     const maxHeight = height - (padding * 2);
 
     if (isLeaf) {
+      const nodeArea = width * height;
+      const baseFontSize = Math.max(8, Math.min(12, Math.sqrt(nodeArea) / 15));
+      const tickerFontSize = Math.round(baseFontSize * 1.2);
+      const detailFontSize = Math.round(baseFontSize * 0.8);
+      const smallFontSize = Math.round(baseFontSize * 0.7);
+
       // Company financial information
       const ticker = node.data.ticker || '';
       const name = node.data.data?.nameEng || ticker;
@@ -253,41 +259,56 @@ export class D3TreemapRenderer implements ChartRenderer {
       const marketCap = Number(node.data.data?.marketCap) || 0;
 
       let currentY = textY;
-      const lineHeight = 16;
+      const lineHeight = Math.round(baseFontSize * 1.2);
 
-      // Ticker symbol (bold, larger)
-      this.context.font = 'bold 14px Arial';
+      // Ticker symbol (bold, proportional size)
+      this.context.font = `bold ${tickerFontSize}px Arial`;
       this.drawWrappedText(ticker, textX, currentY, maxWidth, lineHeight, 1);
       currentY += lineHeight + 2;
 
-      // Company name (smaller)
-      if (height > 80) {
-        this.context.font = '11px Arial';
-        const nameLines = this.drawWrappedText(name, textX, currentY, maxWidth, 14, 2);
-        currentY += (nameLines * 14) + 2;
+      // Company name (smaller, show if there's enough space)
+      if (height > baseFontSize * 5) {
+        this.context.font = `${detailFontSize}px Arial`;
+        const nameLines = this.drawWrappedText(name, textX, currentY, maxWidth, Math.round(detailFontSize * 1.2), 2);
+        currentY += (nameLines * Math.round(detailFontSize * 1.2)) + 2;
       }
 
-      // Price and change
-      if (height > 100) {
-        this.context.font = '12px Arial';
+      // Price and change (show if there's enough space)
+      if (height > baseFontSize * 7) {
+        this.context.font = `${detailFontSize}px Arial`;
         const priceText = `${this.formatCurrency(price)}`;
         const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
         this.drawWrappedText(`${priceText} (${changeText})`, textX, currentY, maxWidth, lineHeight, 1);
         currentY += lineHeight + 2;
       }
 
-      // Market cap
-      if (height > 120) {
-        this.context.fillStyle = '#fff';
-        this.context.font = '11px Arial';
+      // Market cap (show if there's enough space)
+      if (height > baseFontSize * 9) {
+        this.context.font = `${smallFontSize}px Arial`;
         const capText = `Cap: ${this.formatCurrency(marketCap)}`;
-        this.drawWrappedText(capText, textX, currentY, maxWidth, 14, 1);
+        this.drawWrappedText(capText, textX, currentY, maxWidth, Math.round(smallFontSize * 1.2), 1);
       }
     } else {
-      // Sector header text
+      // Sector header text with specific styling
       const sectorName = node.data.name || '';
-      this.context.font = 'bold 14px Arial';
-      this.drawWrappedText(sectorName, textX, textY, maxWidth, 18, 1);
+      this.context.font = 'bold 16px Arial, sans-serif';
+      this.context.fillStyle = '#ffffff';
+      this.context.textAlign = 'left';
+      this.context.textBaseline = 'top';
+      
+      // Add text shadow effect for better readability
+      this.context.shadowColor = 'rgba(0, 0, 0, 0.7)';
+      this.context.shadowBlur = 2;
+      this.context.shadowOffsetX = 1;
+      this.context.shadowOffsetY = 1;
+      
+      this.drawWrappedText(sectorName, textX, textY, maxWidth, 20, 1);
+      
+      // Reset shadow
+      this.context.shadowColor = 'transparent';
+      this.context.shadowBlur = 0;
+      this.context.shadowOffsetX = 0;
+      this.context.shadowOffsetY = 0;
     }
 
     this.context.restore();
