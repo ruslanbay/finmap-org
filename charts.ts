@@ -260,20 +260,20 @@ export class D3TreemapRenderer implements ChartRenderer {
       const lineHeight = Math.round(baseFontSize * 1.2);
 
       // Ticker symbol (bold, same size as other text)
-      this.context.font = `bold ${baseFontSize}px Arial`;
+      this.context.font = `bold ${baseFontSize}px "Open Sans", verdana, arial, sans-serif`;
       this.drawWrappedText(ticker, textX, currentY, maxWidth, lineHeight, 1);
       currentY += lineHeight + 2;
 
       // Company name (same size as ticker, not bold)
       if (height > baseFontSize * 5) {
-        this.context.font = `${baseFontSize}px Arial`;
+        this.context.font = `${baseFontSize}px "Open Sans", verdana, arial, sans-serif`;
         const nameLines = this.drawWrappedText(name, textX, currentY, maxWidth, lineHeight, 2);
         currentY += (nameLines * lineHeight) + 2;
       }
 
       // Price and change (same size)
       if (height > baseFontSize * 7) {
-        this.context.font = `${baseFontSize}px Arial`;
+        this.context.font = `${baseFontSize}px "Open Sans", verdana, arial, sans-serif`;
         const priceText = `${this.formatCurrency(price)}`;
         const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
         this.drawWrappedText(`${priceText} (${changeText})`, textX, currentY, maxWidth, lineHeight, 1);
@@ -282,14 +282,14 @@ export class D3TreemapRenderer implements ChartRenderer {
 
       // Market cap (same size)
       if (height > baseFontSize * 9) {
-        this.context.font = `${baseFontSize}px Arial`;
+        this.context.font = `${baseFontSize}px "Open Sans", verdana, arial, sans-serif`;
         const capText = `Cap: ${this.formatCurrency(marketCap)}`;
         this.drawWrappedText(capText, textX, currentY, maxWidth, lineHeight, 1);
       }
     } else {
       // Sector header text with specific styling
       const sectorName = node.data.name || '';
-      this.context.font = 'bold 12px Arial, sans-serif';
+      this.context.font = '12px "Open Sans", verdana, arial, sans-serif';
       this.context.fillStyle = '#ffffff';
       this.context.textAlign = 'left';
       this.context.textBaseline = 'top';
