@@ -619,7 +619,9 @@ export class D3TreemapRenderer implements ChartRenderer {
       <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume)}</div>
       <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value)}M</div>
       <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades)}</div>
+      <div style="margin-bottom: 2px;">Country: ${data.country}</div>
       <div style="margin-bottom: 2px;">Exchange: ${data.exchange}</div>
+      <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom}</div>
       <div style="margin-bottom: 2px;">Industry: ${data.industry}</div>
       <div style="margin-bottom: 2px;">% of Sector: ${percentParent.toFixed(2)}%</div>
       <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
