@@ -36,10 +36,21 @@ export function clamp(value, min, max) {
 }
 export function getColorForChange(change) {
     if (change === null || change === 0)
-        return '#666';
-    const intensity = Math.min(Math.abs(change) / 3, 1);
-    if (change > 0) {
-        return `rgb(${Math.round(76 + intensity * 100)}, ${Math.round(175 + intensity * 80)}, ${Math.round(80 + intensity * 100)})`;
+        return 'rgb(64, 68, 82)';
+    const normalizedChange = Math.max(-3, Math.min(3, change));
+    const t = (normalizedChange + 3) / 6;
+    if (t <= 0.5) {
+        const localT = t * 2;
+        const r = Math.round(236 + (64 - 236) * localT);
+        const g = Math.round(48 + (68 - 48) * localT);
+        const b = Math.round(51 + (82 - 51) * localT);
+        return `rgb(${r}, ${g}, ${b})`;
     }
-    return `rgb(${Math.round(220 + intensity * 35)}, ${Math.round(76 + intensity * 100)}, ${Math.round(76 + intensity * 100)})`;
+    else {
+        const localT = (t - 0.5) * 2;
+        const r = Math.round(64 + (42 - 64) * localT);
+        const g = Math.round(68 + (202 - 68) * localT);
+        const b = Math.round(82 + (85 - 82) * localT);
+        return `rgb(${r}, ${g}, ${b})`;
+    }
 }

@@ -152,15 +152,15 @@ export class D3TreemapRenderer implements ChartRenderer {
     this.nodes.forEach((node: any) => {
       if (!node.parent) return;
       
-      const width = node.x1 - node.x0;
-      const height = node.y1 - node.y0;
+      const nodeWidth = node.x1 - node.x0;
+      const nodeHeight = node.y1 - node.y0;
       
-      if (width < 1 || height < 1) return;
+      if (nodeWidth < 1 || nodeHeight < 1) return;
       
       if (node.children) {
-        this.renderParentNode(node, width, height);
+        this.renderParentNode(node, nodeWidth, nodeHeight);
       } else {
-        this.renderLeafNode(node, width, height);
+        this.renderLeafNode(node, nodeWidth, nodeHeight);
       }
     });
   }
@@ -334,10 +334,10 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     this.canvas.addEventListener('click', (event) => {
       const node = this.getNodeAtPosition(event);
-      if (node) {
-        if (node.children) {
+      if (node && node.data) {
+        if (node.children && node.children.length > 0) {
           this.drillTo(node.data);
-        } else {
+        } else if (node.data.data) {
           this.showCompanyOverlay(node.data.data as MarketData);
         }
       }
@@ -345,27 +345,21 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     this.canvas.addEventListener('mousemove', (event) => {
       const node = this.getNodeAtPosition(event);
-      if (node) {
-        if (node.children) {
-          this.showSectorTooltip(node.data, event);
-        } else {
-          this.showStockTooltip(node.data.data as MarketData, event);
-        }
+      if (node && node.data && !node.children) {
+        this.showStockTooltip(node.data.data as MarketData, event);
+        this.canvas!.style.cursor = 'pointer';
+      } else if (node && node.children) {
+        this.showSectorTooltip(node.data, event);
+        this.canvas!.style.cursor = 'pointer';
       } else {
+        this.canvas!.style.cursor = 'default';
         this.hideTooltip();
       }
     });
     
     this.canvas.addEventListener('mouseleave', () => {
       this.hideTooltip();
-    });
-
-    this.canvas.addEventListener('dblclick', (event) => {
-      if (this.currentRoot && this.currentRoot.parent) {
-        this.drillTo(this.currentRoot.parent);
-      } else if (this.currentRoot !== this.rootNode && this.rootNode) {
-        this.drillTo(this.rootNode);
-      }
+      this.canvas!.style.cursor = 'default';
     });
   }
 
@@ -373,12 +367,16 @@ export class D3TreemapRenderer implements ChartRenderer {
     if (!this.canvas) return null;
     
     const rect = this.canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     
-    return this.nodes.find(node => 
-      node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1
-    );
+    const x = (event.clientX - rect.left) * scaleX / window.devicePixelRatio;
+    const y = (event.clientY - rect.top) * scaleY / window.devicePixelRatio;
+    
+    return this.nodes.find(node => {
+      if (!node.parent) return false;
+      return node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1;
+    });
   }
 
   private drillTo(node: TreemapNode): void {
@@ -390,25 +388,39 @@ export class D3TreemapRenderer implements ChartRenderer {
     if (!this.tooltip) return;
     
     const config = getConfig();
-    const currencySign = this.getCurrencySign(config.currency);
+    const currencySign = config.currency === 'USD' ? '$' : config.currency;
+    const isPortfolio = localStorage.getItem('finmap-portfolio-mode') === 'true';
+    
+    let portfolioInfo = '';
+    if (isPortfolio) {
+      const storedFilters = localStorage.getItem('finmap-filters');
+      if (storedFilters) {
+        const filters = JSON.parse(storedFilters);
+        const tickerIndex = filters.tickers.indexOf(data.ticker);
+        if (tickerIndex >= 0 && filters.amounts[tickerIndex]) {
+          const amount = filters.amounts[tickerIndex];
+          const portfolioValue = data.priceLastSale * amount;
+          portfolioInfo = `<div>Holdings: ${amount.toLocaleString()} shares</div><div>Portfolio Value: ${currencySign}${formatNumber(portfolioValue)}</div>`;
+        }
+      }
+    }
     
     this.tooltip.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 4px;">${data.ticker}</div>
-      <div style="margin-bottom: 6px;">${data.nameEng}</div>
+      <div><strong>${data.ticker}</strong></div>
+      <div>${data.nameEng}</div>
       <div>Price: ${currencySign}${data.priceLastSale.toFixed(2)}</div>
-      <div>Price change: ${formatPercent(data.priceChangePct || 0)}</div>
+      <div>Change: ${formatPercent(data.priceChangePct || 0)}</div>
       <div>Market Cap: ${currencySign}${formatNumber(data.marketCap)}M</div>
       <div>Volume: ${formatNumber(data.volume)}</div>
       <div>Value: ${currencySign}${formatNumber(data.value)}M</div>
       <div>Trades: ${formatNumber(data.numTrades)}</div>
       <div>Exchange: ${data.exchange}</div>
-      <div>Country: ${data.country}</div>
-      <div>Listed Since: ${data.listedFrom}</div>
       <div>Industry: ${data.industry}</div>
-      <div style="margin-top: 6px; font-style: italic; opacity: 0.8;">Click for details</div>
+      ${portfolioInfo}
     `;
     
     this.positionTooltip(event);
+    this.tooltip.style.opacity = '1';
   }
 
   private showSectorTooltip(sector: TreemapNode, event: MouseEvent): void {
