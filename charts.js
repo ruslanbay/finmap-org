@@ -209,9 +209,8 @@ export class D3TreemapRenderer {
         const maxWidth = width - (padding * 2);
         const maxHeight = height - (padding * 2);
         if (isLeaf) {
-            // Calculate proportional font size based on node area (like Plotly.js)
             const nodeArea = width * height;
-            const baseFontSize = Math.max(8, Math.min(16, Math.sqrt(nodeArea) / 15));
+            const baseFontSize = Math.max(8, Math.min(12, Math.sqrt(nodeArea) / 15));
             const tickerFontSize = Math.round(baseFontSize * 1.2);
             const detailFontSize = Math.round(baseFontSize * 0.8);
             const smallFontSize = Math.round(baseFontSize * 0.7);
