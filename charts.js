@@ -238,6 +238,7 @@ export class D3TreemapRenderer {
     prepareHierarchyData(data) {
         const securities = data.filter(item => item.type === 'stock' || item.type === 'etf');
         const sectors = d3.group(securities, (d) => d.sector || 'Other');
+        const isPortfolioMode = localStorage.getItem('filterCsv') !== null;
         const children = [];
         sectors.forEach((sectorSecurities, sectorName) => {
             const sectorChildren = sectorSecurities.map((security) => ({
@@ -259,7 +260,7 @@ export class D3TreemapRenderer {
         });
         return {
             ticker: 'root',
-            name: 'Market',
+            name: isPortfolioMode ? 'Portfolio' : 'Market',
             value: 0,
             change: 0,
             color: '#666',
@@ -295,8 +296,13 @@ export class D3TreemapRenderer {
         });
         this.canvas.addEventListener('mousemove', (event) => {
             const node = this.getNodeAtPosition(event);
-            if (node && !node.children) {
-                this.showTooltip(node.data.data, event);
+            if (node) {
+                if (node.children) {
+                    this.showSectorTooltip(node.data, event);
+                }
+                else {
+                    this.showStockTooltip(node.data.data, event);
+                }
             }
             else {
                 this.hideTooltip();
@@ -304,6 +310,14 @@ export class D3TreemapRenderer {
         });
         this.canvas.addEventListener('mouseleave', () => {
             this.hideTooltip();
+        });
+        this.canvas.addEventListener('dblclick', (event) => {
+            if (this.currentRoot && this.currentRoot.parent) {
+                this.drillTo(this.currentRoot.parent);
+            }
+            else if (this.currentRoot !== this.rootNode && this.rootNode) {
+                this.drillTo(this.rootNode);
+            }
         });
     }
     getNodeAtPosition(event) {
@@ -318,24 +332,72 @@ export class D3TreemapRenderer {
         this.currentRoot = node;
         this.renderTreemap();
     }
-    showTooltip(data, event) {
+    showStockTooltip(data, event) {
         if (!this.tooltip)
             return;
         const config = getConfig();
-        const currencySign = config.currency === 'USD' ? '$' : config.currency;
+        const currencySign = this.getCurrencySign(config.currency);
         this.tooltip.innerHTML = `
-      <div><strong>${data.ticker}</strong></div>
-      <div>${data.nameEng}</div>
+      <div style="font-weight: bold; margin-bottom: 4px;">${data.ticker}</div>
+      <div style="margin-bottom: 6px;">${data.nameEng}</div>
       <div>Price: ${currencySign}${data.priceLastSale.toFixed(2)}</div>
-      <div>Change: ${formatPercent(data.priceChangePct || 0)}</div>
+      <div>Price change: ${formatPercent(data.priceChangePct || 0)}</div>
       <div>Market Cap: ${currencySign}${formatNumber(data.marketCap)}M</div>
       <div>Volume: ${formatNumber(data.volume)}</div>
+      <div>Value: ${currencySign}${formatNumber(data.value)}M</div>
       <div>Trades: ${formatNumber(data.numTrades)}</div>
       <div>Exchange: ${data.exchange}</div>
+      <div>Country: ${data.country}</div>
+      <div>Listed Since: ${data.listedFrom}</div>
+      <div>Industry: ${data.industry}</div>
+      <div style="margin-top: 6px; font-style: italic; opacity: 0.8;">Click for details</div>
     `;
-        this.tooltip.style.left = `${event.clientX + 10}px`;
-        this.tooltip.style.top = `${event.clientY - 10}px`;
+        this.positionTooltip(event);
+    }
+    showSectorTooltip(sector, event) {
+        if (!this.tooltip)
+            return;
+        const stockCount = sector.children?.length || 0;
+        const totalValue = sector.children?.reduce((sum, child) => sum + child.value, 0) || 0;
+        const avgChange = stockCount > 0 ?
+            (sector.children?.reduce((sum, child) => sum + (child.change || 0), 0) || 0) / stockCount : 0;
+        const config = getConfig();
+        const currencySign = this.getCurrencySign(config.currency);
+        this.tooltip.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 4px;">${sector.name}</div>
+      <div>Companies: ${stockCount}</div>
+      <div>Total Value: ${currencySign}${formatNumber(totalValue)}M</div>
+      <div>Avg Change: ${formatPercent(avgChange)}</div>
+      <div style="margin-top: 6px; font-style: italic; opacity: 0.8;">Click to drill down</div>
+    `;
+        this.positionTooltip(event);
+    }
+    positionTooltip(event) {
+        if (!this.tooltip)
+            return;
+        const tooltipRect = this.tooltip.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        let left = event.clientX + 10;
+        let top = event.clientY - 10;
+        if (left + tooltipRect.width > viewportWidth) {
+            left = event.clientX - tooltipRect.width - 10;
+        }
+        if (top + tooltipRect.height > viewportHeight) {
+            top = event.clientY - tooltipRect.height - 10;
+        }
+        this.tooltip.style.left = `${left}px`;
+        this.tooltip.style.top = `${top}px`;
         this.tooltip.style.opacity = '1';
+    }
+    getCurrencySign(currency) {
+        switch (currency) {
+            case 'USD': return '$';
+            case 'RUB': return '₽';
+            case 'GBP': return '£';
+            case 'TRY': return '₺';
+            default: return '$';
+        }
     }
     hideTooltip() {
         if (this.tooltip) {
@@ -343,7 +405,145 @@ export class D3TreemapRenderer {
         }
     }
     showCompanyOverlay(data) {
-        console.log('Show company overlay for:', data.ticker);
+        this.hideTooltip();
+        let overlay = document.getElementById('company-overlay');
+        if (!overlay) {
+            overlay = this.createOverlay();
+        }
+        this.populateOverlay(overlay, data);
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    createOverlay() {
+        const overlay = document.createElement('div');
+        overlay.id = 'company-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        overlay.style.zIndex = '10000';
+        overlay.style.display = 'none';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        const content = document.createElement('div');
+        content.style.backgroundColor = '#2C3E50';
+        content.style.color = 'white';
+        content.style.padding = '20px';
+        content.style.borderRadius = '8px';
+        content.style.width = '90%';
+        content.style.maxWidth = '800px';
+        content.style.maxHeight = '80%';
+        content.style.overflow = 'auto';
+        content.style.position = 'relative';
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '×';
+        closeBtn.style.position = 'absolute';
+        closeBtn.style.top = '10px';
+        closeBtn.style.right = '15px';
+        closeBtn.style.background = 'none';
+        closeBtn.style.border = 'none';
+        closeBtn.style.color = 'white';
+        closeBtn.style.fontSize = '24px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.onclick = () => this.hideOverlay();
+        const tabs = document.createElement('div');
+        tabs.style.display = 'flex';
+        tabs.style.marginBottom = '20px';
+        tabs.style.borderBottom = '1px solid #555';
+        ['Info', 'News', 'Charts'].forEach((tabName, index) => {
+            const tab = document.createElement('button');
+            tab.textContent = tabName;
+            tab.style.background = 'none';
+            tab.style.border = 'none';
+            tab.style.color = 'white';
+            tab.style.padding = '10px 20px';
+            tab.style.cursor = 'pointer';
+            tab.style.borderBottom = index === 0 ? '2px solid white' : 'none';
+            tab.onclick = () => this.switchTab(tabName.toLowerCase());
+            tab.setAttribute('data-tab', tabName.toLowerCase());
+            tabs.appendChild(tab);
+        });
+        const contentArea = document.createElement('div');
+        contentArea.id = 'overlay-content';
+        content.appendChild(closeBtn);
+        content.appendChild(tabs);
+        content.appendChild(contentArea);
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                this.hideOverlay();
+            }
+        };
+        return overlay;
+    }
+    populateOverlay(overlay, data) {
+        const contentArea = overlay.querySelector('#overlay-content');
+        const config = getConfig();
+        const currencySign = this.getCurrencySign(config.currency);
+        contentArea.innerHTML = `
+      <div>
+        <h2>${data.ticker} - ${data.nameEng}</h2>
+        <div style="margin: 20px 0;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+              <h3>Price Information</h3>
+              <p>Current Price: ${currencySign}${data.priceLastSale.toFixed(2)}</p>
+              <p>Open Price: ${currencySign}${data.priceOpen.toFixed(2)}</p>
+              <p>Change: ${formatPercent(data.priceChangePct || 0)}</p>
+            </div>
+            <div>
+              <h3>Market Data</h3>
+              <p>Market Cap: ${currencySign}${formatNumber(data.marketCap)}M</p>
+              <p>Volume: ${formatNumber(data.volume)}</p>
+              <p>Value: ${currencySign}${formatNumber(data.value)}M</p>
+              <p>Trades: ${formatNumber(data.numTrades)}</p>
+            </div>
+          </div>
+          <div style="margin-top: 20px;">
+            <h3>Company Details</h3>
+            <p>Exchange: ${data.exchange}</p>
+            <p>Country: ${data.country}</p>
+            <p>Sector: ${data.sector}</p>
+            <p>Industry: ${data.industry}</p>
+            <p>Listed Since: ${data.listedFrom}</p>
+            ${data.listedTill ? `<p>Listed Until: ${data.listedTill}</p>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+        this.switchTab('info');
+    }
+    switchTab(tab) {
+        const overlay = document.getElementById('company-overlay');
+        if (!overlay)
+            return;
+        overlay.querySelectorAll('[data-tab]').forEach(button => {
+            const btn = button;
+            btn.style.borderBottom = btn.dataset.tab === tab ? '2px solid white' : 'none';
+        });
+    }
+    hideOverlay() {
+        const overlay = document.getElementById('company-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+    searchAndHighlight(query) {
+        if (!this.nodes || !query)
+            return;
+        const searchQuery = query.toLowerCase();
+        const matchingNodes = this.nodes.filter(node => !node.children && (node.data.ticker.toLowerCase().includes(searchQuery) ||
+            node.data.name.toLowerCase().includes(searchQuery)));
+        if (matchingNodes.length > 0) {
+            const node = matchingNodes[0];
+            if (node.data.data) {
+                this.showCompanyOverlay(node.data.data);
+            }
+        }
     }
     destroy() {
         if (this.resizeObserver) {

@@ -13,6 +13,7 @@ function setupEventListeners() {
     const dataTypeSelect = document.getElementById('dataType');
     const dateInput = document.getElementById('date');
     const searchInput = document.getElementById('search');
+    const fileInput = document.getElementById('inputFile');
     if (dataTypeSelect) {
         dataTypeSelect.addEventListener('change', () => {
             updateConfig({ dataType: dataTypeSelect.value });
@@ -32,11 +33,33 @@ function setupEventListeners() {
         });
     }
     if (searchInput) {
-        const debouncedSearch = debounce((value) => {
-            handleSearch(value);
-        }, 300);
-        searchInput.addEventListener('input', (e) => {
-            debouncedSearch(e.target.value);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = e.target.value.trim();
+                if (query && currentRenderer && 'searchAndHighlight' in currentRenderer) {
+                    currentRenderer.searchAndHighlight(query);
+                }
+                e.target.value = '';
+            }
+        });
+    }
+    if (fileInput) {
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const csvContent = e.target?.result;
+                    if (csvContent) {
+                        localStorage.setItem('filterCsv', csvContent);
+                        updateFilterVisibility();
+                        renderChart();
+                    }
+                };
+                reader.readAsText(file);
+            }
+            event.target.value = '';
         });
     }
     window.addEventListener('resize', debounce(() => {
@@ -80,6 +103,7 @@ function setupEventListeners() {
         if (target.dataset.action === 'erase-filter') {
             event.preventDefault();
             localStorage.removeItem('filterCsv');
+            updateFilterVisibility();
             renderChart();
             return;
         }
@@ -168,12 +192,48 @@ export async function renderChart() {
     }
 }
 function applyFilters(data) {
-    const filters = loadFiltersFromStorage();
-    if (filters.length === 0)
+    const csvData = localStorage.getItem('filterCsv');
+    if (!csvData)
         return data;
-    return data.filter(item => filters.some(filter => item.ticker.toUpperCase().includes(filter) ||
-        item.nameEng.toUpperCase().includes(filter) ||
-        item.sector.toUpperCase().includes(filter)));
+    try {
+        const portfolioData = parsePortfolioCSV(csvData);
+        if (portfolioData.length === 0)
+            return data;
+        const portfolioTickers = portfolioData.map(item => item.ticker.toUpperCase());
+        const filteredData = data.filter(item => portfolioTickers.includes(item.ticker.toUpperCase()) || item.type === 'sector');
+        return filteredData.map(item => {
+            if (item.type === 'sector')
+                return item;
+            const portfolioItem = portfolioData.find(p => p.ticker.toUpperCase() === item.ticker.toUpperCase());
+            if (portfolioItem) {
+                return {
+                    ...item,
+                    value: item.priceLastSale * portfolioItem.amount,
+                    marketCap: item.priceLastSale * portfolioItem.amount,
+                };
+            }
+            return item;
+        });
+    }
+    catch (error) {
+        console.warn('Failed to parse portfolio CSV:', error);
+        return data;
+    }
+}
+function parsePortfolioCSV(csvContent) {
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    const portfolioData = [];
+    for (const line of lines) {
+        const parts = line.split(',').map(part => part.trim());
+        if (parts.length >= 2 && parts[0] && parts[1]) {
+            const ticker = parts[0];
+            const amount = parseFloat(parts[1]);
+            if (ticker && !isNaN(amount) && amount > 0) {
+                portfolioData.push({ ticker, amount });
+            }
+        }
+    }
+    return portfolioData;
 }
 function updateUIState() {
     const config = getConfig();
@@ -193,7 +253,19 @@ function updateUIState() {
             dateInput.value = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
         }
     }
-    updateFilterDisplay();
+    updateFilterVisibility();
+}
+function updateFilterVisibility() {
+    const filterLabel = document.getElementById('inputFileLabel');
+    const eraseFilterLink = document.getElementById('linkEraseFilter');
+    const hasFilter = localStorage.getItem('filterCsv') !== null;
+    if (filterLabel) {
+        filterLabel.style.display = hasFilter ? 'none' : 'inline-block';
+    }
+    if (eraseFilterLink) {
+        eraseFilterLink.style.display = hasFilter ? 'inline-block' : 'none';
+        eraseFilterLink.removeAttribute('hidden');
+    }
 }
 function showLoadingState(container) {
     container.innerHTML = '<div class="loading">Loading...</div>';
