@@ -538,38 +538,23 @@ export class D3TreemapRenderer {
         this.tooltip.style.background = nodeColor;
         this.tooltip.style.color = '#ffffff';
         this.tooltip.style.border = `1px solid ${nodeColor}`;
-        if (isSector) {
-            // Sector tooltip content
-            this.tooltip.innerHTML = `
-        <div style="margin-bottom: 4px;"><b>${data.ticker || data.nameEng}</b></div>
-        <div style="margin-bottom: 2px;">Sector Change: ${formatPercent(change)}</div>
-        <div style="margin-bottom: 2px;">Companies: ${sectorItemCount}</div>
-        <div style="margin-bottom: 2px;">Total Value: ${currencySign}${formatNumber(targetNode?.value || 0)}M</div>
-        <div style="margin-bottom: 2px;">% of Parent: ${percentParent.toFixed(2)}%</div>
-        <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
-        <div style="margin-bottom: 2px; font-style: italic; opacity: 0.8;">Click to drill down</div>
-      `;
-        }
-        else {
-            // Stock tooltip content
-            this.tooltip.innerHTML = `
-        <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
-        <div style="margin-bottom: 2px;">${data.nameEng}</div>
-        <div style="margin-bottom: 2px;">${currencySign}${data.priceLastSale.toFixed(2)} (${formatPercent(data.priceChangePct || 0)})</div>
-        <div style="margin-bottom: 2px;">MarketCap: ${currencySign}${formatNumber(data.marketCap)}M</div>
-        <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume)}</div>
-        <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value)}M</div>
-        <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades)}</div>
-        <div style="margin-bottom: 2px;">Country: ${data.country}</div>
-        <div style="margin-bottom: 2px;">Exchange: ${data.exchange}</div>
-        <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom}</div>
-        <div style="margin-bottom: 2px;">Industry: ${data.industry}</div>
-        <div style="margin-bottom: 2px;">% of Sector: ${percentParent.toFixed(2)}%</div>
-        <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
-        <div style="margin-bottom: 2px;">Items per Sector: ${sectorItemCount}</div>
-        ${portfolioInfo}
-      `;
-        }
+        this.tooltip.innerHTML = `
+      <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
+      <div style="margin-bottom: 2px;">${data.nameEng}</div>
+      <div style="margin-bottom: 2px;">${currencySign}${data.priceLastSale.toFixed(2)} (${formatPercent(data.priceChangePct || 0)})</div>
+      <div style="margin-bottom: 2px;">MarketCap: ${currencySign}${formatNumber(data.marketCap)}M</div>
+      <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume)}</div>
+      <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value)}M</div>
+      <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades)}</div>
+      <div style="margin-bottom: 2px;">Country: ${data.country}</div>
+      <div style="margin-bottom: 2px;">Exchange: ${data.exchange}</div>
+      <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom}</div>
+      <div style="margin-bottom: 2px;">Industry: ${data.industry}</div>
+      <div style="margin-bottom: 2px;">% of Sector: ${percentParent.toFixed(2)}%</div>
+      <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
+      <div style="margin-bottom: 2px;">Items per Sector: ${sectorItemCount}</div>
+      ${portfolioInfo}
+    `;
         this.positionTooltip(event);
         this.tooltip.style.opacity = '1';
     }
