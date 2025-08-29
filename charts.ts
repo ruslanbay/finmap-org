@@ -148,7 +148,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     const treemap = d3.treemap()
       .size([width, height])
-      .paddingTop((d: any) => d.children ? 24 : 2)
+      .paddingTop((d: any) => d.children ? 32 : 2)
       .paddingInner(1)
       .paddingOuter(2)
       .paddingRight(2)
@@ -216,10 +216,10 @@ export class D3TreemapRenderer implements ChartRenderer {
     if (isLeaf) {
       // Company financial information
       const ticker = node.data.ticker || '';
-      const name = node.data.data?.nameEng || node.data.data?.name || ticker;
-      const price = Number(node.data.data?.price) || 0;
+      const name = node.data.data?.nameEng || ticker;
+      const price = Number(node.data.data?.priceLastSale) || 0;
       const change = Number(node.data.data?.priceChangePct) || 0;
-      const marketCap = Number(node.data.data?.capitalization) || 0;
+      const marketCap = Number(node.data.data?.marketCap) || 0;
 
       let currentY = textY;
       const lineHeight = 16;
@@ -241,7 +241,6 @@ export class D3TreemapRenderer implements ChartRenderer {
         this.context.font = '12px Arial';
         const priceText = `${this.formatCurrency(price)}`;
         const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-        this.context.fillStyle = change >= 0 ? '#2aca55' : '#ec3033';
         this.drawWrappedText(`${priceText} (${changeText})`, textX, currentY, maxWidth, lineHeight, 1);
         currentY += lineHeight + 2;
       }
