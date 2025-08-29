@@ -72,19 +72,29 @@ export class D3TreemapRenderer implements ChartRenderer {
 
   private setupTooltip(): void {
     this.tooltip = document.createElement('div');
-    this.tooltip.style.position = 'absolute';
-    this.tooltip.style.background = 'rgba(0, 0, 0, 0.9)';
-    this.tooltip.style.color = 'white';
-    this.tooltip.style.padding = '8px 12px';
-    this.tooltip.style.borderRadius = '4px';
-    this.tooltip.style.fontSize = '12px';
-    this.tooltip.style.pointerEvents = 'none';
-    this.tooltip.style.opacity = '0';
-    this.tooltip.style.transition = 'opacity 0.2s';
-    this.tooltip.style.zIndex = '1000';
-    this.tooltip.style.lineHeight = '1.4';
-    this.tooltip.style.maxWidth = '300px';
-    this.tooltip.style.border = '1px solid #555';
+    this.tooltip.style.cssText = `
+      position: absolute;
+      background: white;
+      color: rgb(68, 68, 68);
+      border: 1px solid rgb(214, 214, 214);
+      border-radius: 2px;
+      font-family: "Open Sans", verdana, arial, sans-serif;
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 1.3;
+      white-space: nowrap;
+      padding: 4px 6px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+      z-index: 1001;
+      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.14);
+      margin: 0;
+      text-align: left;
+      direction: ltr;
+      max-width: none;
+      word-wrap: normal;
+    `;
     document.body.appendChild(this.tooltip);
   }
 
@@ -94,8 +104,12 @@ export class D3TreemapRenderer implements ChartRenderer {
     const rect = this.container.getBoundingClientRect();
     const devicePixelRatio = window.devicePixelRatio || 1;
     
+    // Account for footbar height (approximately 25px) plus pathbar (24px)
+    const footbarHeight = 25;
+    const pathbarHeight = 24;
+    
     this.canvas.width = rect.width * devicePixelRatio;
-    this.canvas.height = (rect.height - 40) * devicePixelRatio;
+    this.canvas.height = (rect.height - pathbarHeight - footbarHeight) * devicePixelRatio;
     
     this.context = this.canvas.getContext('2d');
     if (this.context) {
@@ -580,16 +594,16 @@ export class D3TreemapRenderer implements ChartRenderer {
     }
     
     this.tooltip.innerHTML = `
-      <div><strong>${data.ticker}</strong></div>
-      <div>${data.nameEng}</div>
-      <div>Price: ${currencySign}${data.priceLastSale.toFixed(2)}</div>
-      <div>Change: ${formatPercent(data.priceChangePct || 0)}</div>
-      <div>Market Cap: ${currencySign}${formatNumber(data.marketCap)}M</div>
-      <div>Volume: ${formatNumber(data.volume)}</div>
-      <div>Value: ${currencySign}${formatNumber(data.value)}M</div>
-      <div>Trades: ${formatNumber(data.numTrades)}</div>
-      <div>Exchange: ${data.exchange}</div>
-      <div>Industry: ${data.industry}</div>
+      <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
+      <div style="margin-bottom: 2px;">${data.nameEng}</div>
+      <div style="margin-bottom: 2px;">Price: ${currencySign}${data.priceLastSale.toFixed(2)}</div>
+      <div style="margin-bottom: 2px;">Change: ${formatPercent(data.priceChangePct || 0)}</div>
+      <div style="margin-bottom: 2px;">Market Cap: ${currencySign}${formatNumber(data.marketCap)}M</div>
+      <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume)}</div>
+      <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value)}M</div>
+      <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades)}</div>
+      <div style="margin-bottom: 2px;">Exchange: ${data.exchange}</div>
+      <div style="margin-bottom: 2px;">Industry: ${data.industry}</div>
       ${portfolioInfo}
     `;
     
@@ -609,11 +623,11 @@ export class D3TreemapRenderer implements ChartRenderer {
     const currencySign = this.getCurrencySign(config.currency);
     
     this.tooltip.innerHTML = `
-      <div><strong>${sectorName}</strong></div>
-      <div>Sector Change: ${formatPercent(sectorChange)}</div>
-      <div>Companies: ${stockCount}</div>
-      <div>Total Value: ${currencySign}${formatNumber(totalValue)}M</div>
-      <div><em>Click to drill down</em></div>
+      <div style="margin-bottom: 4px;"><b>${sectorName}</b></div>
+      <div style="margin-bottom: 2px;">Sector Change: ${formatPercent(sectorChange)}</div>
+      <div style="margin-bottom: 2px;">Companies: ${stockCount}</div>
+      <div style="margin-bottom: 2px;">Total Value: ${currencySign}${formatNumber(totalValue)}M</div>
+      <div style="margin-bottom: 2px; font-style: italic; opacity: 0.8;">Click to drill down</div>
     `;
     
     this.positionTooltip(event);
@@ -635,21 +649,10 @@ export class D3TreemapRenderer implements ChartRenderer {
   private positionTooltip(event: MouseEvent): void {
     if (!this.tooltip) return;
     
-    this.tooltip.style.left = `${event.clientX + 10}px`;
-    this.tooltip.style.top = `${event.clientY - 10}px`;
+    // Simple positioning without dynamic resizing (like Plotly.js)
+    this.tooltip.style.left = `${event.clientX + 12}px`;
+    this.tooltip.style.top = `${event.clientY - 12}px`;
     this.tooltip.style.opacity = '1';
-    
-    const tooltipRect = this.tooltip.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    if (tooltipRect.right > viewportWidth) {
-      this.tooltip.style.left = `${event.clientX - tooltipRect.width - 10}px`;
-    }
-    
-    if (tooltipRect.bottom > viewportHeight) {
-      this.tooltip.style.top = `${event.clientY - tooltipRect.height - 10}px`;
-    }
   }
 
   private getCurrencySign(currency: string): string {
