@@ -36,7 +36,7 @@ export class D3TreemapRenderer {
         if (!this.container)
             return;
         this.pathbar = document.createElement('div');
-        this.pathbar.style.height = '40px';
+        this.pathbar.style.height = '24px';
         this.pathbar.style.backgroundColor = '#414554';
         this.pathbar.style.display = 'flex';
         this.pathbar.style.alignItems = 'center';
@@ -104,8 +104,8 @@ export class D3TreemapRenderer {
         this.hierarchy = d3.hierarchy(hierarchyData)
             .sum((d) => d.children ? 0 : this.getValueForDataType(d))
             .sort((a, b) => (b.value || 0) - (a.value || 0));
-        this.rootNode = this.hierarchy.data;
-        this.currentRoot = this.rootNode;
+        this.rootNode = this.hierarchy;
+        this.currentRoot = this.hierarchy;
         this.addParentReferences(this.hierarchy);
     }
     addParentReferences(node) {
@@ -121,7 +121,7 @@ export class D3TreemapRenderer {
             return;
         const rect = this.container.getBoundingClientRect();
         const width = rect.width;
-        const height = rect.height - 40;
+        const height = rect.height - 24;
         const currentHierarchy = this.currentRoot === this.rootNode
             ? this.hierarchy
             : d3.hierarchy(this.currentRoot)
@@ -195,9 +195,9 @@ export class D3TreemapRenderer {
         if (!this.context)
             return;
         // Skip text if too small
-        if (width < 40 || height < 20) {
-            return;
-        }
+        // if (width < 40 || height < 20) {
+        //   return;
+        // }
         this.context.save();
         this.context.fillStyle = '#fff';
         this.context.textAlign = 'left';
@@ -211,7 +211,7 @@ export class D3TreemapRenderer {
         if (isLeaf) {
             // Calculate proportional font size based on node area (like Plotly.js)
             const nodeArea = width * height;
-            const baseFontSize = Math.max(8, Math.min(12, Math.sqrt(nodeArea) / 15));
+            const baseFontSize = Math.max(2, Math.min(12, Math.sqrt(nodeArea) / 15));
             // Company financial information
             const ticker = node.data.ticker || '';
             const name = node.data.data?.nameEng || ticker;
@@ -468,36 +468,21 @@ export class D3TreemapRenderer {
         });
     }
     getNodeAtPosition(event) {
-        if (!this.canvas)
+        if (!this.canvas || !this.nodes)
             return null;
         const rect = this.canvas.getBoundingClientRect();
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
-        const x = (event.clientX - rect.left) * scaleX / window.devicePixelRatio;
-        const y = (event.clientY - rect.top) * scaleY / window.devicePixelRatio;
-        // Find the deepest node at this position
-        let deepestNode = null;
-        let maxDepth = -1;
-        // Check all nodes, not just visible ones
-        const checkNode = (node, depth) => {
-            if (!node)
-                return;
+        // Calculate mouse position relative to canvas
+        const x = (event.clientX - rect.left) * (this.canvas.width / rect.width) / window.devicePixelRatio;
+        const y = (event.clientY - rect.top) * (this.canvas.height / rect.height) / window.devicePixelRatio;
+        // Find the node at this position by checking rendered nodes in reverse order
+        // (so we get the topmost/deepest node)
+        for (let i = this.nodes.length - 1; i >= 0; i--) {
+            const node = this.nodes[i];
             if (node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1) {
-                if (depth > maxDepth) {
-                    maxDepth = depth;
-                    deepestNode = node;
-                }
+                return node;
             }
-            // Recursively check children
-            if (node.children) {
-                node.children.forEach((child) => checkNode(child, depth + 1));
-            }
-        };
-        // Start from the current root and check all descendants
-        if (this.currentRoot) {
-            checkNode(this.currentRoot, 0);
         }
-        return deepestNode;
+        return null;
     }
     drillTo(node) {
         this.currentRoot = node;

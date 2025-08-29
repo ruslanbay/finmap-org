@@ -119,8 +119,8 @@ export class D3TreemapRenderer implements ChartRenderer {
       .sum((d: any) => d.children ? 0 : this.getValueForDataType(d))
       .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
     
-    this.rootNode = this.hierarchy.data;
-    this.currentRoot = this.rootNode;
+    this.rootNode = this.hierarchy;
+    this.currentRoot = this.hierarchy;
     this.addParentReferences(this.hierarchy);
   }
 
@@ -533,42 +533,24 @@ export class D3TreemapRenderer implements ChartRenderer {
   }
 
   private getNodeAtPosition(event: MouseEvent): any {
-    if (!this.canvas) return null;
+    if (!this.canvas || !this.nodes) return null;
     
     const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
     
-    const x = (event.clientX - rect.left) * scaleX / window.devicePixelRatio;
-    const y = (event.clientY - rect.top) * scaleY / window.devicePixelRatio;
+    // Calculate mouse position relative to canvas
+    const x = (event.clientX - rect.left) * (this.canvas.width / rect.width) / window.devicePixelRatio;
+    const y = (event.clientY - rect.top) * (this.canvas.height / rect.height) / window.devicePixelRatio;
     
-    // Find the deepest node at this position
-    let deepestNode = null;
-    let maxDepth = -1;
-    
-    // Check all nodes, not just visible ones
-    const checkNode = (node: any, depth: number) => {
-      if (!node) return;
-      
+    // Find the node at this position by checking rendered nodes in reverse order
+    // (so we get the topmost/deepest node)
+    for (let i = this.nodes.length - 1; i >= 0; i--) {
+      const node = this.nodes[i];
       if (node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1) {
-        if (depth > maxDepth) {
-          maxDepth = depth;
-          deepestNode = node;
-        }
+        return node;
       }
-      
-      // Recursively check children
-      if (node.children) {
-        node.children.forEach((child: any) => checkNode(child, depth + 1));
-      }
-    };
-    
-    // Start from the current root and check all descendants
-    if (this.currentRoot) {
-      checkNode(this.currentRoot, 0);
     }
     
-    return deepestNode;
+    return null;
   }
 
   private drillTo(node: TreemapNode): void {
