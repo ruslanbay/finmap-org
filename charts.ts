@@ -395,7 +395,7 @@ export class D3TreemapRenderer implements ChartRenderer {
       link.style.color = index === path.length - 1 ? '#ccc' : '#fff';
       link.style.textDecoration = 'none';
       link.style.cursor = index === path.length - 1 ? 'default' : 'pointer';
-      link.style.padding = '5px';
+      link.style.padding = '0px';
       
       if (index < path.length - 1) {
         link.addEventListener('click', () => {
@@ -497,7 +497,7 @@ export class D3TreemapRenderer implements ChartRenderer {
       const node = this.getNodeAtPosition(event);
       if (node && node.data) {
         if (node.children && node.children.length > 0) {
-          this.drillTo(node);
+          this.drillTo(node.data);
         } else if (node.data.data) {
           this.showCompanyOverlay(node.data.data as MarketData);
         }
