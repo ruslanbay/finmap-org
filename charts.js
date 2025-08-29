@@ -15,25 +15,22 @@ export class D3TreemapRenderer {
     render(data, container) {
         this.container = container;
         this.currentData = data;
-        this.setupCanvas();
+        this.setupContainer();
         this.setupPathbar();
+        this.setupCanvas();
         this.setupTooltip();
         this.buildHierarchy();
         this.setupInteractions();
         this.setupResizeObserver();
         this.renderTreemap();
     }
-    setupCanvas() {
+    setupContainer() {
         if (!this.container)
             return;
         this.container.innerHTML = '';
-        this.canvas = document.createElement('canvas');
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = 'calc(100vh - 110px)';
-        this.canvas.style.display = 'block';
-        this.canvas.style.cursor = 'pointer';
-        this.updateCanvasSize();
-        this.container.appendChild(this.canvas);
+        this.container.style.display = 'flex';
+        this.container.style.flexDirection = 'column';
+        this.container.style.height = '100%';
     }
     setupPathbar() {
         if (!this.container)
@@ -49,7 +46,20 @@ export class D3TreemapRenderer {
         this.pathbar.style.borderBottom = '1px solid #555';
         this.pathbar.style.overflowX = 'auto';
         this.pathbar.style.whiteSpace = 'nowrap';
+        this.pathbar.style.flexShrink = '0';
         this.container.appendChild(this.pathbar);
+    }
+    setupCanvas() {
+        if (!this.container)
+            return;
+        this.canvas = document.createElement('canvas');
+        this.canvas.style.width = '100%';
+        this.canvas.style.height = '100%';
+        this.canvas.style.display = 'block';
+        this.canvas.style.cursor = 'pointer';
+        this.canvas.style.flexGrow = '1';
+        this.updateCanvasSize();
+        this.container.appendChild(this.canvas);
     }
     setupTooltip() {
         this.tooltip = document.createElement('div');
@@ -65,6 +75,7 @@ export class D3TreemapRenderer {
         this.tooltip.style.zIndex = '1000';
         this.tooltip.style.lineHeight = '1.4';
         this.tooltip.style.maxWidth = '300px';
+        this.tooltip.style.border = '1px solid #555';
         document.body.appendChild(this.tooltip);
     }
     updateCanvasSize() {
@@ -118,10 +129,9 @@ export class D3TreemapRenderer {
                 .sort((a, b) => (b.value || 0) - (a.value || 0));
         const treemap = d3.treemap()
             .size([width, height])
-            .paddingTop((d) => d.parent && d.children ? 24 : 0)
-            .paddingRight(1)
-            .paddingBottom(1)
-            .paddingLeft(1)
+            .padding(2)
+            .paddingInner(1)
+            .paddingOuter(2)
             .round(true);
         treemap(currentHierarchy);
         this.nodes = currentHierarchy.descendants();
@@ -132,54 +142,69 @@ export class D3TreemapRenderer {
                 return;
             const nodeWidth = node.x1 - node.x0;
             const nodeHeight = node.y1 - node.y0;
-            if (nodeWidth < 1 || nodeHeight < 1)
+            if (nodeWidth < 2 || nodeHeight < 2)
                 return;
-            if (node.children) {
-                this.renderParentNode(node, nodeWidth, nodeHeight);
-            }
-            else {
-                this.renderLeafNode(node, nodeWidth, nodeHeight);
-            }
+            this.renderNode(node, nodeWidth, nodeHeight);
         });
     }
-    renderParentNode(node, width, height) {
+    renderNode(node, width, height) {
         if (!this.context)
             return;
-        this.context.fillStyle = '#34495E';
-        this.context.fillRect(node.x0, node.y0, width, height);
-        this.context.fillStyle = '#2C3E50';
-        this.context.fillRect(node.x0, node.y0, width, 24);
-        if (width > 80) {
-            this.context.fillStyle = '#fff';
-            this.context.font = 'bold 12px Arial';
-            this.context.textBaseline = 'middle';
-            this.context.textAlign = 'left';
-            const text = this.getTruncatedText(node.data.name, width - 10);
-            this.context.fillText(text, node.x0 + 5, node.y0 + 12);
-        }
-    }
-    renderLeafNode(node, width, height) {
-        if (!this.context)
-            return;
-        const data = node.data.data;
-        const change = data?.priceChangePct || 0;
+        const isLeaf = !node.children || node.children.length === 0;
+        const data = isLeaf ? node.data.data : node.data;
+        const change = isLeaf ? (data?.priceChangePct || 0) : this.calculateSectorChange(node);
         this.context.fillStyle = getColorForChange(change);
         this.context.fillRect(node.x0, node.y0, width, height);
-        if (width > 40 && height > 30) {
-            this.context.fillStyle = '#fff';
-            this.context.textAlign = 'center';
-            this.context.textBaseline = 'middle';
-            const centerX = node.x0 + width / 2;
-            const centerY = node.y0 + height / 2;
-            const fontSize = Math.min(width / 8, height / 6, 14);
+        this.context.strokeStyle = '#2C3E50';
+        this.context.lineWidth = 1;
+        this.context.strokeRect(node.x0, node.y0, width, height);
+        if (width > 30 && height > 20) {
+            this.renderNodeText(node, width, height, isLeaf, change);
+        }
+    }
+    renderNodeText(node, width, height, isLeaf, change) {
+        if (!this.context)
+            return;
+        this.context.fillStyle = '#fff';
+        this.context.textAlign = 'center';
+        this.context.textBaseline = 'middle';
+        const centerX = node.x0 + width / 2;
+        const centerY = node.y0 + height / 2;
+        if (isLeaf) {
+            const fontSize = Math.min(width / 8, height / 6, 12);
             this.context.font = `bold ${fontSize}px Arial`;
             const ticker = this.getTruncatedText(node.data.ticker, width - 4);
             this.context.fillText(ticker, centerX, centerY - fontSize / 2);
-            if (height > 50) {
+            if (height > 40) {
                 this.context.font = `${Math.max(fontSize - 2, 8)}px Arial`;
                 this.context.fillText(formatPercent(change), centerX, centerY + fontSize / 2 + 2);
             }
         }
+        else {
+            const fontSize = Math.min(width / 12, height / 4, 14);
+            this.context.font = `bold ${fontSize}px Arial`;
+            const sectorName = this.getTruncatedText(node.data.name, width - 8);
+            this.context.fillText(sectorName, centerX, centerY - fontSize / 2);
+            if (height > 50) {
+                this.context.font = `${Math.max(fontSize - 2, 10)}px Arial`;
+                const stockCount = node.children?.length || 0;
+                this.context.fillText(`${stockCount} stocks`, centerX, centerY + fontSize / 2 + 2);
+                if (height > 70) {
+                    this.context.font = `${Math.max(fontSize - 3, 9)}px Arial`;
+                    this.context.fillText(formatPercent(change), centerX, centerY + fontSize + 8);
+                }
+            }
+        }
+    }
+    calculateSectorChange(sectorNode) {
+        if (!sectorNode.children || sectorNode.children.length === 0)
+            return 0;
+        const changes = sectorNode.children
+            .map((child) => child.data.data?.priceChangePct || 0)
+            .filter((change) => change !== null && !isNaN(change));
+        if (changes.length === 0)
+            return 0;
+        return changes.reduce((sum, change) => sum + change, 0) / changes.length;
     }
     getTruncatedText(text, maxWidth) {
         if (!this.context)
@@ -249,11 +274,12 @@ export class D3TreemapRenderer {
                 color: getColorForChange(security.priceChangePct || 0),
                 data: security,
             }));
+            const sectorTotalValue = sectorChildren.reduce((sum, child) => sum + child.value, 0);
             children.push({
                 ticker: sectorName,
                 name: sectorName,
-                value: 0,
-                change: d3.mean(sectorChildren, (d) => d.change) || 0,
+                value: sectorTotalValue,
+                change: this.calculateSectorAverageChange(sectorChildren),
                 color: '#666',
                 children: sectorChildren,
             });
@@ -266,6 +292,14 @@ export class D3TreemapRenderer {
             color: '#666',
             children,
         };
+    }
+    calculateSectorAverageChange(children) {
+        const validChanges = children
+            .map(child => child.change)
+            .filter(change => change !== null && !isNaN(change));
+        if (validChanges.length === 0)
+            return 0;
+        return validChanges.reduce((sum, change) => sum + change, 0) / validChanges.length;
     }
     getValueForDataType(item) {
         const config = getConfig();
@@ -296,13 +330,16 @@ export class D3TreemapRenderer {
         });
         this.canvas.addEventListener('mousemove', (event) => {
             const node = this.getNodeAtPosition(event);
-            if (node && node.data && !node.children) {
-                this.showStockTooltip(node.data.data, event);
-                this.canvas.style.cursor = 'pointer';
-            }
-            else if (node && node.children) {
-                this.showSectorTooltip(node.data, event);
-                this.canvas.style.cursor = 'pointer';
+            if (node && node.data) {
+                const isLeaf = !node.children || node.children.length === 0;
+                if (isLeaf && node.data.data) {
+                    this.showStockTooltip(node.data.data, event);
+                    this.canvas.style.cursor = 'pointer';
+                }
+                else {
+                    this.canvas.style.cursor = 'pointer';
+                    this.hideTooltip();
+                }
             }
             else {
                 this.canvas.style.cursor = 'default';
@@ -336,15 +373,15 @@ export class D3TreemapRenderer {
         if (!this.tooltip)
             return;
         const config = getConfig();
-        const currencySign = config.currency === 'USD' ? '$' : config.currency;
+        const currencySign = this.getCurrencySign(config.currency);
         const isPortfolio = localStorage.getItem('finmap-portfolio-mode') === 'true';
         let portfolioInfo = '';
         if (isPortfolio) {
             const storedFilters = localStorage.getItem('finmap-filters');
             if (storedFilters) {
                 const filters = JSON.parse(storedFilters);
-                const tickerIndex = filters.tickers.indexOf(data.ticker);
-                if (tickerIndex >= 0 && filters.amounts[tickerIndex]) {
+                const tickerIndex = filters.tickers?.indexOf(data.ticker);
+                if (tickerIndex >= 0 && filters.amounts?.[tickerIndex]) {
                     const amount = filters.amounts[tickerIndex];
                     const portfolioValue = data.priceLastSale * amount;
                     portfolioInfo = `<div>Holdings: ${amount.toLocaleString()} shares</div><div>Portfolio Value: ${currencySign}${formatNumber(portfolioValue)}</div>`;
@@ -367,41 +404,21 @@ export class D3TreemapRenderer {
         this.positionTooltip(event);
         this.tooltip.style.opacity = '1';
     }
-    showSectorTooltip(sector, event) {
-        if (!this.tooltip)
-            return;
-        const stockCount = sector.children?.length || 0;
-        const totalValue = sector.children?.reduce((sum, child) => sum + child.value, 0) || 0;
-        const avgChange = stockCount > 0 ?
-            (sector.children?.reduce((sum, child) => sum + (child.change || 0), 0) || 0) / stockCount : 0;
-        const config = getConfig();
-        const currencySign = this.getCurrencySign(config.currency);
-        this.tooltip.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 4px;">${sector.name}</div>
-      <div>Companies: ${stockCount}</div>
-      <div>Total Value: ${currencySign}${formatNumber(totalValue)}M</div>
-      <div>Avg Change: ${formatPercent(avgChange)}</div>
-      <div style="margin-top: 6px; font-style: italic; opacity: 0.8;">Click to drill down</div>
-    `;
-        this.positionTooltip(event);
-    }
     positionTooltip(event) {
         if (!this.tooltip)
             return;
+        this.tooltip.style.left = `${event.clientX + 10}px`;
+        this.tooltip.style.top = `${event.clientY - 10}px`;
+        this.tooltip.style.opacity = '1';
         const tooltipRect = this.tooltip.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        let left = event.clientX + 10;
-        let top = event.clientY - 10;
-        if (left + tooltipRect.width > viewportWidth) {
-            left = event.clientX - tooltipRect.width - 10;
+        if (tooltipRect.right > viewportWidth) {
+            this.tooltip.style.left = `${event.clientX - tooltipRect.width - 10}px`;
         }
-        if (top + tooltipRect.height > viewportHeight) {
-            top = event.clientY - tooltipRect.height - 10;
+        if (tooltipRect.bottom > viewportHeight) {
+            this.tooltip.style.top = `${event.clientY - tooltipRect.height - 10}px`;
         }
-        this.tooltip.style.left = `${left}px`;
-        this.tooltip.style.top = `${top}px`;
-        this.tooltip.style.opacity = '1';
     }
     getCurrencySign(currency) {
         switch (currency) {
@@ -461,27 +478,9 @@ export class D3TreemapRenderer {
         closeBtn.style.fontSize = '24px';
         closeBtn.style.cursor = 'pointer';
         closeBtn.onclick = () => this.hideOverlay();
-        const tabs = document.createElement('div');
-        tabs.style.display = 'flex';
-        tabs.style.marginBottom = '20px';
-        tabs.style.borderBottom = '1px solid #555';
-        ['Info', 'News', 'Charts'].forEach((tabName, index) => {
-            const tab = document.createElement('button');
-            tab.textContent = tabName;
-            tab.style.background = 'none';
-            tab.style.border = 'none';
-            tab.style.color = 'white';
-            tab.style.padding = '10px 20px';
-            tab.style.cursor = 'pointer';
-            tab.style.borderBottom = index === 0 ? '2px solid white' : 'none';
-            tab.onclick = () => this.switchTab(tabName.toLowerCase());
-            tab.setAttribute('data-tab', tabName.toLowerCase());
-            tabs.appendChild(tab);
-        });
         const contentArea = document.createElement('div');
         contentArea.id = 'overlay-content';
         content.appendChild(closeBtn);
-        content.appendChild(tabs);
         content.appendChild(contentArea);
         overlay.appendChild(content);
         document.body.appendChild(overlay);
@@ -527,16 +526,6 @@ export class D3TreemapRenderer {
         </div>
       </div>
     `;
-        this.switchTab('info');
-    }
-    switchTab(tab) {
-        const overlay = document.getElementById('company-overlay');
-        if (!overlay)
-            return;
-        overlay.querySelectorAll('[data-tab]').forEach(button => {
-            const btn = button;
-            btn.style.borderBottom = btn.dataset.tab === tab ? '2px solid white' : 'none';
-        });
     }
     hideOverlay() {
         const overlay = document.getElementById('company-overlay');
@@ -549,7 +538,7 @@ export class D3TreemapRenderer {
         if (!this.nodes || !query)
             return;
         const searchQuery = query.toLowerCase();
-        const matchingNodes = this.nodes.filter(node => !node.children && (node.data.ticker.toLowerCase().includes(searchQuery) ||
+        const matchingNodes = this.nodes.filter(node => !node.children && node.data.data && (node.data.ticker.toLowerCase().includes(searchQuery) ||
             node.data.name.toLowerCase().includes(searchQuery)));
         if (matchingNodes.length > 0) {
             const node = matchingNodes[0];
