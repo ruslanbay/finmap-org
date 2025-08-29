@@ -604,7 +604,7 @@ export class D3TreemapRenderer implements ChartRenderer {
         const tickerIndex = filters.tickers?.indexOf(data.ticker);
         if (tickerIndex >= 0 && filters.amounts?.[tickerIndex]) {
           const amount = filters.amounts[tickerIndex];
-          const portfolioValue = data.priceLastSale * amount;
+          const portfolioValue = (data.priceLastSale || 0) * amount;
           portfolioInfo = `<div>Holdings: ${amount.toLocaleString()} shares</div><div>Portfolio Value: ${currencySign}${formatNumber(portfolioValue)}</div>`;
         }
       }
@@ -618,15 +618,15 @@ export class D3TreemapRenderer implements ChartRenderer {
     this.tooltip.innerHTML = `
       <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
       <div style="margin-bottom: 2px;">${data.nameEng}</div>
-      <div style="margin-bottom: 2px;">${currencySign}${data.priceLastSale.toFixed(2)} (${formatPercent(data.priceChangePct || 0)})</div>
-      <div style="margin-bottom: 2px;">MarketCap: ${currencySign}${formatNumber(data.marketCap)}M</div>
-      <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume)}</div>
-      <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value)}M</div>
-      <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades)}</div>
-      <div style="margin-bottom: 2px;">Country: ${data.country}</div>
-      <div style="margin-bottom: 2px;">Exchange: ${data.exchange}</div>
-      <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom}</div>
-      <div style="margin-bottom: 2px;">Industry: ${data.industry}</div>
+      <div style="margin-bottom: 2px;">${currencySign}${(data.priceLastSale || 0).toFixed(2)} (${formatPercent(data.priceChangePct || 0)})</div>
+      <div style="margin-bottom: 2px;">MarketCap: ${currencySign}${formatNumber(data.marketCap || 0)}M</div>
+      <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume || 0)}</div>
+      <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value || 0)}M</div>
+      <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades || 0)}</div>
+      <div style="margin-bottom: 2px;">Country: ${data.country || 'N/A'}</div>
+      <div style="margin-bottom: 2px;">Exchange: ${data.exchange || 'N/A'}</div>
+      <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom || 'N/A'}</div>
+      <div style="margin-bottom: 2px;">Industry: ${data.industry || 'N/A'}</div>
       <div style="margin-bottom: 2px;">% of Sector: ${percentParent.toFixed(2)}%</div>
       <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
       <div style="margin-bottom: 2px;">Items per Sector: ${sectorItemCount}</div>
