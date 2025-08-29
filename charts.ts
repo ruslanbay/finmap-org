@@ -1,23 +1,32 @@
 declare const d3: any;
 
-import type { MarketData, ChartRenderer, TreemapNode, HistogramDataPoint } from './types.js';
+import type { MarketData, ChartRenderer, TreemapNode, PathbarItem, HistogramDataPoint } from './types.js';
 import { getConfig } from './config.js';
-import { formatNumber, formatPercent, getColorForChange, clamp } from './utils.js';
+import { formatNumber, formatPercent, getColorForChange } from './utils.js';
 
 export class D3TreemapRenderer implements ChartRenderer {
   private container: HTMLElement | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private context: CanvasRenderingContext2D | null = null;
-  private currentData: MarketData[] = [];
+  private pathbar: HTMLElement | null = null;
   private tooltip: HTMLElement | null = null;
+  private currentData: MarketData[] = [];
+  private hierarchy: any = null;
+  private currentRoot: TreemapNode | null = null;
+  private rootNode: TreemapNode | null = null;
+  private nodes: any[] = [];
+  private resizeObserver: ResizeObserver | null = null;
 
   render(data: MarketData[], container: HTMLElement): void {
     this.container = container;
     this.currentData = data;
     this.setupCanvas();
+    this.setupPathbar();
     this.setupTooltip();
-    this.renderTreemap();
+    this.buildHierarchy();
     this.setupInteractions();
+    this.setupResizeObserver();
+    this.renderTreemap();
   }
 
   private setupCanvas(): void {
@@ -26,19 +35,29 @@ export class D3TreemapRenderer implements ChartRenderer {
     this.container.innerHTML = '';
     this.canvas = document.createElement('canvas');
     this.canvas.style.width = '100%';
-    this.canvas.style.height = 'calc(100vh - 70px)';
+    this.canvas.style.height = 'calc(100vh - 110px)';
     this.canvas.style.display = 'block';
+    this.canvas.style.cursor = 'pointer';
     
-    const rect = this.container.getBoundingClientRect();
-    this.canvas.width = rect.width * window.devicePixelRatio;
-    this.canvas.height = rect.height * window.devicePixelRatio;
-    
-    this.context = this.canvas.getContext('2d');
-    if (this.context) {
-      this.context.scale(window.devicePixelRatio, window.devicePixelRatio);
-    }
-    
+    this.updateCanvasSize();
     this.container.appendChild(this.canvas);
+  }
+
+  private setupPathbar(): void {
+    if (!this.container) return;
+
+    this.pathbar = document.createElement('div');
+    this.pathbar.style.height = '40px';
+    this.pathbar.style.backgroundColor = '#414554';
+    this.pathbar.style.display = 'flex';
+    this.pathbar.style.alignItems = 'center';
+    this.pathbar.style.padding = '0 10px';
+    this.pathbar.style.color = 'white';
+    this.pathbar.style.fontSize = '14px';
+    this.pathbar.style.borderBottom = '1px solid #555';
+    this.pathbar.style.overflowX = 'auto';
+    this.pathbar.style.whiteSpace = 'nowrap';
+    this.container.appendChild(this.pathbar);
   }
 
   private setupTooltip(): void {
@@ -46,70 +65,221 @@ export class D3TreemapRenderer implements ChartRenderer {
     this.tooltip.style.position = 'absolute';
     this.tooltip.style.background = 'rgba(0, 0, 0, 0.9)';
     this.tooltip.style.color = 'white';
-    this.tooltip.style.padding = '8px';
+    this.tooltip.style.padding = '8px 12px';
     this.tooltip.style.borderRadius = '4px';
     this.tooltip.style.fontSize = '12px';
     this.tooltip.style.pointerEvents = 'none';
     this.tooltip.style.opacity = '0';
     this.tooltip.style.transition = 'opacity 0.2s';
     this.tooltip.style.zIndex = '1000';
+    this.tooltip.style.lineHeight = '1.4';
+    this.tooltip.style.maxWidth = '300px';
     document.body.appendChild(this.tooltip);
   }
 
-  private renderTreemap(): void {
-    if (!this.canvas || !this.context || !this.container) return;
-    
-    const config = getConfig();
-    const filteredData = this.filterData();
-    const hierarchyData = this.prepareHierarchyData(filteredData);
+  private updateCanvasSize(): void {
+    if (!this.canvas || !this.container) return;
     
     const rect = this.container.getBoundingClientRect();
-    const root = d3.hierarchy(hierarchyData)
-      .sum((d: any) => this.getValueForDataType(d))
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    
+    this.canvas.width = rect.width * devicePixelRatio;
+    this.canvas.height = (rect.height - 40) * devicePixelRatio;
+    
+    this.context = this.canvas.getContext('2d');
+    if (this.context) {
+      this.context.scale(devicePixelRatio, devicePixelRatio);
+    }
+  }
+
+  private setupResizeObserver(): void {
+    if (!this.container) return;
+    
+    this.resizeObserver = new ResizeObserver(() => {
+      this.updateCanvasSize();
+      this.renderTreemap();
+    });
+    this.resizeObserver.observe(this.container);
+  }
+
+  private buildHierarchy(): void {
+    const hierarchyData = this.prepareHierarchyData(this.currentData);
+    this.hierarchy = d3.hierarchy(hierarchyData)
+      .sum((d: any) => d.children ? 0 : this.getValueForDataType(d))
       .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
     
+    this.rootNode = this.hierarchy.data;
+    this.currentRoot = this.rootNode;
+    this.addParentReferences(this.hierarchy);
+  }
+
+  private addParentReferences(node: any): void {
+    if (node.children) {
+      node.children.forEach((child: any) => {
+        child.data.parent = node.data;
+        this.addParentReferences(child);
+      });
+    }
+  }
+
+  private renderTreemap(): void {
+    if (!this.canvas || !this.context || !this.container || !this.hierarchy) return;
+    
+    const rect = this.container.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height - 40;
+    
+    const currentHierarchy = this.currentRoot === this.rootNode 
+      ? this.hierarchy 
+      : d3.hierarchy(this.currentRoot)
+          .sum((d: any) => d.children ? 0 : this.getValueForDataType(d))
+          .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
+    
     const treemap = d3.treemap()
-      .size([rect.width, rect.height])
-      .padding(1);
+      .size([width, height])
+      .paddingTop((d: any) => d.parent && d.children ? 24 : 0)
+      .paddingRight(1)
+      .paddingBottom(1)
+      .paddingLeft(1)
+      .round(true);
     
-    treemap(root);
+    treemap(currentHierarchy);
+    this.nodes = currentHierarchy.descendants();
     
-    this.context.clearRect(0, 0, rect.width, rect.height);
+    this.context.clearRect(0, 0, width, height);
+    this.updatePathbar();
     
-    root.leaves().forEach((node: any) => {
-      if (node.x1 && node.y1 && node.x0 !== undefined && node.y0 !== undefined) {
-        const width = node.x1 - node.x0;
-        const height = node.y1 - node.y0;
-        
-        if (width > 2 && height > 2) {
-          const change = node.data.change || 0;
-          this.context!.fillStyle = getColorForChange(change);
-          this.context!.fillRect(node.x0, node.y0, width, height);
-          
-          if (width > 40 && height > 20) {
-            this.context!.fillStyle = '#fff';
-            this.context!.font = `${Math.min(width / 8, height / 4, 14)}px sans-serif`;
-            this.context!.textAlign = 'center';
-            this.context!.textBaseline = 'middle';
-            
-            const centerX = node.x0 + width / 2;
-            const centerY = node.y0 + height / 2;
-            
-            this.context!.fillText(node.data.ticker, centerX, centerY - 5);
-            this.context!.fillText(formatPercent(change), centerX, centerY + 8);
-          }
-        }
+    this.nodes.forEach((node: any) => {
+      if (!node.parent) return;
+      
+      const width = node.x1 - node.x0;
+      const height = node.y1 - node.y0;
+      
+      if (width < 1 || height < 1) return;
+      
+      if (node.children) {
+        this.renderParentNode(node, width, height);
+      } else {
+        this.renderLeafNode(node, width, height);
       }
     });
   }
 
-  private filterData(): MarketData[] {
-    return this.currentData;
+  private renderParentNode(node: any, width: number, height: number): void {
+    if (!this.context) return;
+    
+    this.context.fillStyle = '#34495E';
+    this.context.fillRect(node.x0, node.y0, width, height);
+    
+    this.context.fillStyle = '#2C3E50';
+    this.context.fillRect(node.x0, node.y0, width, 24);
+    
+    if (width > 80) {
+      this.context.fillStyle = '#fff';
+      this.context.font = 'bold 12px Arial';
+      this.context.textBaseline = 'middle';
+      this.context.textAlign = 'left';
+      
+      const text = this.getTruncatedText(node.data.name, width - 10);
+      this.context.fillText(text, node.x0 + 5, node.y0 + 12);
+    }
+  }
+
+  private renderLeafNode(node: any, width: number, height: number): void {
+    if (!this.context) return;
+    
+    const data = node.data.data as MarketData;
+    const change = data?.priceChangePct || 0;
+    
+    this.context.fillStyle = getColorForChange(change);
+    this.context.fillRect(node.x0, node.y0, width, height);
+    
+    if (width > 40 && height > 30) {
+      this.context.fillStyle = '#fff';
+      this.context.textAlign = 'center';
+      this.context.textBaseline = 'middle';
+      
+      const centerX = node.x0 + width / 2;
+      const centerY = node.y0 + height / 2;
+      
+      const fontSize = Math.min(width / 8, height / 6, 14);
+      this.context.font = `bold ${fontSize}px Arial`;
+      
+      const ticker = this.getTruncatedText(node.data.ticker, width - 4);
+      this.context.fillText(ticker, centerX, centerY - fontSize / 2);
+      
+      if (height > 50) {
+        this.context.font = `${Math.max(fontSize - 2, 8)}px Arial`;
+        this.context.fillText(formatPercent(change), centerX, centerY + fontSize / 2 + 2);
+      }
+    }
+  }
+
+  private getTruncatedText(text: string, maxWidth: number): string {
+    if (!this.context) return text;
+    
+    let truncated = text;
+    while (this.context.measureText(truncated).width > maxWidth && truncated.length > 3) {
+      truncated = truncated.slice(0, -1);
+    }
+    return truncated !== text ? truncated + '...' : truncated;
+  }
+
+  private updatePathbar(): void {
+    if (!this.pathbar || !this.currentRoot) return;
+    
+    const path = this.getPathToRoot(this.currentRoot);
+    this.pathbar.innerHTML = '';
+    
+    path.forEach((item, index) => {
+      if (index > 0) {
+        const separator = document.createElement('span');
+        separator.textContent = ' > ';
+        separator.style.color = '#888';
+        separator.style.margin = '0 5px';
+        this.pathbar!.appendChild(separator);
+      }
+      
+      const link = document.createElement('a');
+      link.textContent = item.name;
+      link.style.color = index === path.length - 1 ? '#ccc' : '#fff';
+      link.style.textDecoration = 'none';
+      link.style.cursor = index === path.length - 1 ? 'default' : 'pointer';
+      link.style.padding = '5px';
+      
+      if (index < path.length - 1) {
+        link.addEventListener('click', () => {
+          this.drillTo(item.node);
+        });
+        link.addEventListener('mouseenter', () => {
+          link.style.textDecoration = 'underline';
+        });
+        link.addEventListener('mouseleave', () => {
+          link.style.textDecoration = 'none';
+        });
+      }
+      
+      this.pathbar!.appendChild(link);
+    });
+  }
+
+  private getPathToRoot(node: TreemapNode): PathbarItem[] {
+    const path: PathbarItem[] = [];
+    let current: TreemapNode | null = node;
+    
+    while (current) {
+      path.unshift({
+        name: current.name || 'Market',
+        node: current
+      });
+      current = current.parent || null;
+    }
+    
+    return path;
   }
 
   private prepareHierarchyData(data: MarketData[]): TreemapNode {
     const securities = data.filter(item => item.type === 'stock' || item.type === 'etf');
-    
     const sectors = d3.group(securities, (d: MarketData) => d.sector || 'Other');
     
     const children: TreemapNode[] = [];
@@ -160,36 +330,68 @@ export class D3TreemapRenderer implements ChartRenderer {
   private setupInteractions(): void {
     if (!this.canvas) return;
     
+    this.canvas.addEventListener('click', (event) => {
+      const node = this.getNodeAtPosition(event);
+      if (node) {
+        if (node.children) {
+          this.drillTo(node.data);
+        } else {
+          this.showCompanyOverlay(node.data.data as MarketData);
+        }
+      }
+    });
+    
     this.canvas.addEventListener('mousemove', (event) => {
-      this.handleMouseMove(event);
+      const node = this.getNodeAtPosition(event);
+      if (node && !node.children) {
+        this.showTooltip(node.data.data as MarketData, event);
+      } else {
+        this.hideTooltip();
+      }
     });
     
     this.canvas.addEventListener('mouseleave', () => {
       this.hideTooltip();
     });
-    
-    this.canvas.addEventListener('click', (event) => {
-      this.handleClick(event);
-    });
   }
 
-  private handleMouseMove(event: MouseEvent): void {
-    if (!this.tooltip || !this.canvas) return;
+  private getNodeAtPosition(event: MouseEvent): any {
+    if (!this.canvas) return null;
     
     const rect = this.canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
+    return this.nodes.find(node => 
+      node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1
+    );
+  }
+
+  private drillTo(node: TreemapNode): void {
+    this.currentRoot = node;
+    this.renderTreemap();
+  }
+
+  private showTooltip(data: MarketData, event: MouseEvent): void {
+    if (!this.tooltip) return;
+    
+    const config = getConfig();
+    const currencySign = config.currency === 'USD' ? '$' : config.currency;
+    
+    this.tooltip.innerHTML = `
+      <div><strong>${data.ticker}</strong></div>
+      <div>${data.nameEng}</div>
+      <div>Price: ${currencySign}${data.priceLastSale.toFixed(2)}</div>
+      <div>Change: ${formatPercent(data.priceChangePct || 0)}</div>
+      <div>Market Cap: ${currencySign}${formatNumber(data.marketCap)}M</div>
+      <div>Volume: ${formatNumber(data.volume)}</div>
+      <div>Trades: ${formatNumber(data.numTrades)}</div>
+      <div>Exchange: ${data.exchange}</div>
+    `;
+    
     this.tooltip.style.left = `${event.clientX + 10}px`;
     this.tooltip.style.top = `${event.clientY - 10}px`;
     this.tooltip.style.opacity = '1';
-    this.tooltip.innerHTML = `
-      <div>Position: ${Math.round(x)}, ${Math.round(y)}</div>
-      <div>Click to drill down</div>
-    `;
-  }
-
-  private handleClick(event: MouseEvent): void {
   }
 
   private hideTooltip(): void {
@@ -198,7 +400,14 @@ export class D3TreemapRenderer implements ChartRenderer {
     }
   }
 
+  private showCompanyOverlay(data: MarketData): void {
+    console.log('Show company overlay for:', data.ticker);
+  }
+
   destroy(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
     if (this.tooltip) {
       document.body.removeChild(this.tooltip);
       this.tooltip = null;
