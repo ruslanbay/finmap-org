@@ -129,9 +129,12 @@ export class D3TreemapRenderer {
                 .sort((a, b) => (b.value || 0) - (a.value || 0));
         const treemap = d3.treemap()
             .size([width, height])
-            .padding(2)
+            .paddingTop((d) => d.children ? 24 : 2)
             .paddingInner(1)
             .paddingOuter(2)
+            .paddingRight(2)
+            .paddingBottom(2)
+            .paddingLeft(2)
             .round(true);
         treemap(currentHierarchy);
         this.nodes = currentHierarchy.descendants();
@@ -165,36 +168,103 @@ export class D3TreemapRenderer {
     renderNodeText(node, width, height, isLeaf, change) {
         if (!this.context)
             return;
+        // Skip text if too small
+        if (width < 80 || height < 60) {
+            return;
+        }
+        this.context.save();
         this.context.fillStyle = '#fff';
-        this.context.textAlign = 'center';
-        this.context.textBaseline = 'middle';
-        const centerX = node.x0 + width / 2;
-        const centerY = node.y0 + height / 2;
+        this.context.textAlign = 'left';
+        this.context.textBaseline = 'top';
+        // Add padding from edges
+        const padding = 6;
+        const textX = node.x0 + padding;
+        const textY = node.y0 + padding;
+        const maxWidth = width - (padding * 2);
+        const maxHeight = height - (padding * 2);
         if (isLeaf) {
-            const fontSize = Math.min(width / 8, height / 6, 12);
-            this.context.font = `bold ${fontSize}px Arial`;
-            const ticker = this.getTruncatedText(node.data.ticker, width - 4);
-            this.context.fillText(ticker, centerX, centerY - fontSize / 2);
-            if (height > 40) {
-                this.context.font = `${Math.max(fontSize - 2, 8)}px Arial`;
-                this.context.fillText(formatPercent(change), centerX, centerY + fontSize / 2 + 2);
+            // Company financial information
+            const ticker = node.data.ticker || '';
+            const name = node.data.data?.nameEng || node.data.data?.name || ticker;
+            const price = Number(node.data.data?.price) || 0;
+            const change = Number(node.data.data?.priceChangePct) || 0;
+            const marketCap = Number(node.data.data?.capitalization) || 0;
+            let currentY = textY;
+            const lineHeight = 16;
+            // Ticker symbol (bold, larger)
+            this.context.font = 'bold 14px Arial';
+            this.drawWrappedText(ticker, textX, currentY, maxWidth, lineHeight, 1);
+            currentY += lineHeight + 2;
+            // Company name (smaller)
+            if (height > 80) {
+                this.context.font = '11px Arial';
+                const nameLines = this.drawWrappedText(name, textX, currentY, maxWidth, 14, 2);
+                currentY += (nameLines * 14) + 2;
+            }
+            // Price and change
+            if (height > 100) {
+                this.context.font = '12px Arial';
+                const priceText = `${this.formatCurrency(price)}`;
+                const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                this.context.fillStyle = change >= 0 ? '#2aca55' : '#ec3033';
+                this.drawWrappedText(`${priceText} (${changeText})`, textX, currentY, maxWidth, lineHeight, 1);
+                currentY += lineHeight + 2;
+            }
+            // Market cap
+            if (height > 120) {
+                this.context.fillStyle = '#fff';
+                this.context.font = '11px Arial';
+                const capText = `Cap: ${this.formatCurrency(marketCap)}`;
+                this.drawWrappedText(capText, textX, currentY, maxWidth, 14, 1);
             }
         }
         else {
-            const fontSize = Math.min(width / 12, height / 4, 14);
-            this.context.font = `bold ${fontSize}px Arial`;
-            const sectorName = this.getTruncatedText(node.data.name, width - 8);
-            this.context.fillText(sectorName, centerX, centerY - fontSize / 2);
-            if (height > 50) {
-                this.context.font = `${Math.max(fontSize - 2, 10)}px Arial`;
-                const stockCount = node.children?.length || 0;
-                this.context.fillText(`${stockCount} stocks`, centerX, centerY + fontSize / 2 + 2);
-                if (height > 70) {
-                    this.context.font = `${Math.max(fontSize - 3, 9)}px Arial`;
-                    this.context.fillText(formatPercent(change), centerX, centerY + fontSize + 8);
-                }
+            // Sector header text
+            const sectorName = node.data.name || '';
+            this.context.font = 'bold 14px Arial';
+            this.drawWrappedText(sectorName, textX, textY, maxWidth, 18, 1);
+        }
+        this.context.restore();
+    }
+    drawWrappedText(text, x, y, maxWidth, lineHeight, maxLines) {
+        const context = this.context;
+        if (!context)
+            return 0;
+        const words = text.split(' ');
+        let line = '';
+        let lineCount = 0;
+        let currentY = y;
+        for (let i = 0; i < words.length && lineCount < maxLines; i++) {
+            const testLine = line + words[i] + ' ';
+            const metrics = context.measureText(testLine);
+            if (metrics.width > maxWidth && line !== '') {
+                // Draw current line
+                context.fillText(line.trim(), x, currentY);
+                lineCount++;
+                currentY += lineHeight;
+                line = words[i] + ' ';
+            }
+            else {
+                line = testLine;
             }
         }
+        // Draw last line if within limits
+        if (line.trim() && lineCount < maxLines) {
+            context.fillText(line.trim(), x, currentY);
+            lineCount++;
+        }
+        return lineCount;
+    }
+    formatCurrency(value) {
+        if (value >= 1e12)
+            return `$${(value / 1e12).toFixed(1)}T`;
+        if (value >= 1e9)
+            return `$${(value / 1e9).toFixed(1)}B`;
+        if (value >= 1e6)
+            return `$${(value / 1e6).toFixed(1)}M`;
+        if (value >= 1e3)
+            return `$${(value / 1e3).toFixed(1)}K`;
+        return `$${value.toFixed(2)}`;
     }
     calculateSectorChange(sectorNode) {
         if (!sectorNode.children || sectorNode.children.length === 0)
