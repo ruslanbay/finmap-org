@@ -227,7 +227,8 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     const isLeaf = !node.children || node.children.length === 0;
     const data = isLeaf ? node.data.data as MarketData : node.data;
-    const change = isLeaf ? (data?.priceChangePct || 0) : this.calculateSectorChange(node);
+    // Use sector's own price change if available, otherwise calculate from children
+    const change = isLeaf ? (data?.priceChangePct || 0) : (data?.priceChangePct !== undefined ? data.priceChangePct : this.calculateSectorChange(node));
     
     this.context.fillStyle = getColorForChange(change);
     this.context.fillRect(node.x0, node.y0, width, height);
@@ -527,11 +528,11 @@ export class D3TreemapRenderer implements ChartRenderer {
         const isLeaf = !node.children || node.children.length === 0;
         if (isLeaf && node.data.data) {
           // Show tooltip for leaf nodes (individual stocks)
-          this.showStockTooltip(node.data.data as MarketData, event);
+          this.showTooltip(node.data.data as MarketData, event, node);
           this.canvas!.style.cursor = 'pointer';
         } else if (node.children && node.children.length > 0) {
-          // Show tooltip for sector nodes
-          this.showSectorTooltip(node, event);
+          // Show tooltip for sector nodes - treat sector data as MarketData
+          this.showTooltip(node.data as MarketData, event, node);
           this.canvas!.style.cursor = 'pointer';
         } else {
           this.canvas!.style.cursor = 'pointer';
@@ -575,25 +576,28 @@ export class D3TreemapRenderer implements ChartRenderer {
     this.renderTreemap();
   }
 
-  private showStockTooltip(data: MarketData, event: MouseEvent): void {
+  private showTooltip(data: MarketData, event: MouseEvent, node?: any): void {
     if (!this.tooltip) return;
     
     const config = getConfig();
     const currencySign = this.getCurrencySign(config.currency);
     const isPortfolio = localStorage.getItem('finmap-portfolio-mode') === 'true';
     
-    // Get the node to access its properties
-    const node = this.getNodeAtPosition(event);
+    // Get the node to access its properties if not provided
+    const targetNode = node || this.getNodeAtPosition(event);
     const change = data?.priceChangePct || 0;
     const nodeColor = getColorForChange(change);
     
+    // Check if this is a sector (has children) or individual stock
+    const isSector = targetNode && targetNode.children && targetNode.children.length > 0;
+    
     // Calculate percentages
-    const percentParent = node && node.parent ? (node.value || 0) / (node.parent.value || 1) * 100 : 100;
-    const percentRoot = node && this.rootNode ? (node.value || 0) / (this.rootNode.value || 1) * 100 : 100;
-    const sectorItemCount = node && node.parent ? this.countLeafNodes(node.parent) : 1;
+    const percentParent = targetNode && targetNode.parent ? (targetNode.value || 0) / (targetNode.parent.value || 1) * 100 : 100;
+    const percentRoot = targetNode && this.rootNode ? (targetNode.value || 0) / (this.rootNode.value || 1) * 100 : 100;
+    const sectorItemCount = isSector ? this.countLeafNodes(targetNode) : (targetNode && targetNode.parent ? this.countLeafNodes(targetNode.parent) : 1);
     
     let portfolioInfo = '';
-    if (isPortfolio) {
+    if (isPortfolio && !isSector) {
       const storedFilters = localStorage.getItem('finmap-filters');
       if (storedFilters) {
         const filters = JSON.parse(storedFilters);
@@ -611,60 +615,37 @@ export class D3TreemapRenderer implements ChartRenderer {
     this.tooltip!.style.color = '#ffffff';
     this.tooltip!.style.border = `1px solid ${nodeColor}`;
     
-    this.tooltip.innerHTML = `
-      <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
-      <div style="margin-bottom: 2px;">${data.nameEng}</div>
-      <div style="margin-bottom: 2px;">${currencySign}${data.priceLastSale.toFixed(2)} (${formatPercent(data.priceChangePct || 0)})</div>
-      <div style="margin-bottom: 2px;">MarketCap: ${currencySign}${formatNumber(data.marketCap)}M</div>
-      <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume)}</div>
-      <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value)}M</div>
-      <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades)}</div>
-      <div style="margin-bottom: 2px;">Country: ${data.country}</div>
-      <div style="margin-bottom: 2px;">Exchange: ${data.exchange}</div>
-      <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom}</div>
-      <div style="margin-bottom: 2px;">Industry: ${data.industry}</div>
-      <div style="margin-bottom: 2px;">% of Sector: ${percentParent.toFixed(2)}%</div>
-      <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
-      <div style="margin-bottom: 2px;">Items per Sector: ${sectorItemCount}</div>
-      ${portfolioInfo}
-    `;
-    
-    this.positionTooltip(event);
-    this.tooltip.style.opacity = '1';
-  }
-
-  private showSectorTooltip(node: any, event: MouseEvent): void {
-    if (!this.tooltip) return;
-    
-    const sectorName = node.data.name || 'Unknown Sector';
-    const sectorChange = this.calculateSectorChange(node);
-    const stockCount = this.countLeafNodes(node);
-    const totalValue = node.value || 0;
-    
-    const config = getConfig();
-    const currencySign = this.getCurrencySign(config.currency);
-    
-    // Calculate percentages
-    const percentParent = node && node.parent ? (node.value || 0) / (node.parent.value || 1) * 100 : 100;
-    const percentRoot = node && this.rootNode ? (node.value || 0) / (this.rootNode.value || 1) * 100 : 100;
-    
-    // Get sector color
-    const sectorColor = getColorForChange(sectorChange);
-    
-    // Set tooltip background to match tile color
-    this.tooltip!.style.background = sectorColor;
-    this.tooltip!.style.color = '#ffffff';
-    this.tooltip!.style.border = `1px solid ${sectorColor}`;
-    
-    this.tooltip.innerHTML = `
-      <div style="margin-bottom: 4px;"><b>${sectorName}</b></div>
-      <div style="margin-bottom: 2px;">Sector Change: ${formatPercent(sectorChange)}</div>
-      <div style="margin-bottom: 2px;">Companies: ${stockCount}</div>
-      <div style="margin-bottom: 2px;">Total Value: ${currencySign}${formatNumber(totalValue)}M</div>
-      <div style="margin-bottom: 2px;">% of Parent: ${percentParent.toFixed(2)}%</div>
-      <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
-      <div style="margin-bottom: 2px; font-style: italic; opacity: 0.8;">Click to drill down</div>
-    `;
+    if (isSector) {
+      // Sector tooltip content
+      this.tooltip.innerHTML = `
+        <div style="margin-bottom: 4px;"><b>${data.ticker || data.nameEng}</b></div>
+        <div style="margin-bottom: 2px;">Sector Change: ${formatPercent(change)}</div>
+        <div style="margin-bottom: 2px;">Companies: ${sectorItemCount}</div>
+        <div style="margin-bottom: 2px;">Total Value: ${currencySign}${formatNumber(targetNode?.value || 0)}M</div>
+        <div style="margin-bottom: 2px;">% of Parent: ${percentParent.toFixed(2)}%</div>
+        <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
+        <div style="margin-bottom: 2px; font-style: italic; opacity: 0.8;">Click to drill down</div>
+      `;
+    } else {
+      // Stock tooltip content
+      this.tooltip.innerHTML = `
+        <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
+        <div style="margin-bottom: 2px;">${data.nameEng}</div>
+        <div style="margin-bottom: 2px;">${currencySign}${data.priceLastSale.toFixed(2)} (${formatPercent(data.priceChangePct || 0)})</div>
+        <div style="margin-bottom: 2px;">MarketCap: ${currencySign}${formatNumber(data.marketCap)}M</div>
+        <div style="margin-bottom: 2px;">Volume: ${formatNumber(data.volume)}</div>
+        <div style="margin-bottom: 2px;">Value: ${currencySign}${formatNumber(data.value)}M</div>
+        <div style="margin-bottom: 2px;">Trades: ${formatNumber(data.numTrades)}</div>
+        <div style="margin-bottom: 2px;">Country: ${data.country}</div>
+        <div style="margin-bottom: 2px;">Exchange: ${data.exchange}</div>
+        <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom}</div>
+        <div style="margin-bottom: 2px;">Industry: ${data.industry}</div>
+        <div style="margin-bottom: 2px;">% of Sector: ${percentParent.toFixed(2)}%</div>
+        <div style="margin-bottom: 2px;">% of Total: ${percentRoot.toFixed(2)}%</div>
+        <div style="margin-bottom: 2px;">Items per Sector: ${sectorItemCount}</div>
+        ${portfolioInfo}
+      `;
+    }
     
     this.positionTooltip(event);
     this.tooltip.style.opacity = '1';
@@ -683,11 +664,53 @@ export class D3TreemapRenderer implements ChartRenderer {
   }
 
   private positionTooltip(event: MouseEvent): void {
-    if (!this.tooltip) return;
+    if (!this.tooltip || !this.canvas) return;
     
-    // Simple positioning without dynamic resizing (like Plotly.js)
-    this.tooltip.style.left = `${event.clientX + 12}px`;
-    this.tooltip.style.top = `${event.clientY - 12}px`;
+    // Get canvas bounds
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Temporarily show tooltip to measure its dimensions
+    this.tooltip.style.visibility = 'hidden';
+    this.tooltip.style.opacity = '1';
+    const tooltipRect = this.tooltip.getBoundingClientRect();
+    this.tooltip.style.visibility = 'visible';
+    
+    const tooltipWidth = tooltipRect.width;
+    const tooltipHeight = tooltipRect.height;
+    
+    // Default offset from cursor
+    const offsetX = 12;
+    const offsetY = -12;
+    
+    // Calculate initial position
+    let left = event.clientX + offsetX;
+    let top = event.clientY + offsetY;
+    
+    // Check if tooltip would go beyond right edge (less than 40px space)
+    const spaceOnRight = viewportWidth - event.clientX;
+    if (spaceOnRight < 40 || left + tooltipWidth > viewportWidth) {
+      // Position tooltip to the left of cursor
+      left = event.clientX - tooltipWidth - offsetX;
+      this.tooltip.style.textAlign = 'right';
+    } else {
+      this.tooltip.style.textAlign = 'left';
+    }
+    
+    // Check if tooltip would go beyond bottom edge (less than 80px space)
+    const spaceBelow = viewportHeight - event.clientY;
+    if (spaceBelow < 80 || top + tooltipHeight > viewportHeight) {
+      // Position tooltip above cursor
+      top = event.clientY - tooltipHeight + offsetY;
+    }
+    
+    // Ensure tooltip doesn't go beyond viewport boundaries
+    left = Math.max(0, Math.min(left, viewportWidth - tooltipWidth));
+    top = Math.max(0, Math.min(top, viewportHeight - tooltipHeight));
+    
+    this.tooltip.style.left = `${left}px`;
+    this.tooltip.style.top = `${top}px`;
     this.tooltip.style.opacity = '1';
   }
 
@@ -708,6 +731,7 @@ export class D3TreemapRenderer implements ChartRenderer {
       this.tooltip.style.background = 'white';
       this.tooltip.style.color = 'rgb(68, 68, 68)';
       this.tooltip.style.border = '1px solid rgb(214, 214, 214)';
+      this.tooltip.style.textAlign = 'left';
     }
   }
 
