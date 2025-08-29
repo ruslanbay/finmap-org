@@ -245,11 +245,9 @@ export class D3TreemapRenderer implements ChartRenderer {
     const maxHeight = height - (padding * 2);
 
     if (isLeaf) {
+      // Calculate proportional font size based on node area (like Plotly.js)
       const nodeArea = width * height;
       const baseFontSize = Math.max(8, Math.min(12, Math.sqrt(nodeArea) / 15));
-      const tickerFontSize = Math.round(baseFontSize * 1.2);
-      const detailFontSize = Math.round(baseFontSize * 0.8);
-      const smallFontSize = Math.round(baseFontSize * 0.7);
 
       // Company financial information
       const ticker = node.data.ticker || '';
@@ -261,32 +259,32 @@ export class D3TreemapRenderer implements ChartRenderer {
       let currentY = textY;
       const lineHeight = Math.round(baseFontSize * 1.2);
 
-      // Ticker symbol (bold, proportional size)
-      this.context.font = `bold ${tickerFontSize}px Arial`;
+      // Ticker symbol (bold, same size as other text)
+      this.context.font = `bold ${baseFontSize}px Arial`;
       this.drawWrappedText(ticker, textX, currentY, maxWidth, lineHeight, 1);
       currentY += lineHeight + 2;
 
-      // Company name (smaller, show if there's enough space)
+      // Company name (same size as ticker, not bold)
       if (height > baseFontSize * 5) {
-        this.context.font = `${detailFontSize}px Arial`;
-        const nameLines = this.drawWrappedText(name, textX, currentY, maxWidth, Math.round(detailFontSize * 1.2), 2);
-        currentY += (nameLines * Math.round(detailFontSize * 1.2)) + 2;
+        this.context.font = `${baseFontSize}px Arial`;
+        const nameLines = this.drawWrappedText(name, textX, currentY, maxWidth, lineHeight, 2);
+        currentY += (nameLines * lineHeight) + 2;
       }
 
-      // Price and change (show if there's enough space)
+      // Price and change (same size)
       if (height > baseFontSize * 7) {
-        this.context.font = `${detailFontSize}px Arial`;
+        this.context.font = `${baseFontSize}px Arial`;
         const priceText = `${this.formatCurrency(price)}`;
         const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
         this.drawWrappedText(`${priceText} (${changeText})`, textX, currentY, maxWidth, lineHeight, 1);
         currentY += lineHeight + 2;
       }
 
-      // Market cap (show if there's enough space)
+      // Market cap (same size)
       if (height > baseFontSize * 9) {
-        this.context.font = `${smallFontSize}px Arial`;
+        this.context.font = `${baseFontSize}px Arial`;
         const capText = `Cap: ${this.formatCurrency(marketCap)}`;
-        this.drawWrappedText(capText, textX, currentY, maxWidth, Math.round(smallFontSize * 1.2), 1);
+        this.drawWrappedText(capText, textX, currentY, maxWidth, lineHeight, 1);
       }
     } else {
       // Sector header text with specific styling
@@ -499,7 +497,7 @@ export class D3TreemapRenderer implements ChartRenderer {
       const node = this.getNodeAtPosition(event);
       if (node && node.data) {
         if (node.children && node.children.length > 0) {
-          this.drillTo(node.data);
+          this.drillTo(node);
         } else if (node.data.data) {
           this.showCompanyOverlay(node.data.data as MarketData);
         }
@@ -550,7 +548,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     // Check all nodes, not just visible ones
     const checkNode = (node: any, depth: number) => {
-      if (!node.parent) return;
+      if (!node) return;
       
       if (node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1) {
         if (depth > maxDepth) {
@@ -566,8 +564,8 @@ export class D3TreemapRenderer implements ChartRenderer {
     };
     
     // Start from the current root and check all descendants
-    if (this.currentRoot && this.currentRoot.children) {
-      this.currentRoot.children.forEach((child: any) => checkNode(child, 0));
+    if (this.currentRoot) {
+      checkNode(this.currentRoot, 0);
     }
     
     return deepestNode;

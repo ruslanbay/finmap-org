@@ -129,7 +129,7 @@ export class D3TreemapRenderer {
                 .sort((a, b) => (b.value || 0) - (a.value || 0));
         const treemap = d3.treemap()
             .size([width, height])
-            .paddingTop((d) => d.children ? 15 : 2)
+            .paddingTop((d) => d.children ? 20 : 2)
             .paddingInner(1)
             .paddingOuter(2)
             .paddingRight(2)
@@ -153,7 +153,7 @@ export class D3TreemapRenderer {
         });
     }
     adjustNodesForSectorHeaders() {
-        const sectorHeaderHeight = 15;
+        const sectorHeaderHeight = 20;
         this.nodes.forEach((node) => {
             if (node.children && node.children.length > 0) {
                 // This is a sector node - adjust only its leaf children (not sector children)
@@ -209,11 +209,9 @@ export class D3TreemapRenderer {
         const maxWidth = width - (padding * 2);
         const maxHeight = height - (padding * 2);
         if (isLeaf) {
+            // Calculate proportional font size based on node area (like Plotly.js)
             const nodeArea = width * height;
             const baseFontSize = Math.max(8, Math.min(12, Math.sqrt(nodeArea) / 15));
-            const tickerFontSize = Math.round(baseFontSize * 1.2);
-            const detailFontSize = Math.round(baseFontSize * 0.8);
-            const smallFontSize = Math.round(baseFontSize * 0.7);
             // Company financial information
             const ticker = node.data.ticker || '';
             const name = node.data.data?.nameEng || ticker;
@@ -222,35 +220,35 @@ export class D3TreemapRenderer {
             const marketCap = Number(node.data.data?.marketCap) || 0;
             let currentY = textY;
             const lineHeight = Math.round(baseFontSize * 1.2);
-            // Ticker symbol (bold, proportional size)
-            this.context.font = `bold ${tickerFontSize}px Arial`;
+            // Ticker symbol (bold, same size as other text)
+            this.context.font = `bold ${baseFontSize}px Arial`;
             this.drawWrappedText(ticker, textX, currentY, maxWidth, lineHeight, 1);
             currentY += lineHeight + 2;
-            // Company name (smaller, show if there's enough space)
+            // Company name (same size as ticker, not bold)
             if (height > baseFontSize * 5) {
-                this.context.font = `${detailFontSize}px Arial`;
-                const nameLines = this.drawWrappedText(name, textX, currentY, maxWidth, Math.round(detailFontSize * 1.2), 2);
-                currentY += (nameLines * Math.round(detailFontSize * 1.2)) + 2;
+                this.context.font = `${baseFontSize}px Arial`;
+                const nameLines = this.drawWrappedText(name, textX, currentY, maxWidth, lineHeight, 2);
+                currentY += (nameLines * lineHeight) + 2;
             }
-            // Price and change (show if there's enough space)
+            // Price and change (same size)
             if (height > baseFontSize * 7) {
-                this.context.font = `${detailFontSize}px Arial`;
+                this.context.font = `${baseFontSize}px Arial`;
                 const priceText = `${this.formatCurrency(price)}`;
                 const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
                 this.drawWrappedText(`${priceText} (${changeText})`, textX, currentY, maxWidth, lineHeight, 1);
                 currentY += lineHeight + 2;
             }
-            // Market cap (show if there's enough space)
+            // Market cap (same size)
             if (height > baseFontSize * 9) {
-                this.context.font = `${smallFontSize}px Arial`;
+                this.context.font = `${baseFontSize}px Arial`;
                 const capText = `Cap: ${this.formatCurrency(marketCap)}`;
-                this.drawWrappedText(capText, textX, currentY, maxWidth, Math.round(smallFontSize * 1.2), 1);
+                this.drawWrappedText(capText, textX, currentY, maxWidth, lineHeight, 1);
             }
         }
         else {
             // Sector header text with specific styling
             const sectorName = node.data.name || '';
-            this.context.font = 'bold 16px Arial, sans-serif';
+            this.context.font = 'bold 12px Arial, sans-serif';
             this.context.fillStyle = '#ffffff';
             this.context.textAlign = 'left';
             this.context.textBaseline = 'top';
@@ -433,7 +431,7 @@ export class D3TreemapRenderer {
             const node = this.getNodeAtPosition(event);
             if (node && node.data) {
                 if (node.children && node.children.length > 0) {
-                    this.drillTo(node.data);
+                    this.drillTo(node);
                 }
                 else if (node.data.data) {
                     this.showCompanyOverlay(node.data.data);
@@ -482,7 +480,7 @@ export class D3TreemapRenderer {
         let maxDepth = -1;
         // Check all nodes, not just visible ones
         const checkNode = (node, depth) => {
-            if (!node.parent)
+            if (!node)
                 return;
             if (node.x0 <= x && x <= node.x1 && node.y0 <= y && y <= node.y1) {
                 if (depth > maxDepth) {
@@ -496,8 +494,8 @@ export class D3TreemapRenderer {
             }
         };
         // Start from the current root and check all descendants
-        if (this.currentRoot && this.currentRoot.children) {
-            this.currentRoot.children.forEach((child) => checkNode(child, 0));
+        if (this.currentRoot) {
+            checkNode(this.currentRoot, 0);
         }
         return deepestNode;
     }
