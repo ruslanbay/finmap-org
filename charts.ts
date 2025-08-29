@@ -42,7 +42,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     if (!this.container) return;
 
     this.pathbar = document.createElement('div');
-    this.pathbar.style.height = '40px';
+    this.pathbar.style.height = '24px';
     this.pathbar.style.backgroundColor = '#414554';
     this.pathbar.style.display = 'flex';
     this.pathbar.style.alignItems = 'center';
@@ -138,7 +138,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     const rect = this.container.getBoundingClientRect();
     const width = rect.width;
-    const height = rect.height - 40;
+    const height = rect.height - 24;
     
     const currentHierarchy = this.currentRoot === this.rootNode 
       ? this.hierarchy 
@@ -228,9 +228,9 @@ export class D3TreemapRenderer implements ChartRenderer {
     if (!this.context) return;
     
     // Skip text if too small
-    if (width < 40 || height < 20) {
-      return;
-    }
+    // if (width < 40 || height < 20) {
+    //   return;
+    // }
 
     this.context.save();
     this.context.fillStyle = '#fff';
@@ -247,7 +247,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     if (isLeaf) {
       // Calculate proportional font size based on node area (like Plotly.js)
       const nodeArea = width * height;
-      const baseFontSize = Math.max(8, Math.min(12, Math.sqrt(nodeArea) / 15));
+      const baseFontSize = Math.max(2, Math.min(12, Math.sqrt(nodeArea) / 15));
 
       // Company financial information
       const ticker = node.data.ticker || '';
