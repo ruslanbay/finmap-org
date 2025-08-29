@@ -148,7 +148,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     const treemap = d3.treemap()
       .size([width, height])
-      .paddingTop((d: any) => d.children ? 15 : 2)
+      .paddingTop((d: any) => d.children ? 20 : 2)
       .paddingInner(1)
       .paddingOuter(2)
       .paddingRight(2)
@@ -178,7 +178,7 @@ export class D3TreemapRenderer implements ChartRenderer {
   }
 
   private adjustNodesForSectorHeaders(): void {
-    const sectorHeaderHeight = 15;
+    const sectorHeaderHeight = 20;
     
     this.nodes.forEach((node: any) => {
       if (node.children && node.children.length > 0) {
@@ -291,7 +291,7 @@ export class D3TreemapRenderer implements ChartRenderer {
     } else {
       // Sector header text with specific styling
       const sectorName = node.data.name || '';
-      this.context.font = 'bold 16px Arial, sans-serif';
+      this.context.font = 'bold 12px Arial, sans-serif';
       this.context.fillStyle = '#ffffff';
       this.context.textAlign = 'left';
       this.context.textBaseline = 'top';
