@@ -1,4 +1,3 @@
-import * as d3 from 'd3';
 const formatSI = d3.format('.1~s');
 const formatPercentD3 = d3.format('+.2%');
 const formatCurrency = d3.format(',.2f');

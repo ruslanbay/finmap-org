@@ -1,10 +1,10 @@
-import * as d3 from 'd3';
+declare const d3: any;
 
 const formatSI = d3.format('.1~s');
 const formatPercentD3 = d3.format('+.2%');
 const formatCurrency = d3.format(',.2f');
 
-const colorScale = d3.scaleLinear<string>()
+const colorScale = d3.scaleLinear()
   .domain([-3, 0, 3])
   .range(['rgb(236, 48, 51)', 'rgb(64, 68, 82)', 'rgb(42, 202, 85)'])
   .clamp(true);

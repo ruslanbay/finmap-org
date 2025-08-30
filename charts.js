@@ -1,4 +1,3 @@
-import * as d3 from 'd3';
 import { getConfig } from './config.js';
 import { formatNumber, formatPercent, getColorForChange } from './utils.js';
 export class D3TreemapRenderer {

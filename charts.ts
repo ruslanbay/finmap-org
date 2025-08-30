@@ -1,4 +1,5 @@
-import * as d3 from 'd3';
+declare const d3: any;
+
 import type { MarketData, ChartRenderer, TreemapNode, PathbarItem, HistogramDataPoint } from './types.js';
 import { getConfig } from './config.js';
 import { formatNumber, formatPercent, getColorForChange } from './utils.js';
@@ -15,7 +16,7 @@ export class D3TreemapRenderer implements ChartRenderer {
   private rootNode: TreemapNode | null = null;
   private nodes: any[] = [];
   private resizeObserver: ResizeObserver | null = null;
-  private colorScale = d3.scaleLinear<string>()
+  private colorScale = d3.scaleLinear()
     .domain([-3, 0, 3])
     .range(['rgb(236, 48, 51)', 'rgb(64, 68, 82)', 'rgb(42, 202, 85)'])
     .clamp(true);
