@@ -8,12 +8,15 @@ export function prepareHierarchyData(data) {
     console.log('Securities count:', securities.length);
     console.log('Sectors count:', sectors.length);
     console.log('Root found:', !!root);
-    const children = sectors.map(sector => ({
-        data: sector,
-        children: securities
-            .filter(s => s.sector === sector.sector)
-            .map(security => ({ data: security }))
-    }));
+    const children = sectors.map(sector => {
+        const sectorName = sector.ticker;
+        const matchingSecurities = securities.filter(s => s.sector === sectorName);
+        console.log(`Sector ${sectorName} has ${matchingSecurities.length} securities`);
+        return {
+            data: sector,
+            children: matchingSecurities.map(security => ({ data: security }))
+        };
+    });
     console.log('Children count:', children.length);
     console.log('Children with securities:', children.filter(c => c.children && c.children.length > 0).length);
     const defaultRoot = {
