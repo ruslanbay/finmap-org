@@ -11,7 +11,6 @@ export class D3TreemapRenderer {
     currentRoot = null;
     rootNode = null;
     nodes = [];
-    quadtree = null;
     resizeObserver = null;
     colorScale = d3.scaleLinear()
         .domain([-3, 0, 3])
@@ -164,7 +163,6 @@ export class D3TreemapRenderer {
             .round(true);
         treemap(currentHierarchy);
         this.nodes = currentHierarchy.descendants();
-        this.buildQuadtree();
         // Adjust child node positions to make room for sector headers
         this.adjustNodesForSectorHeaders();
         this.context.clearRect(0, 0, width, height);
@@ -178,12 +176,6 @@ export class D3TreemapRenderer {
                 return;
             this.renderNode(node, nodeWidth, nodeHeight);
         });
-    }
-    buildQuadtree() {
-        this.quadtree = d3.quadtree()
-            .x((d) => (d.x0 + d.x1) / 2)
-            .y((d) => (d.y0 + d.y1) / 2)
-            .addAll(this.nodes.filter(d => d.parent));
     }
     adjustNodesForSectorHeaders() {
         const sectorHeaderHeight = 20;
@@ -471,29 +463,22 @@ export class D3TreemapRenderer {
         });
     }
     getNodeAtPosition(event) {
-        if (!this.canvas || !this.quadtree)
+        if (!this.canvas || !this.nodes)
             return null;
         const rect = this.canvas.getBoundingClientRect();
         const devicePixelRatio = window.devicePixelRatio || 1;
-        // Get the actual drawing dimensions used by the treemap
-        const containerRect = this.container?.getBoundingClientRect();
-        if (!containerRect)
-            return null;
-        const pathbarHeight = 24;
-        const footerHeight = 25;
-        const drawingWidth = containerRect.width;
-        const drawingHeight = containerRect.height - pathbarHeight - footerHeight;
-        // Convert mouse coordinates to treemap coordinates
-        const x = (event.clientX - rect.left) * (drawingWidth / rect.width);
-        const y = (event.clientY - rect.top) * (drawingHeight / rect.height);
-        const candidates = [];
-        this.quadtree.visit((node, x0, y0, x1, y1) => {
-            if (node.data && node.data.x0 <= x && x <= node.data.x1 && node.data.y0 <= y && y <= node.data.y1) {
-                candidates.push(node.data);
+        // Calculate mouse position relative to canvas (original working calculation)
+        const x = (event.clientX - rect.left) * (this.canvas.width / rect.width) / devicePixelRatio;
+        const y = (event.clientY - rect.top) * (this.canvas.height / rect.height) / devicePixelRatio;
+        // Find the node at this position by checking rendered nodes in reverse order
+        // (so we get the topmost/deepest node)
+        for (let i = this.nodes.length - 1; i >= 0; i--) {
+            const node = this.nodes[i];
+            if (node?.x0 <= x && x <= node?.x1 && node?.y0 <= y && y <= node?.y1) {
+                return node;
             }
-            return x0 > x || y0 > y || x1 < x || y1 < y;
-        });
-        return candidates.length > 0 ? candidates[candidates.length - 1] : null;
+        }
+        return null;
     }
     drillTo(node) {
         this.currentRoot = node;
