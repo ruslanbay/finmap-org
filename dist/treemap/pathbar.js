@@ -1,5 +1,4 @@
 import { COLOR_SCALE, COLORS, LAYOUT, FONT } from './constants.js';
-import { getValueForDataType } from './data.js';
 export class PathbarComponent {
     element = null;
     create(container) {
@@ -86,30 +85,9 @@ export class PathbarComponent {
         });
     }
     getSectorDataForNode(node) {
-        if (node.data && 'exchange' in node.data) {
-            return node.data;
-        }
-        if (node.children && node.children.length > 0) {
-            const marketData = node.data;
-            const sectorName = marketData?.nameEng || 'Unknown';
-            const sectorChange = marketData?.priceChangePct || 0;
-            const sectorValue = getValueForDataType(node) || 0;
-            const firstChild = node.children[0];
-            const representativeData = firstChild?.data;
-            if (representativeData) {
-                return {
-                    ...representativeData,
-                    nameEng: sectorName,
-                    nameEngShort: sectorName,
-                    ticker: sectorName,
-                    priceChangePct: sectorChange,
-                    value: sectorValue,
-                    marketCap: sectorValue,
-                    type: 'sector'
-                };
-            }
-        }
-        return null;
+        if (!node)
+            return null;
+        return node.data.data || node.data;
     }
 }
 //# sourceMappingURL=pathbar.js.map

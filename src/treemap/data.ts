@@ -4,59 +4,19 @@ import { getConfig } from '../config.js';
 declare const d3: any;
 
 export function prepareHierarchyData(data: MarketData[]): TreemapNode {
-  const isPortfolioMode = localStorage.getItem('filterCsv') !== null;
   const securities = data.filter(item => item.type !== 'sector');
   const sectors = data.filter(item => item.type === 'sector' && item.sector !== "");
   const root = data.find(item => item.type === 'sector' && item.sector === "");
 
-  console.log('Data length:', data.length);
-  console.log('Securities count:', securities.length);
-  console.log('Sectors count:', sectors.length);
-  console.log('Root found:', !!root);
-
-  const children: TreemapNode[] = sectors.map(sector => {
-    const sectorName = sector.ticker;
-    const matchingSecurities = securities.filter(s => s.sector === sectorName);
-    
-    console.log(`Sector ${sectorName} has ${matchingSecurities.length} securities`);
-    
-    return {
-      data: sector,
-      children: matchingSecurities.map(security => ({ data: security }))
-    };
-  });
-
-  console.log('Children count:', children.length);
-  console.log('Children with securities:', children.filter(c => c.children && c.children.length > 0).length);
-
-  const defaultRoot: MarketData = {
-    exchange: '',
-    country: '',
-    type: 'sector',
-    sector: '',
-    industry: '',
-    currencyId: '',
-    ticker: 'root',
-    nameEng: 'Market',
-    nameEngShort: '',
-    nameOriginal: '',
-    nameOriginalShort: '',
-    priceOpen: 0,
-    priceLastSale: 0,
-    priceChangePct: 0,
-    volume: 0,
-    value: 0,
-    numTrades: 0,
-    marketCap: 0,
-    listedFrom: '',
-    listedTill: '',
-    wikiPageIdEng: '',
-    wikiPageIdOriginal: '',
-    nestedItemsCount: 0
-  };
+  const children: TreemapNode[] = sectors.map(sector => ({
+    data: sector,
+    children: securities
+      .filter(s => s.sector === sector.ticker)
+      .map(security => ({ data: security }))
+  }));
 
   return {
-    data: root || defaultRoot,
+    data: root!,
     children,
   };
 }

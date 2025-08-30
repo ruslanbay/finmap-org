@@ -81,7 +81,8 @@ export class CanvasRenderer {
         this.drawWrappedText(capText, textX, currentY, maxWidth, lineHeight, 1, context);
       }
     } else {
-      const sectorName = node.data?.nameEng || '';
+      const sectorData = node.data.data || node.data;
+      const sectorName = sectorData?.nameEng || sectorData?.ticker || '';
       context.font = `12px ${FONT.FAMILY}`;
       context.fillStyle = COLORS.TEXT_WHITE;
       context.textAlign = 'left';

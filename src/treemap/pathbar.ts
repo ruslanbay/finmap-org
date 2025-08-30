@@ -104,34 +104,8 @@ export class PathbarComponent {
     });
   }
 
-  private getSectorDataForNode(node: TreemapNode): MarketData | null {
-    if (node.data && 'exchange' in node.data) {
-      return node.data as MarketData;
-    }
-
-    if (node.children && node.children.length > 0) {
-      const marketData = node.data as MarketData | undefined;
-      const sectorName = marketData?.nameEng || 'Unknown';
-      const sectorChange = marketData?.priceChangePct || 0;
-      const sectorValue = getValueForDataType(node) || 0;
-
-      const firstChild = node.children[0];
-      const representativeData = firstChild?.data as MarketData;
-
-      if (representativeData) {
-        return {
-          ...representativeData,
-          nameEng: sectorName,
-          nameEngShort: sectorName,
-          ticker: sectorName,
-          priceChangePct: sectorChange,
-          value: sectorValue,
-          marketCap: sectorValue,
-          type: 'sector' as const
-        };
-      }
-    }
-
-    return null;
+  private getSectorDataForNode(node: any): MarketData | null {
+    if (!node) return null;
+    return node.data.data || node.data;
   }
 }

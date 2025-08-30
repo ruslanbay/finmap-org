@@ -35,35 +35,63 @@ export class TooltipComponent {
       .node();
   }
 
-  show(data: MarketData, event: MouseEvent, node?: any): void {
+  show(data: MarketData | any, event: MouseEvent, node?: any): void {
     if (!this.element) return;
+
+    // Extract MarketData from the node structure
+    let marketData: MarketData;
+    let hierarchyNode = node;
+    
+    if (data && typeof data === 'object' && 'ticker' in data) {
+      // Direct MarketData passed
+      marketData = data as MarketData;
+    } else if (node && node.data && node.data.data) {
+      // D3 hierarchy node structure: {data: {data: MarketData}}
+      marketData = node.data.data;
+    } else if (node && node.data) {
+      // TreemapNode structure: {data: MarketData}
+      marketData = node.data;
+    } else {
+      return; // Can't extract valid data
+    }
 
     const config = getConfig();
     const isPortfolio = localStorage.getItem('finmap-portfolio-mode') === 'true';
-    const change = data?.priceChangePct || 0;
+    const change = marketData?.priceChangePct || 0;
     const nodeColor = COLOR_SCALE(change);
 
-    const isSector = node && node.children && node.children.length > 0;
-    const nodeValue = getValueForDataType(node);
-    const parentValue = node && node.parent ? getValueForDataType(node.parent) : 1;
-    const percentParent = nodeValue / parentValue * 100;
-    let percentRoot = 100;
-    if (node) {
-      let root = node;
-      while (root.parent) root = root.parent;
-      const rootValue = getValueForDataType(root);
-      percentRoot = nodeValue / rootValue * 100;
-    }
+    const isSector = hierarchyNode && hierarchyNode.children && hierarchyNode.children.length > 0;
     
+    // Fix percentage calculations
+    let percentParent = 100;
+    let percentRoot = 100;
+    
+    if (hierarchyNode) {
+      const nodeValue = hierarchyNode.value || 0;
+      
+      if (hierarchyNode.parent && hierarchyNode.parent.value) {
+        percentParent = (nodeValue / hierarchyNode.parent.value) * 100;
+      }
+      
+      // Find root node
+      let root = hierarchyNode;
+      while (root.parent) {
+        root = root.parent;
+      }
+      
+      if (root.value) {
+        percentRoot = (nodeValue / root.value) * 100;
+      }
+    }
     let portfolioInfo = '';
     if (isPortfolio && !isSector) {
       const storedFilters = localStorage.getItem('finmap-filters');
       if (storedFilters) {
         const filters = JSON.parse(storedFilters);
-        const tickerIndex = filters.tickers?.indexOf(data.ticker);
+        const tickerIndex = filters.tickers?.indexOf(marketData.ticker);
         if (tickerIndex >= 0 && filters.amounts?.[tickerIndex]) {
           const amount = filters.amounts[tickerIndex];
-          const portfolioValue = (data.priceLastSale || 0) * amount;
+          const portfolioValue = (marketData.priceLastSale || 0) * amount;
           portfolioInfo = `<div>Holdings: ${amount.toLocaleString()} shares</div><div>Portfolio Value: ${d3.format(',.0f')(portfolioValue)}</div>`;
         }
       }
@@ -75,20 +103,20 @@ export class TooltipComponent {
     this.element.style.boxShadow = COLORS.TOOLTIP_SHADOW;
 
     this.element.innerHTML = `
-      <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
-      <div style="margin-bottom: 2px;">${data.nameEng}</div>
-      <div style="margin-bottom: 2px;">${data.priceLastSale || 0} (${d3.format('.2f')(data.priceChangePct || 0)}%)</div>
-      <div style="margin-bottom: 2px;">MarketCap: ${d3.format(',.0f')( (data.marketCap || 0) / 1e6 )}M</div>
-      <div style="margin-bottom: 2px;">Volume: ${d3.format(',.0f')(data.volume || 0)}</div>
-      <div style="margin-bottom: 2px;">Value: ${d3.format(',.0f')( (data.value || 0) / 1e6 )}M</div>
-      <div style="margin-bottom: 2px;">Trades: ${d3.format(',.0f')(data.numTrades || 0)}</div>
-      <div style="margin-bottom: 2px;">Country: ${data.country || 'N/A'}</div>
-      <div style="margin-bottom: 2px;">Exchange: ${data.exchange || 'N/A'}</div>
-      <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom || 'N/A'}</div>
-      <div style="margin-bottom: 2px;">Industry: ${data.industry || 'N/A'}</div>
+      <div style="margin-bottom: 4px;"><b>${marketData.ticker}</b></div>
+      <div style="margin-bottom: 2px;">${marketData.nameEng}</div>
+      <div style="margin-bottom: 2px;">${marketData.priceLastSale || 0} (${d3.format('.2f')(marketData.priceChangePct || 0)}%)</div>
+      <div style="margin-bottom: 2px;">MarketCap: ${d3.format(',.0f')( (marketData.marketCap || 0) / 1e6 )}M</div>
+      <div style="margin-bottom: 2px;">Volume: ${d3.format(',.0f')(marketData.volume || 0)}</div>
+      <div style="margin-bottom: 2px;">Value: ${d3.format(',.0f')( (marketData.value || 0) / 1e6 )}M</div>
+      <div style="margin-bottom: 2px;">Trades: ${d3.format(',.0f')(marketData.numTrades || 0)}</div>
+      <div style="margin-bottom: 2px;">Country: ${marketData.country || 'N/A'}</div>
+      <div style="margin-bottom: 2px;">Exchange: ${marketData.exchange || 'N/A'}</div>
+      <div style="margin-bottom: 2px;">Listed Since: ${marketData.listedFrom || 'N/A'}</div>
+      <div style="margin-bottom: 2px;">Industry: ${marketData.industry || 'N/A'}</div><br>
       <div style="margin-bottom: 2px;">% of Sector: ${d3.format('.2f')(percentParent)}%</div>
       <div style="margin-bottom: 2px;">% of Total Market: ${d3.format('.2f')(percentRoot)}%</div>
-      <div style="margin-bottom: 2px;">Items per Sector: ${d3.format(',.0f')(data.nestedItemsCount || 0)}</div>
+      <div style="margin-bottom: 2px;">Items per Sector: ${d3.format(',.0f')(marketData.nestedItemsCount || 0)}</div>
       ${portfolioInfo}
     `;
 
