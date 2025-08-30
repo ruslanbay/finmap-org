@@ -1,11 +1,23 @@
-import { buildHierarchy } from './data.js';
-import { getCanvasSize, getViewportSize } from './layout.js';
+import { buildHierarchy, getValueForDataType } from './data.js';
 import { LAYOUT, TRANSITIONS } from './constants.js';
 import { PathbarComponent } from './pathbar.js';
 import { TooltipComponent } from './tooltip.js';
 import { OverlayComponent } from './overlay.js';
 import { CanvasRenderer } from './renderer.js';
 import { InteractionHandler } from './interactions.js';
+function getCanvasSize(container) {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    return {
+        width: container.width * devicePixelRatio,
+        height: (container.height - LAYOUT.PATHBAR_HEIGHT - LAYOUT.FOOTER_HEIGHT) * devicePixelRatio
+    };
+}
+function getViewportSize(container) {
+    return {
+        width: container.width,
+        height: container.height - LAYOUT.PATHBAR_HEIGHT - LAYOUT.FOOTER_HEIGHT
+    };
+}
 export class TreemapChart {
     container = null;
     canvas = null;
@@ -113,7 +125,7 @@ export class TreemapChart {
         const currentHierarchy = this.currentRoot === this.rootNode
             ? this.hierarchy
             : d3.hierarchy(this.currentRoot)
-                .sum((d) => d.children ? 0 : this.getValueForDataType(d))
+                .sum((d) => d.children ? 0 : getValueForDataType(d))
                 .sort((a, b) => (b.value || 0) - (a.value || 0));
         const treemap = d3.treemap()
             .size([width, height])
@@ -130,7 +142,7 @@ export class TreemapChart {
         this.context.clearRect(0, 0, width, height);
         this.pathbar.update(this.getPathToRoot(this.currentRoot), {
             onDrill: (node) => this.drillTo(node),
-            onShowTooltip: (data, event) => this.tooltip.showPathbar(data, event),
+            onShowTooltip: (data, event) => this.tooltip.show(data, event),
             onHideTooltip: () => this.tooltip.hide()
         });
         this.renderer.render(this.nodes, this.context);
@@ -154,11 +166,6 @@ export class TreemapChart {
                 }
             }
         });
-    }
-    // ToDo: Do we really need this?
-    getValueForDataType(item) {
-        // Delegate to data module
-        return item.value || 0;
     }
     drillTo(node) {
         if (this.isTransitioning)
@@ -188,7 +195,7 @@ export class TreemapChart {
         let current = node;
         while (current) {
             path.unshift({
-                name: current.name || 'Market',
+                name: current.data.name || 'Market',
                 node: current
             });
             current = current.parent || null;

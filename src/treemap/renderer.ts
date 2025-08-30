@@ -20,7 +20,7 @@ export class CanvasRenderer {
   private renderNode(node: any, width: number, height: number, context: CanvasRenderingContext2D): void {
     const isLeaf = !node.children || node.children.length === 0;
     const data = isLeaf ? node.data.data : node.data;
-    const change = isLeaf ? (data?.priceChangePct || 0) : (data?.priceChangePct !== undefined ? data.priceChangePct : this.calculateSectorChange(node));
+    const change = isLeaf ? (data?.priceChangePct || 0) : (data?.change || 0);
     
     context.fillStyle = COLOR_SCALE(change);
     context.fillRect(node.x0, node.y0, width, height);
@@ -129,16 +129,5 @@ export class CanvasRenderer {
     }
 
     return lineCount;
-  }
-
-  // Todo: don't need this, use precalculated values from datafile
-  private calculateSectorChange(sectorNode: any): number {
-    if (!sectorNode.children || sectorNode.children.length === 0) return 0;
-    
-    const changes = sectorNode.children
-      .map((child: any) => child.data.data?.priceChangePct || 0)
-      .filter((change: number) => !isNaN(change));
-    
-    return changes.length > 0 ? d3.mean(changes) || 0 : 0;
   }
 }

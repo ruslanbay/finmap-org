@@ -3,6 +3,5 @@ export declare class CanvasRenderer {
     private renderNode;
     private renderNodeText;
     private drawWrappedText;
-    private calculateSectorChange;
 }
 //# sourceMappingURL=renderer.d.ts.map

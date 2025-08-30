@@ -2,8 +2,8 @@ import { getConfig } from '../config.js';
 export function prepareHierarchyData(data) {
     const securities = data.filter(item => item.type === 'stock' || item.type === 'etf');
     const sectors = d3.group(securities, (d) => d.sector || 'Other');
+    const sectorData = data.filter(item => item.type === 'sector');
     const isPortfolioMode = localStorage.getItem('filterCsv') !== null;
-    // ToDo: No need for re-calulculation for each sector - values already in datafiles
     const children = [];
     sectors.forEach((sectorSecurities, sectorName) => {
         const sectorChildren = sectorSecurities.map((security) => ({
@@ -13,12 +13,17 @@ export function prepareHierarchyData(data) {
             change: security.priceChangePct || 0,
             data: security,
         }));
-        const sectorTotalValue = sectorChildren.reduce((sum, child) => sum + child.value, 0);
+        // Use precalculated sector data if available, otherwise calculate
+        const precalculatedSector = sectorData.find(s => s.sector === sectorName || s.nameEng === sectorName);
+        const sectorTotalValue = precalculatedSector ? getValueForDataType(precalculatedSector) :
+            sectorChildren.reduce((sum, child) => sum + child.value, 0);
+        const sectorChange = precalculatedSector ? (precalculatedSector.priceChangePct || 0) :
+            calculateSectorAverageChange(sectorChildren);
         children.push({
             ticker: sectorName,
             name: sectorName,
             value: sectorTotalValue,
-            change: calculateSectorAverageChange(sectorChildren),
+            change: sectorChange,
             children: sectorChildren,
         });
     });

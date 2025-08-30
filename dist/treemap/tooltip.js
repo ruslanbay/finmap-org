@@ -74,32 +74,9 @@ export class TooltipComponent {
       <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom || 'N/A'}</div>
       <div style="margin-bottom: 2px;">Industry: ${data.industry || 'N/A'}</div>
       <div style="margin-bottom: 2px;">% of Sector: ${d3.format('.2f')(percentParent)}%</div>
-  <div style="margin-bottom: 2px;">% of Total Market: ${d3.format('.2f')(percentRoot)}%</div>
-      <div style="margin-bottom: 2px;">Items per Sector: ${d3.format(',.0f')(data.nestedItemsCount || 0)}%</div>
+      <div style="margin-bottom: 2px;">% of Total Market: ${d3.format('.2f')(percentRoot)}%</div>
+      <div style="margin-bottom: 2px;">Items per Sector: ${d3.format(',.0f')(data.nestedItemsCount || 0)}</div>
       ${portfolioInfo}
-    `;
-        this.position(event);
-        this.element.style.opacity = '1';
-    }
-    // ToDo: use show() instead of duplicting code
-    showPathbar(data, event) {
-        if (!this.element)
-            return;
-        const config = getConfig();
-        const change = data?.priceChangePct || 0;
-        const nodeColor = COLOR_SCALE(change);
-        this.element.style.background = nodeColor;
-        this.element.style.color = COLORS.TEXT_WHITE;
-        this.element.style.border = '2px solid white';
-        this.element.style.boxShadow = COLORS.TOOLTIP_SHADOW;
-        this.element.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 4px;">${data.nameEng}</div>
-      <div style="margin-bottom: 2px;">Change: ${change / 100}</div>
-      <div style="margin-bottom: 2px;">${config.dataType === 'marketcap' ? 'Market Cap' :
-            config.dataType === 'value' ? 'Value' :
-                config.dataType === 'trades' ? 'Trades' : 'Items'}: ${d3.format(',.0f')(data.marketCap)}M</div>
-      ${data.type === 'sector' ? `<div style="margin-bottom: 2px;">Sector</div>` :
-            `<div style="margin-bottom: 2px;">Ticker: ${data.ticker}</div>`}
     `;
         this.position(event);
         this.element.style.opacity = '1';

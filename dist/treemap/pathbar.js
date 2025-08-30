@@ -41,7 +41,7 @@ export class PathbarComponent {
                 .style('background-color', sectorColor)
                 .style('display', 'flex')
                 .style('align-items', 'center')
-                .style('justify-content', 'center')
+                .style('justify-content', 'left')
                 .style('cursor', isLast ? 'default' : 'pointer')
                 .style('border-right', index < path.length - 1 ? '1px solid rgba(255,255,255,0.2)' : 'none')
                 .style('transition', 'background-color 0.2s ease')

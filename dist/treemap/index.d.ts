@@ -25,7 +25,6 @@ export declare class TreemapChart implements ChartRenderer {
     private setupResizeObserver;
     private renderTreemap;
     private adjustNodesForSectorHeaders;
-    private getValueForDataType;
     private drillTo;
     private getPathToRoot;
     private getNodeAtPosition;
