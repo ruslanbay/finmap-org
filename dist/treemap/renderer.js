@@ -59,7 +59,7 @@ export class CanvasRenderer {
             }
             if (height > baseFontSize * 9) {
                 context.font = `${baseFontSize}px ${FONT.FAMILY}`;
-                const capText = `Cap: ${d3.format(',.0f')(marketCap)}M`;
+                const capText = `Cap: ${d3.format(',.0f')((marketCap || 0) / 1e6)}M`;
                 this.drawWrappedText(capText, textX, currentY, maxWidth, lineHeight, 1, context);
             }
         }
