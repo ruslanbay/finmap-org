@@ -195,7 +195,7 @@ export class TreemapChart {
         let current = node;
         while (current) {
             path.unshift({
-                name: current.data.name || 'Market',
+                name: current.name || 'Market',
                 node: current
             });
             current = current.parent || null;
