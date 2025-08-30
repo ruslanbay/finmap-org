@@ -83,8 +83,8 @@ export class TooltipComponent {
       <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom || 'N/A'}</div>
       <div style="margin-bottom: 2px;">Industry: ${data.industry || 'N/A'}</div>
       <div style="margin-bottom: 2px;">% of Sector: ${d3.format('.2f')(percentParent)}%</div>
-  <div style="margin-bottom: 2px;">% of Total Market: ${d3.format('.2f')(percentRoot)}%</div>
-      <div style="margin-bottom: 2px;">Items per Sector: ${d3.format(',.0f')(data.nestedItemsCount || 0)}%</div>
+      <div style="margin-bottom: 2px;">% of Total Market: ${d3.format('.2f')(percentRoot)}%</div>
+      <div style="margin-bottom: 2px;">Items per Sector: ${d3.format(',.0f')(data.nestedItemsCount || 0)}</div>
       ${portfolioInfo}
     `;
 
