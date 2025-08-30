@@ -16,6 +16,7 @@ export class D3TreemapRenderer implements ChartRenderer {
   private rootNode: TreemapNode | null = null;
   private nodes: any[] = [];
   private resizeObserver: ResizeObserver | null = null;
+  private isTransitioning: boolean = false;
   private colorScale = d3.scaleLinear()
     .domain([-3, 0, 3])
     .range(['rgb(236, 48, 51)', 'rgb(64, 68, 82)', 'rgb(42, 202, 85)'])
@@ -502,7 +503,11 @@ export class D3TreemapRenderer implements ChartRenderer {
   private setupInteractions(): void {
     if (!this.canvas) return;
     
+    const canvasSelection = d3.select(this.canvas);
+    
     this.canvas.addEventListener('click', (event) => {
+      if (this.isTransitioning) return;
+      
       const node = this.getNodeAtPosition(event);
       if (!node?.data) return;
       
@@ -513,11 +518,31 @@ export class D3TreemapRenderer implements ChartRenderer {
       }
     });
     
+    this.canvas.addEventListener('mouseenter', () => {
+      if (!this.isTransitioning) {
+        canvasSelection
+          .transition()
+          .duration(200)
+          .style('filter', 'brightness(1.05)');
+      }
+    });
+    
+    this.canvas.addEventListener('mouseleave', () => {
+      canvasSelection
+        .transition()
+        .duration(200)
+        .style('filter', 'brightness(1)')
+        .style('cursor', 'default');
+      this.hideTooltip();
+    });
+    
     this.canvas.addEventListener('mousemove', (event) => {
+      if (this.isTransitioning) return;
+      
       const node = this.getNodeAtPosition(event);
       if (!node?.data) {
         this.hideTooltip();
-        if (this.canvas) this.canvas.style.cursor = 'default';
+        canvasSelection.style('cursor', 'default');
         return;
       }
       
@@ -526,13 +551,8 @@ export class D3TreemapRenderer implements ChartRenderer {
       
       if (tooltipData) {
         this.showTooltip(tooltipData, event, node);
-        if (this.canvas) this.canvas.style.cursor = 'pointer';
+        canvasSelection.style('cursor', 'pointer');
       }
-    });
-    
-    this.canvas.addEventListener('mouseleave', () => {
-      this.hideTooltip();
-      if (this.canvas) this.canvas.style.cursor = 'default';
     });
   }
 
@@ -559,8 +579,31 @@ export class D3TreemapRenderer implements ChartRenderer {
   }
 
   private drillTo(node: TreemapNode): void {
+    if (this.isTransitioning) return;
+    
+    this.isTransitioning = true;
+    this.hideTooltip();
+    
+    const previousRoot = this.currentRoot;
     this.currentRoot = node;
-    this.renderTreemap();
+    
+    if (this.canvas) {
+      d3.select(this.canvas)
+        .style('opacity', 1)
+        .transition()
+        .duration(250)
+        .style('opacity', 0.3)
+        .transition()
+        .duration(250)
+        .style('opacity', 1)
+        .on('end', () => {
+          this.isTransitioning = false;
+        });
+    }
+    
+    setTimeout(() => {
+      this.renderTreemap();
+    }, 250);
   }
 
   private showTooltip(data: MarketData, event: MouseEvent, node?: any): void {
@@ -660,6 +703,8 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     tooltipSelection
       .style('visibility', 'visible')
+      .transition()
+      .duration(150)
       .style('left', `${Math.max(0, Math.min(left, viewportWidth - tooltipWidth))}px`)
       .style('top', `${Math.max(0, Math.min(top, viewportHeight - tooltipHeight))}px`)
       .style('opacity', '1');
@@ -680,11 +725,18 @@ export class D3TreemapRenderer implements ChartRenderer {
     if (!this.tooltip) return;
     
     d3.select(this.tooltip)
+      .transition()
+      .duration(150)
       .style('opacity', '0')
-      .style('background', 'white')
-      .style('color', 'rgb(68, 68, 68)')
-      .style('border', '1px solid rgb(214, 214, 214)')
-      .style('text-align', 'left');
+      .on('end', () => {
+        if (this.tooltip) {
+          d3.select(this.tooltip)
+            .style('background', 'white')
+            .style('color', 'rgb(68, 68, 68)')
+            .style('border', '1px solid rgb(214, 214, 214)')
+            .style('text-align', 'left');
+        }
+      });
   }
 
   private showCompanyOverlay(data: MarketData): void {
@@ -696,7 +748,14 @@ export class D3TreemapRenderer implements ChartRenderer {
     }
     
     this.populateOverlay(overlay, data);
-    d3.select(overlay).style('display', 'flex');
+    
+    d3.select(overlay)
+      .style('display', 'flex')
+      .style('opacity', '0')
+      .transition()
+      .duration(300)
+      .style('opacity', '1');
+      
     d3.select('body').style('overflow', 'hidden');
   }
 
@@ -792,7 +851,13 @@ export class D3TreemapRenderer implements ChartRenderer {
   private hideOverlay(): void {
     const overlay = document.getElementById('company-overlay');
     if (overlay) {
-      d3.select(overlay).style('display', 'none');
+      d3.select(overlay)
+        .transition()
+        .duration(250)
+        .style('opacity', '0')
+        .on('end', () => {
+          d3.select(overlay).style('display', 'none');
+        });
       d3.select('body').style('overflow', 'auto');
     }
   }
