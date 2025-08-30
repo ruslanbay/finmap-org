@@ -340,31 +340,124 @@ export class D3TreemapRenderer {
         const path = this.getPathToRoot(this.currentRoot);
         const pathbarSelection = d3.select(this.pathbar);
         pathbarSelection.selectAll('*').remove();
+        // Create sections container with equal width distribution
+        const sectionsContainer = pathbarSelection
+            .append('div')
+            .style('display', 'flex')
+            .style('width', '100%')
+            .style('height', '100%');
+        // Calculate equal width for each section
+        const sectionWidth = `${100 / path.length}%`;
         path.forEach((item, index) => {
-            if (index > 0) {
-                pathbarSelection.append('span')
-                    .style('color', '#888')
-                    .style('margin', '0 5px')
-                    .text(' > ');
-            }
             const isLast = index === path.length - 1;
-            const link = pathbarSelection.append('a')
-                .style('color', isLast ? '#ccc' : '#fff')
-                .style('text-decoration', 'none')
+            const sectorData = this.getSectorDataForNode(item.node);
+            const sectorChange = sectorData?.priceChangePct || item.node.change || 0;
+            const sectorColor = this.colorScale(sectorChange);
+            const section = sectionsContainer
+                .append('div')
+                .style('width', sectionWidth)
+                .style('height', '100%')
+                .style('background-color', sectorColor)
+                .style('display', 'flex')
+                .style('align-items', 'center')
+                .style('justify-content', 'center')
                 .style('cursor', isLast ? 'default' : 'pointer')
-                .style('padding', '0px')
+                .style('border-right', index < path.length - 1 ? '1px solid rgba(255,255,255,0.2)' : 'none')
+                .style('transition', 'background-color 0.2s ease')
+                .style('position', 'relative');
+            // Add text label
+            section
+                .append('span')
+                .style('color', '#fff')
+                .style('font-size', '14px')
+                .style('font-weight', isLast ? 'normal' : 'bold')
+                .style('text-align', 'center')
+                .style('overflow', 'hidden')
+                .style('text-overflow', 'ellipsis')
+                .style('white-space', 'nowrap')
+                .style('padding', '0 5px')
+                .style('pointer-events', 'none')
                 .text(item.name);
+            // Add click and hover interactions
             if (!isLast) {
-                link
+                section
                     .on('click', () => this.drillTo(item.node))
                     .on('mouseenter', (event) => {
-                    d3.select(event.target).style('text-decoration', 'underline');
+                    d3.select(event.currentTarget)
+                        .style('background-color', d3.color(sectorColor)?.brighter(0.3)?.toString() || sectorColor);
                 })
                     .on('mouseleave', (event) => {
-                    d3.select(event.target).style('text-decoration', 'none');
+                    d3.select(event.currentTarget)
+                        .style('background-color', sectorColor);
+                });
+            }
+            // Add tooltip for sector data
+            if (sectorData) {
+                section
+                    .on('mouseenter.tooltip', (event) => {
+                    this.showPathbarTooltip(sectorData, event);
+                })
+                    .on('mousemove.tooltip', (event) => {
+                    this.positionTooltip(event);
+                })
+                    .on('mouseleave.tooltip', () => {
+                    this.hideTooltip();
                 });
             }
         });
+    }
+    getSectorDataForNode(node) {
+        // For leaf nodes, return the market data
+        if (node.data && 'exchange' in node.data) {
+            return node.data;
+        }
+        // For sector nodes, create a virtual market data object with sector info
+        if (node.children && node.children.length > 0) {
+            const sectorName = node.name || 'Unknown';
+            const sectorChange = node.change || 0;
+            const sectorValue = node.value || 0;
+            // Find a representative security to get sector info
+            const firstChild = node.children[0];
+            const representativeData = firstChild?.data;
+            if (representativeData) {
+                return {
+                    ...representativeData,
+                    nameEng: sectorName,
+                    nameEngShort: sectorName,
+                    ticker: sectorName,
+                    priceChangePct: sectorChange,
+                    value: sectorValue,
+                    marketCap: sectorValue,
+                    type: 'sector'
+                };
+            }
+        }
+        return null;
+    }
+    showPathbarTooltip(data, event) {
+        if (!this.tooltip)
+            return;
+        const config = getConfig();
+        const formatCurrency = this.getCurrencyFormatter(config.currency);
+        const change = data?.priceChangePct || 0;
+        const nodeColor = this.colorScale(change);
+        // Set tooltip background to match tile color
+        this.tooltip.style.background = nodeColor;
+        this.tooltip.style.color = '#ffffff';
+        this.tooltip.style.border = `2px solid white`;
+        this.tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+        const isPortfolio = localStorage.getItem('finmap-portfolio-mode') === 'true';
+        this.tooltip.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 4px;">${data.nameEng}</div>
+      <div style="margin-bottom: 2px;">Change: ${formatPercent(change / 100)}</div>
+      <div style="margin-bottom: 2px;">${config.dataType === 'marketcap' ? 'Market Cap' :
+            config.dataType === 'value' ? 'Value' :
+                config.dataType === 'trades' ? 'Trades' : 'Items'}: ${formatCurrency(data.value || data.marketCap)}</div>
+      ${data.type === 'sector' ? `<div style="margin-bottom: 2px;">Sector</div>` :
+            `<div style="margin-bottom: 2px;">Ticker: ${data.ticker}</div>`}
+    `;
+        this.positionTooltip(event);
+        this.tooltip.style.opacity = '1';
     }
     getPathToRoot(node) {
         const path = [];
