@@ -11,11 +11,13 @@ export class D3TreemapRenderer {
     currentRoot = null;
     rootNode = null;
     nodes = [];
+    quadtree = null;
     resizeObserver = null;
     colorScale = d3.scaleLinear()
         .domain([-3, 0, 3])
         .range(['rgb(236, 48, 51)', 'rgb(64, 68, 82)', 'rgb(42, 202, 85)'])
-        .clamp(true);
+        .clamp(true)
+        .interpolate(d3.interpolateRgb);
     render(data, container) {
         this.container = container;
         this.currentData = data;
@@ -31,66 +33,70 @@ export class D3TreemapRenderer {
     setupContainer() {
         if (!this.container)
             return;
-        this.container.innerHTML = '';
-        this.container.style.display = 'flex';
-        this.container.style.flexDirection = 'column';
-        this.container.style.height = '100%';
+        d3.select(this.container)
+            .selectAll('*')
+            .remove();
+        d3.select(this.container)
+            .style('display', 'flex')
+            .style('flex-direction', 'column')
+            .style('height', '100%');
     }
     setupPathbar() {
         if (!this.container)
             return;
-        this.pathbar = document.createElement('div');
-        this.pathbar.style.height = '24px';
-        this.pathbar.style.backgroundColor = '#414554';
-        this.pathbar.style.display = 'flex';
-        this.pathbar.style.alignItems = 'center';
-        this.pathbar.style.padding = '0 10px';
-        this.pathbar.style.color = 'white';
-        this.pathbar.style.fontSize = '14px';
-        this.pathbar.style.borderBottom = '1px solid #555';
-        this.pathbar.style.overflowX = 'auto';
-        this.pathbar.style.whiteSpace = 'nowrap';
-        this.pathbar.style.flexShrink = '0';
-        this.container.appendChild(this.pathbar);
+        this.pathbar = d3.select(this.container)
+            .append('div')
+            .style('height', '24px')
+            .style('background-color', '#414554')
+            .style('display', 'flex')
+            .style('align-items', 'center')
+            .style('padding', '0 10px')
+            .style('color', 'white')
+            .style('font-size', '14px')
+            .style('border-bottom', '1px solid #555')
+            .style('overflow-x', 'auto')
+            .style('white-space', 'nowrap')
+            .style('flex-shrink', '0')
+            .node();
     }
     setupCanvas() {
         if (!this.container)
             return;
-        this.canvas = document.createElement('canvas');
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = '100%';
-        this.canvas.style.display = 'block';
-        this.canvas.style.cursor = 'pointer';
-        this.canvas.style.flexGrow = '1';
+        this.canvas = d3.select(this.container)
+            .append('canvas')
+            .style('width', '100%')
+            .style('height', '100%')
+            .style('display', 'block')
+            .style('cursor', 'pointer')
+            .style('flex-grow', '1')
+            .node();
         this.updateCanvasSize();
-        this.container.appendChild(this.canvas);
     }
     setupTooltip() {
-        this.tooltip = document.createElement('div');
-        this.tooltip.style.cssText = `
-      position: absolute;
-      background: white;
-      color: rgb(68, 68, 68);
-      border: 1px solid rgb(214, 214, 214);
-      border-radius: 2px;
-      font-family: "Open Sans", verdana, arial, sans-serif;
-      font-size: 12px;
-      font-weight: normal;
-      line-height: 1.3;
-      white-space: nowrap;
-      padding: 4px 6px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s ease-out;
-      z-index: 1001;
-      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.14);
-      margin: 0;
-      text-align: left;
-      direction: ltr;
-      max-width: none;
-      word-wrap: normal;
-    `;
-        document.body.appendChild(this.tooltip);
+        this.tooltip = d3.select('body')
+            .append('div')
+            .style('position', 'absolute')
+            .style('background', 'white')
+            .style('color', 'rgb(68, 68, 68)')
+            .style('border', '1px solid rgb(214, 214, 214)')
+            .style('border-radius', '2px')
+            .style('font-family', '"Open Sans", verdana, arial, sans-serif')
+            .style('font-size', '12px')
+            .style('font-weight', 'normal')
+            .style('line-height', '1.3')
+            .style('white-space', 'nowrap')
+            .style('padding', '4px 6px')
+            .style('pointer-events', 'none')
+            .style('opacity', '0')
+            .style('transition', 'opacity 0.15s ease-out')
+            .style('z-index', '1001')
+            .style('box-shadow', '0px 3px 8px rgba(0, 0, 0, 0.14)')
+            .style('margin', '0')
+            .style('text-align', 'left')
+            .style('direction', 'ltr')
+            .style('max-width', 'none')
+            .style('word-wrap', 'normal')
+            .node();
     }
     updateCanvasSize() {
         if (!this.canvas || !this.container)
@@ -158,6 +164,7 @@ export class D3TreemapRenderer {
             .round(true);
         treemap(currentHierarchy);
         this.nodes = currentHierarchy.descendants();
+        this.buildQuadtree();
         // Adjust child node positions to make room for sector headers
         this.adjustNodesForSectorHeaders();
         this.context.clearRect(0, 0, width, height);
@@ -171,6 +178,12 @@ export class D3TreemapRenderer {
                 return;
             this.renderNode(node, nodeWidth, nodeHeight);
         });
+    }
+    buildQuadtree() {
+        this.quadtree = d3.quadtree()
+            .x((d) => (d.x0 + d.x1) / 2)
+            .y((d) => (d.y0 + d.y1) / 2)
+            .addAll(this.nodes.filter(d => d.parent));
     }
     adjustNodesForSectorHeaders() {
         const sectorHeaderHeight = 20;
@@ -332,33 +345,32 @@ export class D3TreemapRenderer {
         if (!this.pathbar || !this.currentRoot)
             return;
         const path = this.getPathToRoot(this.currentRoot);
-        this.pathbar.innerHTML = '';
+        const pathbarSelection = d3.select(this.pathbar);
+        pathbarSelection.selectAll('*').remove();
         path.forEach((item, index) => {
             if (index > 0) {
-                const separator = document.createElement('span');
-                separator.textContent = ' > ';
-                separator.style.color = '#888';
-                separator.style.margin = '0 5px';
-                this.pathbar.appendChild(separator);
+                pathbarSelection.append('span')
+                    .style('color', '#888')
+                    .style('margin', '0 5px')
+                    .text(' > ');
             }
-            const link = document.createElement('a');
-            link.textContent = item.name;
-            link.style.color = index === path.length - 1 ? '#ccc' : '#fff';
-            link.style.textDecoration = 'none';
-            link.style.cursor = index === path.length - 1 ? 'default' : 'pointer';
-            link.style.padding = '0px';
-            if (index < path.length - 1) {
-                link.addEventListener('click', () => {
-                    this.drillTo(item.node);
-                });
-                link.addEventListener('mouseenter', () => {
-                    link.style.textDecoration = 'underline';
-                });
-                link.addEventListener('mouseleave', () => {
-                    link.style.textDecoration = 'none';
+            const isLast = index === path.length - 1;
+            const link = pathbarSelection.append('a')
+                .style('color', isLast ? '#ccc' : '#fff')
+                .style('text-decoration', 'none')
+                .style('cursor', isLast ? 'default' : 'pointer')
+                .style('padding', '0px')
+                .text(item.name);
+            if (!isLast) {
+                link
+                    .on('click', () => this.drillTo(item.node))
+                    .on('mouseenter', (event) => {
+                    d3.select(event.target).style('text-decoration', 'underline');
+                })
+                    .on('mouseleave', (event) => {
+                    d3.select(event.target).style('text-decoration', 'none');
                 });
             }
-            this.pathbar.appendChild(link);
         });
     }
     getPathToRoot(node) {
@@ -459,16 +471,20 @@ export class D3TreemapRenderer {
         });
     }
     getNodeAtPosition(event) {
-        if (!this.canvas || !this.nodes)
+        if (!this.canvas || !this.quadtree)
             return null;
         const rect = this.canvas.getBoundingClientRect();
         const devicePixelRatio = window.devicePixelRatio || 1;
         const x = (event.clientX - rect.left) * (this.canvas.width / rect.width) / devicePixelRatio;
         const y = (event.clientY - rect.top) * (this.canvas.height / rect.height) / devicePixelRatio;
-        return this.nodes
-            .slice()
-            .reverse()
-            .find(node => node?.x0 <= x && x <= node?.x1 && node?.y0 <= y && y <= node?.y1) || null;
+        const candidates = [];
+        this.quadtree.visit((node, x0, y0, x1, y1) => {
+            if (node.data && node.data.x0 <= x && x <= node.data.x1 && node.data.y0 <= y && y <= node.data.y1) {
+                candidates.push(node.data);
+            }
+            return x0 > x || y0 > y || x1 < x || y1 < y;
+        });
+        return candidates.length > 0 ? candidates[candidates.length - 1] : null;
     }
     drillTo(node) {
         this.currentRoot = node;
@@ -540,13 +556,13 @@ export class D3TreemapRenderer {
     positionTooltip(event) {
         if (!this.tooltip || !this.canvas)
             return;
+        const [mouseX, mouseY] = d3.pointer(event);
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        this.tooltip.style.visibility = 'hidden';
-        this.tooltip.style.opacity = '1';
-        const tooltipRect = this.tooltip.getBoundingClientRect();
-        this.tooltip.style.visibility = 'visible';
-        const { width: tooltipWidth, height: tooltipHeight } = tooltipRect;
+        const tooltipSelection = d3.select(this.tooltip)
+            .style('visibility', 'hidden')
+            .style('opacity', '1');
+        const { width: tooltipWidth, height: tooltipHeight } = this.tooltip.getBoundingClientRect();
         const offset = 12;
         const left = event.clientX + tooltipWidth + offset > viewportWidth
             ? event.clientX - tooltipWidth - offset
@@ -554,9 +570,11 @@ export class D3TreemapRenderer {
         const top = event.clientY + tooltipHeight + offset > viewportHeight
             ? event.clientY - tooltipHeight - offset
             : event.clientY + offset;
-        this.tooltip.style.left = `${Math.max(0, Math.min(left, viewportWidth - tooltipWidth))}px`;
-        this.tooltip.style.top = `${Math.max(0, Math.min(top, viewportHeight - tooltipHeight))}px`;
-        this.tooltip.style.opacity = '1';
+        tooltipSelection
+            .style('visibility', 'visible')
+            .style('left', `${Math.max(0, Math.min(left, viewportWidth - tooltipWidth))}px`)
+            .style('top', `${Math.max(0, Math.min(top, viewportHeight - tooltipHeight))}px`)
+            .style('opacity', '1');
     }
     getCurrencyFormatter(currency) {
         const currencyMap = {
@@ -571,13 +589,12 @@ export class D3TreemapRenderer {
     hideTooltip() {
         if (!this.tooltip)
             return;
-        Object.assign(this.tooltip.style, {
-            opacity: '0',
-            background: 'white',
-            color: 'rgb(68, 68, 68)',
-            border: '1px solid rgb(214, 214, 214)',
-            textAlign: 'left'
-        });
+        d3.select(this.tooltip)
+            .style('opacity', '0')
+            .style('background', 'white')
+            .style('color', 'rgb(68, 68, 68)')
+            .style('border', '1px solid rgb(214, 214, 214)')
+            .style('text-align', 'left');
     }
     showCompanyOverlay(data) {
         this.hideTooltip();
@@ -586,59 +603,54 @@ export class D3TreemapRenderer {
             overlay = this.createOverlay();
         }
         this.populateOverlay(overlay, data);
-        Object.assign(overlay.style, { display: 'flex' });
-        Object.assign(document.body.style, { overflow: 'hidden' });
+        d3.select(overlay).style('display', 'flex');
+        d3.select('body').style('overflow', 'hidden');
     }
     createOverlay() {
-        const overlay = document.createElement('div');
-        overlay.id = 'company-overlay';
-        Object.assign(overlay.style, {
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            zIndex: '10000',
-            display: 'none',
-            alignItems: 'center',
-            justifyContent: 'center'
-        });
-        const content = document.createElement('div');
-        Object.assign(content.style, {
-            backgroundColor: '#2C3E50',
-            color: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            width: '90%',
-            maxWidth: '800px',
-            maxHeight: '80%',
-            overflow: 'auto',
-            position: 'relative'
-        });
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '×';
-        Object.assign(closeBtn.style, {
-            position: 'absolute',
-            top: '10px',
-            right: '15px',
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '24px',
-            cursor: 'pointer'
-        });
-        closeBtn.onclick = () => this.hideOverlay();
-        const contentArea = document.createElement('div');
-        contentArea.id = 'overlay-content';
-        content.append(closeBtn, contentArea);
-        overlay.appendChild(content);
-        document.body.appendChild(overlay);
-        overlay.onclick = (e) => {
-            if (e.target === overlay)
+        const overlay = d3.select('body')
+            .append('div')
+            .attr('id', 'company-overlay')
+            .style('position', 'fixed')
+            .style('top', '0')
+            .style('left', '0')
+            .style('width', '100%')
+            .style('height', '100%')
+            .style('background-color', 'rgba(0, 0, 0, 0.8)')
+            .style('z-index', '10000')
+            .style('display', 'none')
+            .style('align-items', 'center')
+            .style('justify-content', 'center');
+        const content = overlay
+            .append('div')
+            .style('background-color', '#2C3E50')
+            .style('color', 'white')
+            .style('padding', '20px')
+            .style('border-radius', '8px')
+            .style('width', '90%')
+            .style('max-width', '800px')
+            .style('max-height', '80%')
+            .style('overflow', 'auto')
+            .style('position', 'relative');
+        content
+            .append('button')
+            .html('×')
+            .style('position', 'absolute')
+            .style('top', '10px')
+            .style('right', '15px')
+            .style('background', 'none')
+            .style('border', 'none')
+            .style('color', 'white')
+            .style('font-size', '24px')
+            .style('cursor', 'pointer')
+            .on('click', () => this.hideOverlay());
+        content
+            .append('div')
+            .attr('id', 'overlay-content');
+        overlay.on('click', (event) => {
+            if (event.target === overlay.node())
                 this.hideOverlay();
-        };
-        return overlay;
+        });
+        return overlay.node();
     }
     populateOverlay(overlay, data) {
         const contentArea = overlay.querySelector('#overlay-content');
@@ -679,8 +691,8 @@ export class D3TreemapRenderer {
     hideOverlay() {
         const overlay = document.getElementById('company-overlay');
         if (overlay) {
-            Object.assign(overlay.style, { display: 'none' });
-            Object.assign(document.body.style, { overflow: 'auto' });
+            d3.select(overlay).style('display', 'none');
+            d3.select('body').style('overflow', 'auto');
         }
     }
     searchAndHighlight(query) {
@@ -698,11 +710,11 @@ export class D3TreemapRenderer {
             this.resizeObserver.disconnect();
         }
         if (this.tooltip) {
-            document.body.removeChild(this.tooltip);
+            d3.select(this.tooltip).remove();
             this.tooltip = null;
         }
         if (this.container) {
-            this.container.innerHTML = '';
+            d3.select(this.container).selectAll('*').remove();
         }
     }
 }
