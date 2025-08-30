@@ -234,7 +234,7 @@ export class TreemapChart implements ChartRenderer {
     
     while (current) {
       path.unshift({
-        name: current.data.name || 'Market',
+        name: current.name || 'Market',
         node: current
       });
       current = current.parent || null;
