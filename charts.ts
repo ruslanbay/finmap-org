@@ -552,8 +552,18 @@ export class D3TreemapRenderer implements ChartRenderer {
     const rect = this.canvas.getBoundingClientRect();
     const devicePixelRatio = window.devicePixelRatio || 1;
     
-    const x = (event.clientX - rect.left) * (this.canvas.width / rect.width) / devicePixelRatio;
-    const y = (event.clientY - rect.top) * (this.canvas.height / rect.height) / devicePixelRatio;
+    // Get the actual drawing dimensions used by the treemap
+    const containerRect = this.container?.getBoundingClientRect();
+    if (!containerRect) return null;
+    
+    const pathbarHeight = 24;
+    const footerHeight = 25;
+    const drawingWidth = containerRect.width;
+    const drawingHeight = containerRect.height - pathbarHeight - footerHeight;
+    
+    // Convert mouse coordinates to treemap coordinates
+    const x = (event.clientX - rect.left) * (drawingWidth / rect.width);
+    const y = (event.clientY - rect.top) * (drawingHeight / rect.height);
     
     const candidates: any[] = [];
     this.quadtree.visit((node: any, x0: number, y0: number, x1: number, y1: number) => {

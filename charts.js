@@ -475,8 +475,17 @@ export class D3TreemapRenderer {
             return null;
         const rect = this.canvas.getBoundingClientRect();
         const devicePixelRatio = window.devicePixelRatio || 1;
-        const x = (event.clientX - rect.left) * (this.canvas.width / rect.width) / devicePixelRatio;
-        const y = (event.clientY - rect.top) * (this.canvas.height / rect.height) / devicePixelRatio;
+        // Get the actual drawing dimensions used by the treemap
+        const containerRect = this.container?.getBoundingClientRect();
+        if (!containerRect)
+            return null;
+        const pathbarHeight = 24;
+        const footerHeight = 25;
+        const drawingWidth = containerRect.width;
+        const drawingHeight = containerRect.height - pathbarHeight - footerHeight;
+        // Convert mouse coordinates to treemap coordinates
+        const x = (event.clientX - rect.left) * (drawingWidth / rect.width);
+        const y = (event.clientY - rect.top) * (drawingHeight / rect.height);
         const candidates = [];
         this.quadtree.visit((node, x0, y0, x1, y1) => {
             if (node.data && node.data.x0 <= x && x <= node.data.x1 && node.data.y0 <= y && y <= node.data.y1) {
