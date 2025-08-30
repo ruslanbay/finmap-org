@@ -44,7 +44,12 @@ export class TooltipComponent {
 
     const isSector = node && node.children && node.children.length > 0;
     const percentParent = node && node.parent ? (node.value || 0) / (node.parent.value || 1) * 100 : 100;
-    const persentRoot = node && node.parent && node.parent.parent ? (node.value || 0) / (node.parent.parent.value || 1) * 100 : 100;
+    let percentRoot = 100;
+    if (node) {
+      let root = node;
+      while (root.parent) root = root.parent;
+      percentRoot = (node.value || 0) / (root.value || 1) * 100;
+    }
     
     let portfolioInfo = '';
     if (isPortfolio && !isSector) {
@@ -69,16 +74,16 @@ export class TooltipComponent {
       <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
       <div style="margin-bottom: 2px;">${data.nameEng}</div>
       <div style="margin-bottom: 2px;">${data.priceLastSale || 0} (${d3.format('.2f')(data.priceChangePct || 0)}%)</div>
-      <div style="margin-bottom: 2px;">MarketCap: ${d3.format(',.0f')(data.marketCap)}M</div>
-      <div style="margin-bottom: 2px;">Volume: ${d3.format(',.0f')(data.volume)}</div>
-      <div style="margin-bottom: 2px;">Value: ${d3.format(',.0f')(data.value)}M</div>
-      <div style="margin-bottom: 2px;">Trades: ${d3.format(',.0f')(data.numTrades)}</div>
+      <div style="margin-bottom: 2px;">MarketCap: ${d3.format(',.0f')( (data.marketCap || 0) / 1e6 )}M</div>
+      <div style="margin-bottom: 2px;">Volume: ${d3.format(',.0f')(data.volume || 0)}</div>
+      <div style="margin-bottom: 2px;">Value: ${d3.format(',.0f')( (data.value || 0) / 1e6 )}M</div>
+      <div style="margin-bottom: 2px;">Trades: ${d3.format(',.0f')(data.numTrades || 0)}</div>
       <div style="margin-bottom: 2px;">Country: ${data.country || 'N/A'}</div>
       <div style="margin-bottom: 2px;">Exchange: ${data.exchange || 'N/A'}</div>
       <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom || 'N/A'}</div>
       <div style="margin-bottom: 2px;">Industry: ${data.industry || 'N/A'}</div>
-      <div style="margin-bottom: 2px;">% of Sector: ${d3.format('.2p')(percentParent)}%</div>
-      <div style="margin-bottom: 2px;">% of Total Market: ${d3.format('.2p')(persentRoot)}%</div>
+      <div style="margin-bottom: 2px;">% of Sector: ${d3.format('.2f')(percentParent)}%</div>
+  <div style="margin-bottom: 2px;">% of Total Market: ${d3.format('.2f')(percentRoot)}%</div>
       <div style="margin-bottom: 2px;">Items per Sector: ${d3.format(',.0f')(data.nestedItemsCount || 0)}%</div>
       ${portfolioInfo}
     `;
