@@ -9,12 +9,20 @@ export function prepareHierarchyData(data: MarketData[]): TreemapNode {
   const sectors = data.filter(item => item.type === 'sector' && item.sector !== "");
   const root = data.find(item => item.type === 'sector' && item.sector === "");
 
+  console.log('Data length:', data.length);
+  console.log('Securities count:', securities.length);
+  console.log('Sectors count:', sectors.length);
+  console.log('Root found:', !!root);
+
   const children: TreemapNode[] = sectors.map(sector => ({
     data: sector,
     children: securities
       .filter(s => s.sector === sector.sector)
       .map(security => ({ data: security }))
   }));
+
+  console.log('Children count:', children.length);
+  console.log('Children with securities:', children.filter(c => c.children && c.children.length > 0).length);
 
   const defaultRoot: MarketData = {
     exchange: '',
@@ -51,7 +59,7 @@ export function prepareHierarchyData(data: MarketData[]): TreemapNode {
 export function buildHierarchy(data: MarketData[]): any {
   const hierarchyData = prepareHierarchyData(data);
   const hierarchy = d3.hierarchy(hierarchyData)
-    .sum((d: any) => d.children ? 0 : getValueForDataType(d))
+    .sum((d: any) => d.children ? 0 : getValueForTreemapNode(d))
     .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
   
   addParentReferences(hierarchy);
@@ -59,6 +67,8 @@ export function buildHierarchy(data: MarketData[]): any {
 }
 
 export function getValueForDataType(item: MarketData | TreemapNode): number {
+  if (!item) return 0;
+  
   const config = getConfig();
   const data = 'data' in item ? item.data : item;
   if (!data) return 0;
@@ -71,6 +81,11 @@ export function getValueForDataType(item: MarketData | TreemapNode): number {
     case 'nestedItems': return marketData.nestedItemsCount;
     default: return marketData.marketCap;
   }
+}
+
+export function getValueForTreemapNode(node: TreemapNode): number {
+  if (!node || !node.data) return 0;
+  return getValueForDataType(node.data);
 }
 
 export function addParentReferences(node: any): void {
