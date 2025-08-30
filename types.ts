@@ -1,3 +1,5 @@
+import * as d3 from 'd3';
+
 export interface MarketDataResponse {
   securities: {
     columns: string[];
@@ -83,7 +85,6 @@ export interface TreemapNode {
   name: string;
   value: number;
   change: number;
-  color: string;
   children?: TreemapNode[];
   data?: MarketData;
   parent?: TreemapNode;
