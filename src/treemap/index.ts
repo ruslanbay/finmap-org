@@ -234,7 +234,7 @@ export class TreemapChart implements ChartRenderer {
     
     while (current) {
       path.unshift({
-        name: current.name || 'Market',
+        name: current.data?.nameEng || 'Market',
         node: current
       });
       current = current.parent || null;
@@ -268,8 +268,8 @@ export class TreemapChart implements ChartRenderer {
     const searchQuery = query.toLowerCase();
     const matchingNode = this.nodes.find(node => 
       !node.children?.length && node.data.data && (
-        node.data.ticker.toLowerCase().includes(searchQuery) ||
-        node.data.name.toLowerCase().includes(searchQuery)
+        node.data.data.ticker.toLowerCase().includes(searchQuery) ||
+        node.data.data.nameEng.toLowerCase().includes(searchQuery)
       )
     );
     

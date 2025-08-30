@@ -1,5 +1,6 @@
 import { COLOR_SCALE, COLORS, LAYOUT, FONT, TRANSITIONS } from './constants.js';
 import { getConfig } from '../config.js';
+import { getValueForDataType } from './data.js';
 export class TooltipComponent {
     element = null;
     init() {
@@ -36,13 +37,16 @@ export class TooltipComponent {
         const change = data?.priceChangePct || 0;
         const nodeColor = COLOR_SCALE(change);
         const isSector = node && node.children && node.children.length > 0;
-        const percentParent = node && node.parent ? (node.value || 0) / (node.parent.value || 1) * 100 : 100;
+        const nodeValue = getValueForDataType(node);
+        const parentValue = node && node.parent ? getValueForDataType(node.parent) : 1;
+        const percentParent = nodeValue / parentValue * 100;
         let percentRoot = 100;
         if (node) {
             let root = node;
             while (root.parent)
                 root = root.parent;
-            percentRoot = (node.value || 0) / (root.value || 1) * 100;
+            const rootValue = getValueForDataType(root);
+            percentRoot = nodeValue / rootValue * 100;
         }
         let portfolioInfo = '';
         if (isPortfolio && !isSector) {

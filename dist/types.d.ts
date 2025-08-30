@@ -7,7 +7,7 @@ export interface MarketDataResponse {
 export interface MarketData {
     exchange: string;
     country: string;
-    type: 'stock' | 'etf' | 'sector';
+    type: string;
     sector: string;
     industry: string;
     currencyId: string;
@@ -69,13 +69,9 @@ export interface ChartRenderer {
     destroy(): void;
 }
 export interface TreemapNode {
-    ticker: string;
-    name: string;
-    value: number;
-    change: number;
     children?: TreemapNode[];
-    data?: MarketData;
     parent?: TreemapNode;
+    data: MarketData;
     x0?: number;
     y0?: number;
     x1?: number;

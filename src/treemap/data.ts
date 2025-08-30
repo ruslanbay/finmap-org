@@ -4,42 +4,46 @@ import { getConfig } from '../config.js';
 declare const d3: any;
 
 export function prepareHierarchyData(data: MarketData[]): TreemapNode {
-  const securities = data.filter(item => item.type === 'stock' || item.type === 'etf');
-  const sectors = d3.group(securities, (d: MarketData) => d.sector || 'Other');
-  const sectorData = data.filter(item => item.type === 'sector');
   const isPortfolioMode = localStorage.getItem('filterCsv') !== null;
-  
-  const children: TreemapNode[] = [];
-  sectors.forEach((sectorSecurities: MarketData[], sectorName: string) => {
-    const sectorChildren = sectorSecurities.map((security: MarketData) => ({
-      ticker: security.ticker,
-      name: security.nameEng,
-      value: getValueForDataType(security),
-      change: security.priceChangePct || 0,
-      data: security,
-    }));
-    
-    // Use precalculated sector data if available, otherwise calculate
-    const precalculatedSector = sectorData.find(s => s.sector === sectorName || s.nameEng === sectorName);
-    const sectorTotalValue = precalculatedSector ? getValueForDataType(precalculatedSector) : 
-      sectorChildren.reduce((sum, child) => sum + child.value, 0);
-    const sectorChange = precalculatedSector ? (precalculatedSector.priceChangePct || 0) :
-      calculateSectorAverageChange(sectorChildren);
-    
-    children.push({
-      ticker: sectorName,
-      name: sectorName,
-      value: sectorTotalValue,
-      change: sectorChange,
-      children: sectorChildren,
-    });
-  });
-  
-  return {
+  const securities = data.filter(item => item.type !== 'sector');
+  const sectors = data.filter(item => item.type === 'sector' && item.sector !== "");
+  const root = data.find(item => item.type === 'sector' && item.sector === "");
+
+  const children: TreemapNode[] = sectors.map(sector => ({
+    data: sector,
+    children: securities
+      .filter(s => s.sector === sector.sector)
+      .map(security => ({ data: security }))
+  }));
+
+  const defaultRoot: MarketData = {
+    exchange: '',
+    country: '',
+    type: 'sector',
+    sector: '',
+    industry: '',
+    currencyId: '',
     ticker: 'root',
-    name: isPortfolioMode ? 'Portfolio' : 'Market',
+    nameEng: 'Market',
+    nameEngShort: '',
+    nameOriginal: '',
+    nameOriginalShort: '',
+    priceOpen: 0,
+    priceLastSale: 0,
+    priceChangePct: 0,
+    volume: 0,
     value: 0,
-    change: 0,
+    numTrades: 0,
+    marketCap: 0,
+    listedFrom: '',
+    listedTill: '',
+    wikiPageIdEng: '',
+    wikiPageIdOriginal: '',
+    nestedItemsCount: 0
+  };
+
+  return {
+    data: root || defaultRoot,
     children,
   };
 }
@@ -56,24 +60,17 @@ export function buildHierarchy(data: MarketData[]): any {
 
 export function getValueForDataType(item: MarketData | TreemapNode): number {
   const config = getConfig();
-  if ('marketCap' in item) {
-    switch (config.dataType) {
-      case 'marketcap': return item.marketCap;
-      case 'value': return item.value;
-      case 'trades': return item.numTrades;
-      case 'nestedItems': return item.nestedItemsCount;
-      default: return item.marketCap;
-    }
-  }
-  return item.value;
-}
-
-export function calculateSectorAverageChange(children: TreemapNode[]): number {
-  const validChanges = children
-    .map(child => child.change)
-    .filter(change => !isNaN(change));
+  const data = 'data' in item ? item.data : item;
+  if (!data) return 0;
   
-  return validChanges.length > 0 ? d3.mean(validChanges) || 0 : 0;
+  const marketData = data as MarketData;
+  switch (config.dataType) {
+    case 'marketcap': return marketData.marketCap;
+    case 'value': return marketData.value;
+    case 'trades': return marketData.numTrades;
+    case 'nestedItems': return marketData.nestedItemsCount;
+    default: return marketData.marketCap;
+  }
 }
 
 export function addParentReferences(node: any): void {

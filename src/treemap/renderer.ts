@@ -20,7 +20,7 @@ export class CanvasRenderer {
   private renderNode(node: any, width: number, height: number, context: CanvasRenderingContext2D): void {
     const isLeaf = !node.children || node.children.length === 0;
     const data = isLeaf ? node.data.data : node.data;
-    const change = isLeaf ? (data?.priceChangePct || 0) : (data?.change || 0);
+    const change = isLeaf ? (data?.priceChangePct || 0) : (data?.priceChangePct || 0);
     
     context.fillStyle = COLOR_SCALE(change);
     context.fillRect(node.x0, node.y0, width, height);
@@ -49,7 +49,7 @@ export class CanvasRenderer {
       const nodeArea = width * height;
       const baseFontSize = Math.max(2, Math.min(12, Math.sqrt(nodeArea) / 15));
 
-      const ticker = node.data.ticker || '';
+      const ticker = node.data.data?.ticker || '';
       const name = node.data.data?.nameEng || ticker;
       const price = Number(node.data.data?.priceLastSale) || 0;
       const changeValue = Number(node.data.data?.priceChangePct) || 0;
@@ -81,7 +81,7 @@ export class CanvasRenderer {
         this.drawWrappedText(capText, textX, currentY, maxWidth, lineHeight, 1, context);
       }
     } else {
-      const sectorName = node.data.name || '';
+      const sectorName = node.data?.nameEng || '';
       context.font = `12px ${FONT.FAMILY}`;
       context.fillStyle = COLORS.TEXT_WHITE;
       context.textAlign = 'left';

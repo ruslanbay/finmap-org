@@ -1,4 +1,5 @@
 import { COLOR_SCALE, COLORS, LAYOUT, FONT } from './constants.js';
+import { getValueForDataType } from './data.js';
 export class PathbarComponent {
     element = null;
     create(container) {
@@ -32,7 +33,7 @@ export class PathbarComponent {
         path.forEach((item, index) => {
             const isLast = index === path.length - 1;
             const sectorData = this.getSectorDataForNode(item.node);
-            const sectorChange = sectorData?.priceChangePct || item.node.change || 0;
+            const sectorChange = sectorData?.priceChangePct || item.node.data?.priceChangePct || 0;
             const sectorColor = COLOR_SCALE(sectorChange);
             const section = sectionsContainer
                 .append('div')
@@ -57,7 +58,7 @@ export class PathbarComponent {
                 .style('white-space', 'nowrap')
                 .style('padding', '0 5px')
                 .style('pointer-events', 'none')
-                .text(item.name);
+                .text(item.node.data?.nameEng || item.name);
             if (!isLast) {
                 section
                     .on('click', () => callbacks.onDrill(item.node))
@@ -89,9 +90,10 @@ export class PathbarComponent {
             return node.data;
         }
         if (node.children && node.children.length > 0) {
-            const sectorName = node.name || 'Unknown';
-            const sectorChange = node.change || 0;
-            const sectorValue = node.value || 0;
+            const marketData = node.data;
+            const sectorName = marketData?.nameEng || 'Unknown';
+            const sectorChange = marketData?.priceChangePct || 0;
+            const sectorValue = getValueForDataType(node) || 0;
             const firstChild = node.children[0];
             const representativeData = firstChild?.data;
             if (representativeData) {
