@@ -44,11 +44,6 @@ export const COLOR_SCALE = d3.scaleLinear()
     .range(['rgb(236, 48, 51)', 'rgb(64, 68, 82)', 'rgb(42, 202, 85)'])
     .clamp(true)
     .interpolate(d3.interpolateRgb);
-export const FORMATTERS = {
-    number: d3.format('.1~s'),
-    percent: d3.format('+.2%'),
-    currency: (symbol) => d3.format(`${symbol},.2f`)
-};
 export const CURRENCY_SYMBOLS = {
     USD: '$',
     RUB: '₽',

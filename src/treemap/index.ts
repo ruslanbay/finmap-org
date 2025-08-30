@@ -186,6 +186,7 @@ export class TreemapChart implements ChartRenderer {
     });
   }
 
+  // ToDo: Do we really need this?
   private getValueForDataType(item: any): number {
     // Delegate to data module
     return item.value || 0;

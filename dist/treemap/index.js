@@ -155,6 +155,7 @@ export class TreemapChart {
             }
         });
     }
+    // ToDo: Do we really need this?
     getValueForDataType(item) {
         // Delegate to data module
         return item.value || 0;

@@ -1,4 +1,4 @@
-import { COLOR_SCALE, COLORS, LAYOUT, FONT, FORMATTERS, CURRENCY_SYMBOLS, TRANSITIONS } from './constants.js';
+import { COLOR_SCALE, COLORS, LAYOUT, FONT, CURRENCY_SYMBOLS, TRANSITIONS } from './constants.js';
 import type { MarketData } from '../types.js';
 import { getConfig } from '../config.js';
 
@@ -38,13 +38,13 @@ export class TooltipComponent {
     if (!this.element) return;
 
     const config = getConfig();
-    const formatCurrency = this.getCurrencyFormatter(config.currency);
     const isPortfolio = localStorage.getItem('finmap-portfolio-mode') === 'true';
     const change = data?.priceChangePct || 0;
     const nodeColor = COLOR_SCALE(change);
 
     const isSector = node && node.children && node.children.length > 0;
     const percentParent = node && node.parent ? (node.value || 0) / (node.parent.value || 1) * 100 : 100;
+    const persentRoot = node && node.parent && node.parent.parent ? (node.value || 0) / (node.parent.parent.value || 1) * 100 : 100;
     
     let portfolioInfo = '';
     if (isPortfolio && !isSector) {
@@ -55,7 +55,7 @@ export class TooltipComponent {
         if (tickerIndex >= 0 && filters.amounts?.[tickerIndex]) {
           const amount = filters.amounts[tickerIndex];
           const portfolioValue = (data.priceLastSale || 0) * amount;
-          portfolioInfo = `<div>Holdings: ${amount.toLocaleString()} shares</div><div>Portfolio Value: ${formatCurrency(portfolioValue)}</div>`;
+          portfolioInfo = `<div>Holdings: ${amount.toLocaleString()} shares</div><div>Portfolio Value: ${d3.format(',.0f')(portfolioValue)}</div>`;
         }
       }
     }
@@ -68,16 +68,18 @@ export class TooltipComponent {
     this.element.innerHTML = `
       <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
       <div style="margin-bottom: 2px;">${data.nameEng}</div>
-      <div style="margin-bottom: 2px;">${formatCurrency(data.priceLastSale || 0)} (${FORMATTERS.percent(data.priceChangePct || 0)})</div>
-      <div style="margin-bottom: 2px;">MarketCap: ${formatCurrency((data.marketCap || 0) * 1e6)}M</div>
-      <div style="margin-bottom: 2px;">Volume: ${FORMATTERS.number(data.volume || 0)}</div>
-      <div style="margin-bottom: 2px;">Value: ${formatCurrency((data.value || 0) * 1e6)}M</div>
-      <div style="margin-bottom: 2px;">Trades: ${FORMATTERS.number(data.numTrades || 0)}</div>
+      <div style="margin-bottom: 2px;">${data.priceLastSale || 0} (${d3.format('.2f')(data.priceChangePct || 0)}%)</div>
+      <div style="margin-bottom: 2px;">MarketCap: ${d3.format(',.0f')(data.marketCap)}M</div>
+      <div style="margin-bottom: 2px;">Volume: ${d3.format(',.0f')(data.volume)}</div>
+      <div style="margin-bottom: 2px;">Value: ${d3.format(',.0f')(data.value)}M</div>
+      <div style="margin-bottom: 2px;">Trades: ${d3.format(',.0f')(data.numTrades)}</div>
       <div style="margin-bottom: 2px;">Country: ${data.country || 'N/A'}</div>
       <div style="margin-bottom: 2px;">Exchange: ${data.exchange || 'N/A'}</div>
       <div style="margin-bottom: 2px;">Listed Since: ${data.listedFrom || 'N/A'}</div>
       <div style="margin-bottom: 2px;">Industry: ${data.industry || 'N/A'}</div>
-      <div style="margin-bottom: 2px;">% of Sector: ${percentParent.toFixed(2)}%</div>
+      <div style="margin-bottom: 2px;">% of Sector: ${d3.format('.2p')(percentParent)}%</div>
+      <div style="margin-bottom: 2px;">% of Total Market: ${d3.format('.2p')(persentRoot)}%</div>
+      <div style="margin-bottom: 2px;">Items per Sector: ${d3.format(',.0f')(data.nestedItemsCount || 0)}%</div>
       ${portfolioInfo}
     `;
 
@@ -85,11 +87,11 @@ export class TooltipComponent {
     this.element.style.opacity = '1';
   }
 
+  // ToDo: use show() instead of duplicting code
   showPathbar(data: MarketData, event: MouseEvent): void {
     if (!this.element) return;
 
     const config = getConfig();
-    const formatCurrency = this.getCurrencyFormatter(config.currency);
     const change = data?.priceChangePct || 0;
     const nodeColor = COLOR_SCALE(change);
 
@@ -100,10 +102,10 @@ export class TooltipComponent {
 
     this.element.innerHTML = `
       <div style="font-weight: bold; margin-bottom: 4px;">${data.nameEng}</div>
-      <div style="margin-bottom: 2px;">Change: ${FORMATTERS.percent(change / 100)}</div>
+      <div style="margin-bottom: 2px;">Change: ${change / 100}</div>
       <div style="margin-bottom: 2px;">${config.dataType === 'marketcap' ? 'Market Cap' : 
         config.dataType === 'value' ? 'Value' : 
-        config.dataType === 'trades' ? 'Trades' : 'Items'}: ${formatCurrency(data.value || data.marketCap)}</div>
+        config.dataType === 'trades' ? 'Trades' : 'Items'}: ${d3.format(',.0f')(data.marketCap)}M</div>
       ${data.type === 'sector' ? `<div style="margin-bottom: 2px;">Sector</div>` : 
         `<div style="margin-bottom: 2px;">Ticker: ${data.ticker}</div>`}
     `;
@@ -156,11 +158,6 @@ export class TooltipComponent {
             .style('text-align', 'left');
         }
       });
-  }
-
-  private getCurrencyFormatter(currency: string) {
-    const symbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '$';
-    return FORMATTERS.currency(symbol);
   }
 
   destroy(): void {

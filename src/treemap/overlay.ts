@@ -1,4 +1,4 @@
-import { COLORS, FONT, FORMATTERS, CURRENCY_SYMBOLS, TRANSITIONS } from './constants.js';
+import { COLORS, FONT, CURRENCY_SYMBOLS, TRANSITIONS } from './constants.js';
 import type { MarketData } from '../types.js';
 import { getConfig } from '../config.js';
 
@@ -81,7 +81,6 @@ export class OverlayComponent {
   private populate(overlay: HTMLElement, data: MarketData): void {
     const contentArea = overlay.querySelector('#overlay-content') as HTMLElement;
     const config = getConfig();
-    const formatCurrency = this.getCurrencyFormatter(config.currency);
 
     contentArea.innerHTML = `
       <div>
@@ -90,16 +89,16 @@ export class OverlayComponent {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
               <h3>Price Information</h3>
-              <p>Current Price: ${formatCurrency(data.priceLastSale)}</p>
-              <p>Open Price: ${formatCurrency(data.priceOpen)}</p>
-              <p>Change: ${FORMATTERS.percent(data.priceChangePct || 0)}</p>
+              <p>Current Price: ${data.priceLastSale}</p>
+              <p>Open Price: ${data.priceOpen}</p>
+              <p>Change: ${d3.format('.2f')(data.priceChangePct || 0)}%</p>
             </div>
             <div>
               <h3>Market Data</h3>
-              <p>Market Cap: ${formatCurrency((data.marketCap) * 1e6)}M</p>
-              <p>Volume: ${FORMATTERS.number(data.volume)}</p>
-              <p>Value: ${formatCurrency((data.value) * 1e6)}M</p>
-              <p>Trades: ${FORMATTERS.number(data.numTrades)}</p>
+              <p>Market Cap: ${d3.format(',.0f')(data.marketCap)}M</p>
+              <p>Volume: ${d3.format(',.0f')(data.volume)}</p>
+              <p>Value: ${d3.format(',.0f')(data.value)}M</p>
+              <p>Trades: ${d3.format(',.0f')(data.numTrades)}</p>
             </div>
           </div>
           <div style="margin-top: 20px;">
@@ -128,11 +127,6 @@ export class OverlayComponent {
         });
       d3.select('body').style('overflow', 'auto');
     }
-  }
-
-  private getCurrencyFormatter(currency: string) {
-    const symbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '$';
-    return FORMATTERS.currency(symbol);
   }
 
   destroy(): void {

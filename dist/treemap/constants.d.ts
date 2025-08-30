@@ -40,11 +40,6 @@ export declare const FONT: {
     };
 };
 export declare const COLOR_SCALE: any;
-export declare const FORMATTERS: {
-    readonly number: any;
-    readonly percent: any;
-    readonly currency: (symbol: string) => any;
-};
 export declare const CURRENCY_SYMBOLS: {
     readonly USD: "$";
     readonly RUB: "₽";

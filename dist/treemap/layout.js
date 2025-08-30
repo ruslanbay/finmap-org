@@ -1,3 +1,4 @@
+// ToDo: Consider moving to index.ts
 import { LAYOUT } from './constants.js';
 export function getCanvasSize(container) {
     const devicePixelRatio = window.devicePixelRatio || 1;

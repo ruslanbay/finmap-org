@@ -8,6 +8,7 @@ export function prepareHierarchyData(data: MarketData[]): TreemapNode {
   const sectors = d3.group(securities, (d: MarketData) => d.sector || 'Other');
   const isPortfolioMode = localStorage.getItem('filterCsv') !== null;
   
+  // ToDo: No need for re-calulculation for each sector - values already in datafiles
   const children: TreemapNode[] = [];
   sectors.forEach((sectorSecurities: MarketData[], sectorName: string) => {
     const sectorChildren = sectorSecurities.map((security: MarketData) => ({

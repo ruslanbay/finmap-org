@@ -3,6 +3,7 @@ export function prepareHierarchyData(data) {
     const securities = data.filter(item => item.type === 'stock' || item.type === 'etf');
     const sectors = d3.group(securities, (d) => d.sector || 'Other');
     const isPortfolioMode = localStorage.getItem('filterCsv') !== null;
+    // ToDo: No need for re-calulculation for each sector - values already in datafiles
     const children = [];
     sectors.forEach((sectorSecurities, sectorName) => {
         const sectorChildren = sectorSecurities.map((security) => ({

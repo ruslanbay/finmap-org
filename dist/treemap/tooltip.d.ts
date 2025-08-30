@@ -6,7 +6,6 @@ export declare class TooltipComponent {
     showPathbar(data: MarketData, event: MouseEvent): void;
     private position;
     hide(): void;
-    private getCurrencyFormatter;
     destroy(): void;
 }
 //# sourceMappingURL=tooltip.d.ts.map

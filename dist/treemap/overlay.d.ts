@@ -5,7 +5,6 @@ export declare class OverlayComponent {
     private create;
     private populate;
     private hide;
-    private getCurrencyFormatter;
     destroy(): void;
 }
 //# sourceMappingURL=overlay.d.ts.map

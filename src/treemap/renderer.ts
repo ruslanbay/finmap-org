@@ -70,15 +70,14 @@ export class CanvasRenderer {
 
       if (height > baseFontSize * 7) {
         context.font = `${baseFontSize}px ${FONT.FAMILY}`;
-        const priceText = `${this.formatCurrency(price)}`;
         const changeText = `${changeValue >= 0 ? '+' : ''}${changeValue.toFixed(2)}%`;
-        this.drawWrappedText(`${priceText} (${changeText})`, textX, currentY, maxWidth, lineHeight, 1, context);
+        this.drawWrappedText(`${price} (${changeText})`, textX, currentY, maxWidth, lineHeight, 1, context);
         currentY += lineHeight + 2;
       }
 
       if (height > baseFontSize * 9) {
         context.font = `${baseFontSize}px ${FONT.FAMILY}`;
-        const capText = `Cap: ${this.formatCurrency(marketCap)}M`;
+        const capText = `Cap: ${d3.format(',.0f')(marketCap)}M`;
         this.drawWrappedText(capText, textX, currentY, maxWidth, lineHeight, 1, context);
       }
     } else {
@@ -132,10 +131,7 @@ export class CanvasRenderer {
     return lineCount;
   }
 
-  private formatCurrency(value: number): string {
-    return d3.format('$,.1~s')(value).replace('G', 'B');
-  }
-
+  // Todo: don't need this, use precalculated values from datafile
   private calculateSectorChange(sectorNode: any): number {
     if (!sectorNode.children || sectorNode.children.length === 0) return 0;
     

@@ -3,7 +3,6 @@ export declare class CanvasRenderer {
     private renderNode;
     private renderNodeText;
     private drawWrappedText;
-    private formatCurrency;
     private calculateSectorChange;
 }
 //# sourceMappingURL=renderer.d.ts.map
