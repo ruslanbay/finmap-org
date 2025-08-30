@@ -643,8 +643,9 @@ export class D3TreemapRenderer implements ChartRenderer {
     // Set tooltip background to match tile color
     this.tooltip!.style.background = nodeColor;
     this.tooltip!.style.color = '#ffffff';
-    this.tooltip!.style.border = `1px solid ${nodeColor}`;
-    
+    this.tooltip!.style.border = `2px solid white`;
+    this.tooltip!.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+
     this.tooltip.innerHTML = `
       <div style="margin-bottom: 4px;"><b>${data.ticker}</b></div>
       <div style="margin-bottom: 2px;">${data.nameEng}</div>
@@ -703,8 +704,6 @@ export class D3TreemapRenderer implements ChartRenderer {
     
     tooltipSelection
       .style('visibility', 'visible')
-      .transition()
-      .duration(150)
       .style('left', `${Math.max(0, Math.min(left, viewportWidth - tooltipWidth))}px`)
       .style('top', `${Math.max(0, Math.min(top, viewportHeight - tooltipHeight))}px`)
       .style('opacity', '1');
@@ -733,7 +732,7 @@ export class D3TreemapRenderer implements ChartRenderer {
           d3.select(this.tooltip)
             .style('background', 'white')
             .style('color', 'rgb(68, 68, 68)')
-            .style('border', '1px solid rgb(214, 214, 214)')
+            .style('border', '2px solid white')
             .style('text-align', 'left');
         }
       });
