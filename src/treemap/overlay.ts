@@ -1,6 +1,6 @@
 import { COLORS, FONT, FORMATTERS, CURRENCY_SYMBOLS, TRANSITIONS } from './constants.js';
-import type { MarketData } from '../../dist/types.js';
-import { getConfig } from '../../dist/config.js';
+import type { MarketData } from '../types.js';
+import { getConfig } from '../config.js';
 
 declare const d3: any;
 

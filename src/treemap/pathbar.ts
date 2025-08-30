@@ -1,6 +1,6 @@
 import { COLOR_SCALE, COLORS, LAYOUT, FONT } from './constants.js';
 import { getValueForDataType } from './data.js';
-import type { MarketData, TreemapNode } from '../../dist/types.js';
+import type { MarketData, TreemapNode } from '../types.js';
 
 declare const d3: any;
 

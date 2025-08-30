@@ -1,5 +1,5 @@
 import { TRANSITIONS } from './constants.js';
-import type { MarketData } from '../../dist/types.js';
+import type { MarketData } from '../types.js';
 
 declare const d3: any;
 

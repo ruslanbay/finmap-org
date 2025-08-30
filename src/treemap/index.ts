@@ -1,4 +1,4 @@
-import type { MarketData, ChartRenderer } from '../../dist/types.js';
+import type { MarketData, ChartRenderer } from '../types.js';
 import { buildHierarchy } from './data.js';
 import { getCanvasSize, getViewportSize } from './layout.js';
 import { LAYOUT, TRANSITIONS } from './constants.js';

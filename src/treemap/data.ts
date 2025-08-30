@@ -1,5 +1,5 @@
-import type { MarketData, TreemapNode } from '../../dist/types.js';
-import { getConfig } from '../../dist/config.js';
+import type { MarketData, TreemapNode } from '../types.js';
+import { getConfig } from '../config.js';
 
 declare const d3: any;
 
