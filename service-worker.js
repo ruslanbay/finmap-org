@@ -1,82 +1,121 @@
-"use strict";
+const CACHE_NAME = 'finmap-v2.0.0';
+const STATIC_CACHE = 'finmap-static-v2.0.0';
+const DATA_CACHE = 'finmap-data-v2.0.0';
 
-const CACHE_NAME = "my-app-static-cache-v25.5.6";
-const DATA_CACHE_NAME = "my-app-data-cache-v25.5.6";
-
-const FILES_TO_CACHE = [
-  "/",
-  "/styles/style.css",
-  "/styles/Material_Icons.woff2",
-  "/index.html",
-  "/tcg/index.html",
-  "/images/icons/favicon.png",
-  "/images/icons/patreon.png",
-  "/images/icons/boosty.png",
-  "/scripts/currency.js",
-  "/scripts/histogram.js",
-  "/scripts/install.js",
-  "/scripts/main.js",
-  "/scripts/menu.js",
-  "/scripts/overlay.js",
-  "/scripts/plotly-3.0.1.min.js",
-  "/scripts/share.js",
-  "/scripts/treemap.js",
-  "/scripts/treemap-d3js.js",
+const STATIC_FILES = [
+  '/',
+  '/index.html',
+  '/main.js',
+  '/types.js',
+  '/config.js',
+  '/data.js',
+  '/charts.js',
+  '/ui.js',
+  '/utils.js',
+  '/manifest.json',
+  '/images/icons/favicon.png',
+  '/images/icons/ios/180.png',
+  '/js/d3.v7.min.js',
+  '/js/plotly-3.1.0.min.js',
 ];
 
-self.addEventListener("install", async (evt) => {
-  evt.waitUntil(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      try {
-        await cache.addAll(FILES_TO_CACHE);
-      } catch (error) {
-        console.error("Failed to cache files:", error);
-      }
-    }),
+const DATA_URLS = [
+  'https://raw.githubusercontent.com/finmap-org/',
+  'https://news.finmap.org/',
+  'https://en.wikipedia.org',
+  'https://ru.wikipedia.org',
+  'https://tr.wikipedia.org',
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(STATIC_CACHE)
+      .then(cache => cache.addAll(STATIC_FILES))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-self.addEventListener("activate", (evt) => {
-  evt.waitUntil(
-    caches.keys().then((keyList) => {
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
-            return caches.delete(key);
+        cacheNames.map(cacheName => {
+          if (cacheName !== STATIC_CACHE && cacheName !== DATA_CACHE) {
+            return caches.delete(cacheName);
           }
-        }),
+        })
       );
-    }),
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-self.addEventListener("fetch", (evt) => {
-  if (evt.request.url.includes("raw.githubusercontent.com") || evt.request.url.includes("wikipedia.org") || evt.request.url.includes("news.finmap.org")) {
-    evt.respondWith(
-      caches.open(DATA_CACHE_NAME).then(async (cache) => {
-        try {
-          const response = await fetch(evt.request);
-          if (response.status === 200) {
-            cache.put(evt.request, response.clone());
-          }
-          return response;
-        } catch (error) {
-          const cachedResponse = await cache.match(evt.request);
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          console.error("Failed to fetch data:", error);
-        }
-      }),
-    );
-    return;
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  
+  if (isStaticAsset(request.url)) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+  } else if (isDataRequest(request.url)) {
+    event.respondWith(networkFirst(request, DATA_CACHE));
+  } else {
+    event.respondWith(fetch(request));
   }
-  evt.respondWith(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      const response = await cache.match(evt.request);
-      return response || fetch(evt.request);
-    }),
-  );
 });
+
+function isStaticAsset(url) {
+  return STATIC_FILES.some(file => url.includes(file)) || 
+         url.includes('d3js.org') ||
+         url.endsWith('.js') ||
+         url.endsWith('.ts') ||
+         url.endsWith('.css') ||
+         url.endsWith('.png') ||
+         url.endsWith('.svg');
+}
+
+function isDataRequest(url) {
+  return DATA_URLS.some(dataUrl => url.includes(dataUrl)) ||
+         url.includes('githubusercontent') ||
+         url.includes('wikipedia') ||
+         url.includes('news.finmap.org');
+}
+
+async function cacheFirst(request, cacheName) {
+  try {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      return cached;
+    }
+    
+    const response = await fetch(request);
+    if (response.status === 200) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cache = await caches.open(cacheName);
+    return cache.match(request);
+  }
+}
+
+async function networkFirst(request, cacheName) {
+  try {
+    const response = await fetch(request);
+    
+    if (response.status === 200) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+    
+    return response;
+  } catch (error) {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      return cached;
+    }
+    
+    throw error;
+  }
+}

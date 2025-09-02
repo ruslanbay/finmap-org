@@ -19,11 +19,8 @@
     <link rel="icon" href="images/icons/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="images/icons/ios/152.png" />
 
-    <script src="scripts/plotly-3.0.1.min.js"></script>
-    <script src="scripts/currency.js"></script>
-    <script src="scripts/histogram.js"></script>
-    <script src="scripts/overlay.js"></script>
-    <script src="scripts/treemap.js"></script>
+    <script src="js/d3.v7.min.js"></script>
+    <script src="js/plotly-3.1.0.min.js" charset="utf-8"></script>
   </head>
 
   <body>
@@ -34,45 +31,39 @@
         <img
           src="images/icons/filter.png"
           title="Apply filter"
-          style="height: 31px; margin-top: 5px"
         />
       </label>
-      <a id="linkEraseFilter" onclick="localStorage.removeItem('filterCsv'); refreshChart();" hidden>
+      <a id="linkEraseFilter" data-action="erase-filter" hidden>
         <img
           src="images/icons/erasefilter.png"
           title="Erase filter"
-          style="height: 31px; margin-top: 5px"
         />
       </a>
       <form id="inputForm" onsubmit="return false;">
         <div class="autocomplete">
           <input
             type="text"
-            id="inputSearch"
+            id="search"
             placeholder="🔎 AAPL"
             maxlength="40"
           />
         </div>
       </form>
 
-      <select id="inputDataType">
+      <select id="dataType">
         <option value="marketcap" selected="selected">marketcap</option>
         <option value="value">value</option>
         <option value="trades">trades</option>
-        <option value="nestedItems">listed items</option>
+        <!-- <option value="nestedItems">listed items</option> -->
       </select>
       <input
         type="date"
-        id="inputDate"
+        id="date"
         name="date"
         pattern="\d{4}-\d{2}-\d{2}"
-        value="2023-12-08"
-        min="2011-12-19"
-        max="2024-03-04"
       />
     </header>
     <div id="chart"></div>
-    <div id="loading">rendering, please wait...</div>
     <ul class="menu">
       <li>
         <a class="menuItem" target="_blank" rel="noopener" href="https://x.com/finmaporg">
@@ -94,34 +85,24 @@
           <img src="images/icons/patreon.png"  />
         </a>
       </li>
+      <li>
+        <a class="menuItem" data-chart-type="treemap" href="#" rel="noopener">TREEMAP</a>|
+        <a class="menuItem" data-chart-type="histogram" href="#" rel="noopener">HISTOGRAM</a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="chartType = 'treemap'; refreshChart(); return false;">TREEMAP</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="chartType = 'histogram'; refreshChart(); return false;">HISTOGRAM</a>
+        <a class="menuItem" data-exchange="nasdaq" href="#" rel="noopener">NASDAQ</a>|
+        <a class="menuItem" data-exchange="nyse" href="#" rel="noopener">NYSE</a>|
+        <a class="menuItem" data-exchange="amex" href="#" rel="noopener">AMEX</a>|
+        <a class="menuItem" data-exchange="us-all" href="#" rel="noopener">US ALL</a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('nasdaq');">NASDAQ</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('nyse');">NYSE</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('amex');">AMEX</a>|
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('us-all');">US ALL</a>
+        <a class="menuItem" data-exchange="lse" href="#" rel="noopener">LONDON STOCK EXCHANGE</a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('lse');">LONDON STOCK EXCHANGE</a>
+        <a class="menuItem" data-exchange="bist" href="#" rel="noopener">TURKISH STOCK MARKET</a>
       </li>
       <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('bist');">TURKISH STOCK MARKET</a>
-      </li>
-      <li>
-        <a class="menuItem" target="_self" rel="noopener"
-          onclick="exchangeSwitcher('moex');">MOSCOW EXCHANGE</a>
+        <a class="menuItem" data-exchange="moex" href="#" rel="noopener">MOSCOW EXCHANGE</a>
       </li>
       <li>
         <a class="menuItem" target="_self" rel="noopener"
@@ -144,13 +125,67 @@
       <a id="share">
         <img src="images/icons/share.png" height="14px" /> Share</a>
       <a id="install" hidden>✓ Install</a>
-      <a id="currencyToggle" onclick="currencyToggle(); if (nativeCurrency !== 'USD') refreshChart(); return false;">USD</a>
+      <a id="currencyToggle" data-action="currency-toggle">USD</a>
       <a id="langToggle">ENG</a>
     </footer>
 
-    <script src="scripts/main.js"></script>
-    <script src="scripts/menu.js"></script>
-    <script src="scripts/install.js"></script>
-    <script src="scripts/share.js"></script>
+    <div id="company-overlay" class="company-overlay">
+      <div class="overlay-content">
+        <div class="overlay-header">
+          <h2 id="overlay-title" class="overlay-title"></h2>
+          <div class="price-info">
+            <div class="price-row">
+              <div class="price-item">
+                <span><b>Price:</b></span>
+                <span id="price-last"></span>
+              </div>
+              <div class="price-item">
+                <span><b>Change:</b></span>
+                <span id="price-change" class="price-change"></span>
+              </div>
+            </div>
+            <div class="price-row">
+              <div class="price-item">
+                <span><b>Cap:</b></span>
+                <span id="market-cap"></span>
+              </div>
+              <div class="price-item">
+                <span><b>Value:</b></span>
+                <span id="value"></span>
+              </div>
+              <div class="price-item">
+                <span><b>Trades:</b></span>
+                <span id="num-trades"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="overlay-tabs">
+          <button class="overlay-tab active" data-tab="news">News</button>
+          <button class="overlay-tab" data-tab="info">Info</button>
+          <button class="overlay-tab" data-tab="buy">Buy</button>
+        </div>
+        <div id="overlay-content" class="overlay-body"></div>
+        <button class="overlay-close" aria-label="Close overlay">×</button>
+      </div>
+    </div>
+
+    <template id="tooltip">
+      <div class="tooltip-ticker"></div>
+      <div class="tooltip-name"></div>
+      <div class="tooltip-price"></div>
+      <div class="tooltip-marketcap"></div>
+      <div class="tooltip-value"></div>
+      <div class="tooltip-volume"></div>
+      <div class="tooltip-trades"></div>
+      <div class="tooltip-exchange"></div>
+      <div class="tooltip-industry"></div>
+      <div class="tooltip-separator"></div>
+      <div class="tooltip-sector-percent"></div>
+      <div class="tooltip-total-percent"></div>
+      <div class="tooltip-items"></div>
+    </template>
+
+  <script type="module" src="js/main.js"></script>
   </body>
 </html>

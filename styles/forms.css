@@ -1,0 +1,16 @@
+select,
+input {
+  min-height: 30px;
+  margin: 0 2px;
+}
+
+#search {
+  width: 60px;
+  margin: 0 2px;
+}
+
+input[type="date"]::-webkit-clear-button,
+input[type="date"]::-ms-clear {
+  display: none;
+  margin: 0 2px;
+}
