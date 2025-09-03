@@ -306,7 +306,6 @@ export class TreemapChart implements ChartRenderer {
       .paddingRight(LAYOUT.PADDING.RIGHT)
       .paddingBottom(LAYOUT.PADDING.BOTTOM)
       .paddingLeft(LAYOUT.PADDING.LEFT)
-      .tile(d3.treemapBinary)
       .round(true);
 
     treemap(hierarchy);
