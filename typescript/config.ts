@@ -65,7 +65,7 @@ export const EXCHANGE_INFO = {
     nativeCurrency: "TRY" as const,
     dataRepo: "data-turkey",
     minDate: "2015-11-30",
-    maxDate: "2025-07-31",
+    maxDate: "2025-05-30",
     marketOpenHour: 8,
     updateFrequencyMinutes: 86400,
     region: "turkey",
